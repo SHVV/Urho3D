@@ -92,6 +92,16 @@ static const char* fillModeNames[] =
     0
 };
 
+static const char* primitivesInputModeNames[] =
+{
+    "points list",
+    "lines list",
+    "lines strip",
+    "triangles list",
+    "triangles strip",
+    0
+};
+
 TextureUnit ParseTextureUnitName(String name)
 {
     name = name.ToLower().Trimmed();
@@ -478,6 +488,11 @@ bool Material::Load(const XMLElement& source)
     if (fillElem)
         SetFillMode((FillMode)GetStringListIndex(fillElem.GetAttribute("value").CString(), fillModeNames, FILL_SOLID));
 
+    XMLElement primitivesInputElem = source.GetChild("primitivesinput");
+    if (primitivesInputElem)
+        SetPrimitivesInputMode((PrimitivesInputMode)GetStringListIndex(primitivesInputElem.GetAttribute("value").CString(), primitivesInputModeNames, PRIMITIVES_TRIANGLES_LIST));
+
+
     XMLElement depthBiasElem = source.GetChild("depthbias");
     if (depthBiasElem)
         SetDepthBias(BiasParameters(depthBiasElem.GetFloat("constant"), depthBiasElem.GetFloat("slopescaled")));
@@ -615,6 +630,10 @@ bool Material::Load(const JSONValue& source)
     if (!fillVal.IsNull())
         SetFillMode((FillMode)GetStringListIndex(fillVal.GetString().CString(), fillModeNames, FILL_SOLID));
 
+    JSONValue primitivesInputElem = source.Get("primitivesinput");
+    if (!primitivesInputElem.IsNull())
+        SetPrimitivesInputMode((PrimitivesInputMode)GetStringListIndex(primitivesInputElem.GetString().CString(), primitivesInputModeNames, PRIMITIVES_TRIANGLES_LIST));
+
     JSONValue depthBiasVal = source.Get("depthbias");
     if (!depthBiasVal.IsNull())
         SetDepthBias(BiasParameters(depthBiasVal.Get("constant").GetFloat(), depthBiasVal.Get("slopescaled").GetFloat()));
@@ -702,6 +721,10 @@ bool Material::Save(XMLElement& dest) const
     XMLElement fillElem = dest.CreateChild("fill");
     fillElem.SetString("value", fillModeNames[fillMode_]);
 
+    // Write primitive input mode
+    XMLElement primitivesInputModeElem = dest.CreateChild("primitivesinput");
+    primitivesInputModeElem.SetString("value", primitivesInputModeNames[primitivesInputMode_]);
+
     // Write depth bias
     XMLElement depthBiasElem = dest.CreateChild("depthbias");
     depthBiasElem.SetFloat("constant", depthBias_.constantBias_);
@@ -782,6 +805,9 @@ bool Material::Save(JSONValue& dest) const
 
     // Write fill mode
     dest.Set("fill", fillModeNames[fillMode_]);
+
+    // Write primitives input mode
+    dest.Set("primitivesinput", primitivesInputModeNames[primitivesInputMode_]);
 
     // Write depth bias
     JSONValue depthBiasValue;
@@ -947,6 +973,11 @@ void Material::SetShadowCullMode(CullMode mode)
 void Material::SetFillMode(FillMode mode)
 {
     fillMode_ = mode;
+}
+
+void Material::SetPrimitivesInputMode(PrimitivesInputMode mode)
+{
+    primitivesInputMode_ = mode;
 }
 
 void Material::SetDepthBias(const BiasParameters& parameters)
@@ -1125,6 +1156,7 @@ void Material::ResetToDefaults()
     cullMode_ = CULL_CCW;
     shadowCullMode_ = CULL_CCW;
     fillMode_ = FILL_SOLID;
+    primitivesInputMode_ = PRIMITIVES_TRIANGLES_LIST;
     depthBias_ = BiasParameters(0.0f, 0.0f);
     renderOrder_ = DEFAULT_RENDER_ORDER;
 

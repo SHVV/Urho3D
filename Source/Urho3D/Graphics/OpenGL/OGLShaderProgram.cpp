@@ -47,10 +47,11 @@ const char* shaderParameterGroups[] = {
 unsigned ShaderProgram::globalFrameNumber = 0;
 const void* ShaderProgram::globalParameterSources[MAX_SHADER_PARAMETER_GROUPS];
 
-ShaderProgram::ShaderProgram(Graphics* graphics, ShaderVariation* vertexShader, ShaderVariation* pixelShader) :
+ShaderProgram::ShaderProgram(Graphics* graphics, ShaderVariation* vertexShader, ShaderVariation* pixelShader, ShaderVariation* geometryShader) :
     GPUObject(graphics),
     vertexShader_(vertexShader),
     pixelShader_(pixelShader),
+    geometryShader_(geometryShader),
     frameNumber_(0)
 {
     for (unsigned i = 0; i < MAX_TEXTURE_UNITS; ++i)
@@ -69,7 +70,7 @@ void ShaderProgram::OnDeviceLost()
     GPUObject::OnDeviceLost();
 
     if (graphics_ && graphics_->GetShaderProgram() == this)
-        graphics_->SetShaders(0, 0);
+        graphics_->SetShaders(0, 0, 0);
 
     linkerOutput_.Clear();
 }
@@ -84,7 +85,7 @@ void ShaderProgram::Release()
         if (!graphics_->IsDeviceLost())
         {
             if (graphics_->GetShaderProgram() == this)
-                graphics_->SetShaders(0, 0);
+                graphics_->SetShaders(0, 0, 0);
 
             glDeleteProgram(object_);
         }
@@ -135,6 +136,16 @@ bool ShaderProgram::Link()
     glBindAttribLocation(object_, 13, "iObjectIndex");
 
     glAttachShader(object_, vertexShader_->GetGPUObject());
+#ifndef GL_ES_VERSION_2_0
+    if (Graphics::GetGL3Support())
+    {
+        // if GS shader are exist we try to attach it
+        if (geometryShader_ && geometryShader_->GetGPUObject())
+        {
+            glAttachShader(object_, geometryShader_->GetGPUObject());
+        }
+    }
+#endif
     glAttachShader(object_, pixelShader_->GetGPUObject());
     glLinkProgram(object_);
 
@@ -317,6 +328,11 @@ ShaderVariation* ShaderProgram::GetVertexShader() const
 ShaderVariation* ShaderProgram::GetPixelShader() const
 {
     return pixelShader_;
+}
+
+ShaderVariation* ShaderProgram::GetGeometryShader() const
+{
+    return geometryShader_;
 }
 
 bool ShaderProgram::HasParameter(StringHash param) const

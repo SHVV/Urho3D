@@ -191,7 +191,7 @@ void Batch::Prepare(View* view, Camera* camera, bool setModelTransform, bool all
     Texture2D* shadowMap = lightQueue_ ? lightQueue_->shadowMap_ : 0;
 
     // Set shaders first. The available shader parameters and their register/uniform positions depend on the currently set shaders
-    graphics->SetShaders(vertexShader_, pixelShader_);
+    graphics->SetShaders(vertexShader_, pixelShader_, geometryShader_);
 
     // Set pass / material-specific renderstates
     if (pass_ && material_)
@@ -217,6 +217,7 @@ void Batch::Prepare(View* view, Camera* camera, bool setModelTransform, bool all
 
         // Use the "least filled" fill mode combined from camera & material
         graphics->SetFillMode((FillMode)(Max(camera->GetFillMode(), material_->GetFillMode())));
+        graphics->SetPrimitivesInputMode(material_->GetPrimitivesInputMode());
         graphics->SetDepthTest(pass_->GetDepthTestMode());
         graphics->SetDepthWrite(pass_->GetDepthWrite() && allowDepthWrite);
     }
@@ -653,7 +654,9 @@ void BatchGroup::Draw(View* view, Camera* camera, bool allowDepthWrite) const
                 if (graphics->NeedParameterUpdate(SP_OBJECT, instances_[i].worldTransform_))
                     graphics->SetShaderParameter(VSP_MODEL, *instances_[i].worldTransform_);
 
-                graphics->Draw(geometry_->GetPrimitiveType(), geometry_->GetIndexStart(), geometry_->GetIndexCount(),
+                PrimitiveType gsPrimitiveTypeMode = graphics->GetEffectivePrimitiveTypeOverGSInput(geometry_->GetPrimitiveType());
+
+                graphics->Draw(gsPrimitiveTypeMode, geometry_->GetIndexStart(), geometry_->GetIndexCount(),
                     geometry_->GetVertexStart(), geometry_->GetVertexCount());
             }
         }
@@ -669,9 +672,11 @@ void BatchGroup::Draw(View* view, Camera* camera, bool allowDepthWrite) const
             vertexBuffers.Push(SharedPtr<VertexBuffer>(instanceBuffer));
             elementMasks.Push(instanceBuffer->GetElementMask());
 
+            PrimitiveType gsPrimitiveTypeMode = graphics->GetEffectivePrimitiveTypeOverGSInput(geometry_->GetPrimitiveType());
+
             graphics->SetIndexBuffer(geometry_->GetIndexBuffer());
             graphics->SetVertexBuffers(vertexBuffers, elementMasks, startIndex_);
-            graphics->DrawInstanced(geometry_->GetPrimitiveType(), geometry_->GetIndexStart(), geometry_->GetIndexCount(),
+            graphics->DrawInstanced(gsPrimitiveTypeMode, geometry_->GetIndexStart(), geometry_->GetIndexCount(),
                 geometry_->GetVertexStart(), geometry_->GetVertexCount(), instances_.Size());
 
             // Remove the instancing buffer & element mask now

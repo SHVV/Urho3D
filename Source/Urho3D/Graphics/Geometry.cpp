@@ -187,16 +187,19 @@ void Geometry::SetRawIndexData(SharedArrayPtr<unsigned char> data, unsigned inde
 
 void Geometry::Draw(Graphics* graphics)
 {
+
+    PrimitiveType gsPrimitiveType = graphics->GetEffectivePrimitiveTypeOverGSInput(primitiveType_);
+
     if (indexBuffer_ && indexCount_ > 0)
     {
         graphics->SetIndexBuffer(indexBuffer_);
         graphics->SetVertexBuffers(vertexBuffers_, elementMasks_);
-        graphics->Draw(primitiveType_, indexStart_, indexCount_, vertexStart_, vertexCount_);
+        graphics->Draw(gsPrimitiveType, indexStart_, indexCount_, vertexStart_, vertexCount_);
     }
     else if (vertexCount_ > 0)
     {
         graphics->SetVertexBuffers(vertexBuffers_, elementMasks_);
-        graphics->Draw(primitiveType_, vertexStart_, vertexCount_);
+        graphics->Draw(gsPrimitiveType, vertexStart_, vertexCount_);
     }
 }
 

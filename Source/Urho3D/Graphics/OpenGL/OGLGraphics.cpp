@@ -257,6 +257,9 @@ Graphics::Graphics(Context* context_) :
     shaderPath_("Shaders/GLSL/"),
     shaderExtension_(".glsl"),
     orientations_("LandscapeLeft LandscapeRight"),
+    vertexShader_(0),
+    geometryShader_(0),
+    pixelShader_(0), 
 #ifndef GL_ES_VERSION_2_0
     apiName_("GL2")
 #else
@@ -955,9 +958,9 @@ void Graphics::SetIndexBuffer(IndexBuffer* buffer)
     indexBuffer_ = buffer;
 }
 
-void Graphics::SetShaders(ShaderVariation* vs, ShaderVariation* ps)
+void Graphics::SetShaders(ShaderVariation* vs, ShaderVariation* ps, ShaderVariation* gs)
 {
-    if (vs == vertexShader_ && ps == pixelShader_)
+    if (vs == vertexShader_ && ps == pixelShader_ && gs == geometryShader_)
         return;
 
     // Compile the shaders now if not yet compiled. If already attempted, do not retry
@@ -999,20 +1002,51 @@ void Graphics::SetShaders(ShaderVariation* vs, ShaderVariation* ps)
             ps = 0;
     }
 
+    if (gs && !gs->GetGPUObject())
+    {
+        if (gs->GetCompilerOutput().Empty())
+        {
+            URHO3D_PROFILE(CompileGeometryShader);
+
+            bool success = gs->Create();
+            if (success)
+                URHO3D_LOGDEBUG("Compiled geometry shader " + gs->GetFullName());
+            else
+            {
+                URHO3D_LOGERROR("Failed to compile geometry shader " + gs->GetFullName() + ":\n" + gs->GetCompilerOutput());
+                gs = 0;
+            }
+        }
+        else
+            gs = 0;
+    }
+
     if (!vs || !ps)
     {
         glUseProgram(0);
         vertexShader_ = 0;
         pixelShader_ = 0;
+        geometryShader_ = 0;
         shaderProgram_ = 0;
     }
     else
     {
         vertexShader_ = vs;
         pixelShader_ = ps;
+        geometryShader_ = gs;
 
+        ShaderProgramMap::Iterator i;
+
+#ifndef GL_ES_VERSION_2_0
+
+        Pair<ShaderVariation*, ShaderVariation*> baseCombination(vs, ps);
+        Pair<ShaderVariation*, Pair<ShaderVariation*, ShaderVariation*>> combination(gs, baseCombination);
+#else
         Pair<ShaderVariation*, ShaderVariation*> combination(vs, ps);
         ShaderProgramMap::Iterator i = shaderPrograms_.Find(combination);
+
+#endif        
+        i = shaderPrograms_.Find(combination);
 
         if (i != shaderPrograms_.End())
         {
@@ -1033,18 +1067,31 @@ void Graphics::SetShaders(ShaderVariation* vs, ShaderVariation* ps)
             // Link a new combination
             URHO3D_PROFILE(LinkShaders);
 
-            SharedPtr<ShaderProgram> newProgram(new ShaderProgram(this, vs, ps));
+            SharedPtr<ShaderProgram> newProgram(new ShaderProgram(this, vs, ps, gs));
             if (newProgram->Link())
             {
-                URHO3D_LOGDEBUG("Linked vertex shader " + vs->GetFullName() + " and pixel shader " + ps->GetFullName());
+                if (gs)
+                    URHO3D_LOGDEBUG("Linked vertex shader " + vs->GetFullName() + " and pixel shader " + ps->GetFullName() + " and geometry shader " + gs->GetFullName());
+                else
+                    URHO3D_LOGDEBUG("Linked vertex shader " + vs->GetFullName() + " and pixel shader " + ps->GetFullName());
+
                 // Note: Link() calls glUseProgram() to set the texture sampler uniforms,
                 // so it is not necessary to call it again
                 shaderProgram_ = newProgram;
             }
             else
             {
-                URHO3D_LOGERROR("Failed to link vertex shader " + vs->GetFullName() + " and pixel shader " + ps->GetFullName() + ":\n" +
+                if (gs) 
+                {
+                URHO3D_LOGERROR("Failed to link vertex shader " + vs->GetFullName() + " and pixel shader " + ps->GetFullName() + " and geometry shader " + gs->GetFullName() + ":\n" +
                          newProgram->GetLinkerOutput());
+                }
+                else 
+                {
+                URHO3D_LOGERROR("Failed to link vertex shader " + vs->GetFullName() + " and pixel shader " + ps->GetFullName() + ":\n" +
+                        newProgram->GetLinkerOutput());
+                }
+
                 glUseProgram(0);
                 shaderProgram_ = 0;
             }
@@ -1078,7 +1125,7 @@ void Graphics::SetShaders(ShaderVariation* vs, ShaderVariation* ps)
 
     // Store shader combination if shader dumping in progress
     if (shaderPrecache_)
-        shaderPrecache_->StoreShaders(vertexShader_, pixelShader_);
+        shaderPrecache_->StoreShaders(vertexShader_, pixelShader_, geometryShader_);
 }
 
 void Graphics::SetShaderParameter(StringHash param, const float* data, unsigned count)
@@ -1755,6 +1802,16 @@ void Graphics::SetFillMode(FillMode mode)
 #endif
 }
 
+void Graphics::SetPrimitivesInputMode(PrimitivesInputMode mode)
+{
+#ifndef GL_ES_VERSION_2_0
+    if (mode != primitivesInputMode_)
+    {
+        primitivesInputMode_ = mode;
+    }
+#endif
+}
+
 void Graphics::SetScissorTest(bool enable, const Rect& rect, bool borderInclusive)
 {
     // During some light rendering loops, a full rect is toggled on/off repeatedly.
@@ -2325,6 +2382,19 @@ void Graphics::CleanupRenderSurface(RenderSurface* surface)
 
 void Graphics::CleanupShaderPrograms(ShaderVariation* variation)
 {
+#ifndef GL_ES_VERSION_2_0
+    for (ShaderProgramMap::Iterator i = shaderPrograms_.Begin(); i != shaderPrograms_.End();)
+    {
+        if (i->second_->GetVertexShader() == variation || i->second_->GetPixelShader() == variation || i->second_->GetGeometryShader() == variation)
+            i = shaderPrograms_.Erase(i);
+        else
+            ++i;
+    }
+
+    if (vertexShader_ == variation || pixelShader_ == variation || geometryShader_ == variation)
+        shaderProgram_ = 0;
+
+#else
     for (ShaderProgramMap::Iterator i = shaderPrograms_.Begin(); i != shaderPrograms_.End();)
     {
         if (i->second_->GetVertexShader() == variation || i->second_->GetPixelShader() == variation)
@@ -2335,6 +2405,7 @@ void Graphics::CleanupShaderPrograms(ShaderVariation* variation)
 
     if (vertexShader_ == variation || pixelShader_ == variation)
         shaderProgram_ = 0;
+#endif
 }
 
 ConstantBuffer* Graphics::GetOrCreateConstantBuffer(unsigned bindingIndex, unsigned size)
@@ -2737,6 +2808,40 @@ unsigned Graphics::GetFormat(const String& formatName)
     return GetRGBFormat();
 }
 
+PrimitiveType Graphics::GetEffectivePrimitiveTypeOverGSInput(PrimitiveType primitiveType_)
+{
+    switch (primitivesInputMode_)
+    {
+        case PrimitivesInputMode::PRIMITIVES_POINTS_LIST:
+        {
+            return POINT_LIST;
+            break;
+        }
+        case PrimitivesInputMode::PRIMITIVES_LINES_LIST:
+        {
+            return LINE_LIST;
+            break;
+        }
+        case PrimitivesInputMode::PRIMITIVES_LINES_STRIP:
+        {
+            return LINE_STRIP;
+            break;
+        }
+        case PrimitivesInputMode::PRIMITIVES_TRIANGLES_LIST:
+        {
+            return TRIANGLE_LIST;
+            break;
+        }
+        case PrimitivesInputMode::PRIMITIVES_TRIANGLES_STRIP:
+        {
+            return TRIANGLE_STRIP;
+            break;
+        }
+        default:
+            return TRIANGLE_LIST;
+    }
+}
+
 void Graphics::CreateWindowIcon()
 {
     if (windowIcon_)
@@ -3117,6 +3222,7 @@ void Graphics::ResetCachedState()
     indexBuffer_ = 0;
     vertexShader_ = 0;
     pixelShader_ = 0;
+    geometryShader_ = 0;
     shaderProgram_ = 0;
     blendMode_ = BLEND_REPLACE;
     textureAnisotropy_ = 1;
@@ -3127,6 +3233,7 @@ void Graphics::ResetCachedState()
     depthTestMode_ = CMP_ALWAYS;
     depthWrite_ = false;
     fillMode_ = FILL_SOLID;
+    primitivesInputMode_ = PRIMITIVES_TRIANGLES_LIST;
     scissorTest_ = false;
     scissorRect_ = IntRect::ZERO;
     stencilTest_ = false;

@@ -105,6 +105,16 @@ enum FillMode
     FILL_POINT
 };
 
+/// Input mode.
+enum PrimitivesInputMode
+{
+    PRIMITIVES_POINTS_LIST = 0,
+    PRIMITIVES_LINES_LIST,
+    PRIMITIVES_LINES_STRIP,
+    PRIMITIVES_TRIANGLES_LIST,
+    PRIMITIVES_TRIANGLES_STRIP,
+};
+
 /// Stencil operation.
 enum StencilOp
 {
@@ -219,6 +229,7 @@ enum ShaderType
 {
     VS = 0,
     PS,
+    GS
 };
 
 /// Shader parameter groups for determining need to update. On APIs that support constant buffers, these correspond to different constant buffers.
@@ -309,6 +320,7 @@ extern URHO3D_API const StringHash VSP_LIGHTPOS;
 extern URHO3D_API const StringHash VSP_MODEL;
 extern URHO3D_API const StringHash VSP_VIEW;
 extern URHO3D_API const StringHash VSP_VIEWINV;
+extern URHO3D_API const StringHash VSP_PROJ;
 extern URHO3D_API const StringHash VSP_VIEWPROJ;
 extern URHO3D_API const StringHash VSP_UOFFSET;
 extern URHO3D_API const StringHash VSP_VOFFSET;

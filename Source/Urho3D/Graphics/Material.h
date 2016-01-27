@@ -155,6 +155,8 @@ public:
     void SetShadowCullMode(CullMode mode);
     /// Set polygon fill mode. Interacts with the camera's fill mode setting so that the "least filled" mode will be used.
     void SetFillMode(FillMode mode);
+    /// Set polygon primitives mode. Interacts with the camera's fill mode setting so that the "least filled" mode will be used.
+    void SetPrimitivesInputMode(PrimitivesInputMode mode);
     /// Set depth bias.
     void SetDepthBias(const BiasParameters& parameters);
     /// Set 8-bit render order within pass. Default 128. Lower values will render earlier and higher values later, taking precedence over e.g. state and distance sorting.
@@ -210,6 +212,9 @@ public:
 
     /// Return polygon fill mode.
     FillMode GetFillMode() const { return fillMode_; }
+
+    /// Return polygon fill mode.
+    PrimitivesInputMode GetPrimitivesInputMode() const { return primitivesInputMode_; }
 
     /// Return depth bias.
     const BiasParameters& GetDepthBias() const { return depthBias_; }
@@ -272,6 +277,8 @@ private:
     CullMode shadowCullMode_;
     /// Polygon fill mode.
     FillMode fillMode_;
+    /// VS-GS Primitives input mode
+    PrimitivesInputMode primitivesInputMode_;
     /// Depth bias parameters.
     BiasParameters depthBias_;
     /// Render order value.

@@ -65,12 +65,17 @@ void ShaderVariation::Release()
             if (type_ == VS)
             {
                 if (graphics_->GetVertexShader() == this)
-                    graphics_->SetShaders(0, 0);
+                    graphics_->SetShaders(0, 0, 0);
             }
-            else
+            else if (type_ == PS)
             {
                 if (graphics_->GetPixelShader() == this)
-                    graphics_->SetShaders(0, 0);
+                    graphics_->SetShaders(0, 0, 0);
+            }
+            else 
+            {
+                if (graphics_->GetGeometryShader() == this)
+                    graphics_->SetShaders(0, 0, 0);
             }
 
             glDeleteShader(object_);
@@ -93,7 +98,7 @@ bool ShaderVariation::Create()
         return false;
     }
 
-    object_ = glCreateShader(type_ == VS ? GL_VERTEX_SHADER : GL_FRAGMENT_SHADER);
+    object_ = glCreateShader(type_ == VS ? GL_VERTEX_SHADER : (type_ == PS ? GL_FRAGMENT_SHADER : GL_GEOMETRY_SHADER));
     if (!object_)
     {
         compilerOutput_ = "Could not create shader object";
@@ -128,7 +133,12 @@ bool ShaderVariation::Create()
         shaderCode += "#version 150\n";
 
     // Distinguish between VS and PS compile in case the shader code wants to include/omit different things
-    shaderCode += type_ == VS ? "#define COMPILEVS\n" : "#define COMPILEPS\n";
+    if (type_ == VS)
+        shaderCode += "#define COMPILEVS\n";
+    else if (type_ == PS)
+        shaderCode += "#define COMPILEPS\n";
+    else
+        shaderCode += "#define COMPILEGS\n";
 
     // Add define for the maximum number of supported bones
     shaderCode += "#define MAXBONES " + String(Graphics::GetMaxBones()) + "\n";

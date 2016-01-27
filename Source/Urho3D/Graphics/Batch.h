@@ -52,7 +52,10 @@ struct Batch
     /// Construct with defaults.
     Batch() :
         isBase_(false),
-        lightQueue_(0)
+        lightQueue_(0),
+        vertexShader_(0),
+        pixelShader_(0),
+        geometryShader_(0)
     {
     }
 
@@ -66,7 +69,10 @@ struct Batch
         worldTransform_(rhs.worldTransform_),
         numWorldTransforms_(rhs.numWorldTransforms_),
         lightQueue_(0),
-        geometryType_(rhs.geometryType_)
+        geometryType_(rhs.geometryType_),
+        vertexShader_(0),
+        pixelShader_(0),
+        geometryShader_(0)
     {
     }
 
@@ -104,6 +110,8 @@ struct Batch
     ShaderVariation* vertexShader_;
     /// Pixel shader.
     ShaderVariation* pixelShader_;
+    /// Geometry shader.
+    ShaderVariation* geometryShader_;
     /// %Geometry type.
     GeometryType geometryType_;
 };

@@ -1150,6 +1150,8 @@ void Renderer::SetBatchShaders(Batch& batch, Technique* tech, bool allowShadows)
     Pass* pass = batch.pass_;
     Vector<SharedPtr<ShaderVariation> >& vertexShaders = pass->GetVertexShaders();
     Vector<SharedPtr<ShaderVariation> >& pixelShaders = pass->GetPixelShaders();
+    Vector<SharedPtr<ShaderVariation> >& geometryShaders = pass->GetGeometryShaders();
+
     if (!vertexShaders.Size() || !pixelShaders.Size() || pass->GetShadersLoadedFrameNumber() != shadersChangedFrameNumber_)
     {
         // First release all previous shaders, then load
@@ -1178,6 +1180,7 @@ void Renderer::SetBatchShaders(Batch& batch, Technique* tech, bool allowShadows)
                 // Do not log error, as it would result in a lot of spam
                 batch.vertexShader_ = 0;
                 batch.pixelShader_ = 0;
+                batch.geometryShader_ = 0;
                 return;
             }
 
@@ -1242,6 +1245,9 @@ void Renderer::SetBatchShaders(Batch& batch, Technique* tech, bool allowShadows)
             batch.pixelShader_ = pixelShaders[heightFog ? 1 : 0];
         }
     }
+
+    if (geometryShaders.Size())
+        batch.geometryShader_ = geometryShaders[0];
 
     // Log error if shaders could not be assigned, but only once per technique
     if (!batch.vertexShader_ || !batch.pixelShader_)
@@ -1577,10 +1583,12 @@ void Renderer::LoadPassShaders(Pass* pass)
 
     Vector<SharedPtr<ShaderVariation> >& vertexShaders = pass->GetVertexShaders();
     Vector<SharedPtr<ShaderVariation> >& pixelShaders = pass->GetPixelShaders();
+    Vector<SharedPtr<ShaderVariation> >& geometryShaders = pass->GetGeometryShaders();
 
     // Forget all the old shaders
     vertexShaders.Clear();
     pixelShaders.Clear();
+    geometryShaders.Clear();
 
     String extraShaderDefines = " ";
     if (pass->GetName() == "shadow"
@@ -1649,6 +1657,13 @@ void Renderer::LoadPassShaders(Pass* pass)
             pixelShaders[j] =
                 graphics_->GetShader(PS, pass->GetPixelShader(), pass->GetPixelShaderDefines() + extraShaderDefines + heightFogVariations[j]);
         }
+    }
+    
+    // Load common geometry shader for all passes
+    if (!pass->GetGeometryShader().Empty())
+    {
+        geometryShaders.Resize(1);
+        geometryShaders[0] = graphics_->GetShader(GS, pass->GetGeometryShader(), pass->GetGeometryShaderDefines() + " ");
     }
 
     pass->MarkShadersLoaded(shadersChangedFrameNumber_);

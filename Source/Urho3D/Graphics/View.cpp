@@ -630,6 +630,7 @@ void View::Render()
 
     // Reset state after commands
     graphics_->SetFillMode(FILL_SOLID);
+    graphics_->SetPrimitivesInputMode(PRIMITIVES_TRIANGLES_LIST);
     graphics_->SetClipPlane(false);
     graphics_->SetColorWrite(true);
     graphics_->SetDepthBias(0.0f, 0.0f);
@@ -759,6 +760,7 @@ void View::SetCameraShaderParameters(Camera* camera, bool setProjection)
         graphics_->SetShaderParameter(VSP_VIEWINV, camera->GetEffectiveWorldTransform());
         graphics_->SetShaderParameter(VSP_VIEW, camera->GetView());
         graphics_->SetShaderParameter(VSP_VIEWPROJ, projection * camera->GetView());
+        graphics_->SetShaderParameter(VSP_PROJ, projection);
     }
 }
 
@@ -1130,6 +1132,7 @@ void View::GetLightBatches()
                     volumeBatch.lightQueue_ = &lightQueue;
                     volumeBatch.distance_ = light->GetDistance();
                     volumeBatch.material_ = 0;
+                    volumeBatch.geometryShader_ = 0;
                     volumeBatch.pass_ = 0;
                     volumeBatch.zone_ = 0;
                     renderer_->SetLightVolumeBatchShaders(volumeBatch, cullCamera_, lightVolumeCommand_->vertexShaderName_,
@@ -1835,6 +1838,7 @@ void View::RenderQuad(RenderPathCommand& command)
     graphics_->SetDepthTest(CMP_ALWAYS);
     graphics_->SetDepthWrite(false);
     graphics_->SetFillMode(FILL_SOLID);
+    graphics_->SetPrimitivesInputMode(PRIMITIVES_TRIANGLES_LIST);
     graphics_->SetClipPlane(false);
     graphics_->SetScissorTest(false);
     graphics_->SetStencilTest(false);
@@ -2062,6 +2066,7 @@ void View::BlitFramebuffer(Texture* source, RenderSurface* destination, bool dep
     graphics_->SetDepthTest(CMP_ALWAYS);
     graphics_->SetDepthWrite(depthWrite);
     graphics_->SetFillMode(FILL_SOLID);
+    graphics_->SetPrimitivesInputMode(PRIMITIVES_TRIANGLES_LIST);
     graphics_->SetClipPlane(false);
     graphics_->SetScissorTest(false);
     graphics_->SetStencilTest(false);
@@ -2904,6 +2909,7 @@ void View::SetupLightVolumeBatch(Batch& batch)
     graphics_->SetDepthBias(0.0f, 0.0f);
     graphics_->SetDepthWrite(false);
     graphics_->SetFillMode(FILL_SOLID);
+    graphics_->SetPrimitivesInputMode(PRIMITIVES_TRIANGLES_LIST);
     graphics_->SetClipPlane(false);
 
     if (type != LIGHT_DIRECTIONAL)
@@ -2949,6 +2955,7 @@ void View::RenderShadowMap(const LightBatchQueue& queue)
     graphics_->SetTexture(TU_SHADOWMAP, 0);
 
     graphics_->SetFillMode(FILL_SOLID);
+    graphics_->SetPrimitivesInputMode(PRIMITIVES_TRIANGLES_LIST);
     graphics_->SetClipPlane(false);
     graphics_->SetStencilTest(false);
 

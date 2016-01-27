@@ -52,7 +52,11 @@ class Vector3;
 class Vector4;
 class VertexBuffer;
 
+#ifndef GL_ES_VERSION_2_0
+typedef HashMap<Pair<ShaderVariation*, Pair<ShaderVariation*, ShaderVariation*>>, SharedPtr<ShaderProgram> > ShaderProgramMap;
+#else
 typedef HashMap<Pair<ShaderVariation*, ShaderVariation*>, SharedPtr<ShaderProgram> > ShaderProgramMap;
+#endif
 
 static const unsigned NUM_SCREEN_BUFFERS = 2;
 
@@ -139,7 +143,7 @@ public:
     /// Set index buffer.
     void SetIndexBuffer(IndexBuffer* buffer);
     /// Set shaders.
-    void SetShaders(ShaderVariation* vs, ShaderVariation* ps);
+    void SetShaders(ShaderVariation* vs, ShaderVariation* ps, ShaderVariation* gs = 0);
     /// Set shader float constants.
     void SetShaderParameter(StringHash param, const float* data, unsigned count);
     /// Set shader float constant.
@@ -212,6 +216,8 @@ public:
     void SetDepthWrite(bool enable);
     /// Set polygon fill mode.
     void SetFillMode(FillMode mode);
+    /// Set primitives input mode 
+    void SetPrimitivesInputMode(PrimitivesInputMode mode);
     /// Set scissor test.
     void SetScissorTest(bool enable, const Rect& rect = Rect::FULL, bool borderInclusive = true);
     /// Set scissor test.
@@ -350,6 +356,9 @@ public:
     /// Return pixel shader.
     ShaderVariation* GetPixelShader() const { return pixelShader_; }
 
+    /// Return geometry shader.
+    ShaderVariation* GetGeometryShader() const { return geometryShader_; }
+
     /// Return shader program.
     ShaderProgram* GetShaderProgram() const { return shaderProgram_; }
 
@@ -401,6 +410,12 @@ public:
 
     /// Return polygon fill mode.
     FillMode GetFillMode() const { return fillMode_; }
+
+    /// Return primitives input mode.
+    PrimitivesInputMode GetPrimitivesInputMode() { return primitivesInputMode_; }
+    
+    /// Return effective primitives input mode over GS settings.
+    PrimitiveType GetEffectivePrimitiveTypeOverGSInput(PrimitiveType primitiveType_);
 
     /// Return whether stencil test is enabled.
     bool GetStencilTest() const { return stencilTest_; }
@@ -621,6 +636,8 @@ private:
     ShaderVariation* vertexShader_;
     /// Pixel shader in use.
     ShaderVariation* pixelShader_;
+    /// Geometry shader in use.
+    ShaderVariation* geometryShader_;
     /// Shader program in use.
     ShaderProgram* shaderProgram_;
     /// Linked shader programs.
@@ -661,6 +678,8 @@ private:
     bool depthWrite_;
     /// Polygon fill mode.
     FillMode fillMode_;
+    /// Primitives input mode_
+    PrimitivesInputMode primitivesInputMode_;
     /// Scissor test rectangle.
     IntRect scissorRect_;
     /// Scissor test enable flag.
