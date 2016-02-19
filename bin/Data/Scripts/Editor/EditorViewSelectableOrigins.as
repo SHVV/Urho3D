@@ -251,24 +251,6 @@ void ShowSelectedNodeOrigin(Node@ node, int index)
     }
 }
 
-void DeleteAllOrigin()
-{
-    if (originsIcons.length <= 0) return;
-    
-    //for (int i=0; i < originsIcons.length; i++)
-    //{
-    //    EditorOriginUIContainer.RemoveChild(originsIcons[i]);
-    //    EditorOriginUIContainer.RemoveChild(originsNames[i]);
-    //    originsIcons[i] = null;
-    //    originsNames[i] = null;
-    //}
-    
-    EditorOriginUIContainer.RemoveAllChildren();
-    
-    originsIcons.Clear();
-    originsNames.Clear();
-}
-
 void CreateOrigin(int index, bool isVisible = false) 
 {
     if (originsIcons.length < index) return;
