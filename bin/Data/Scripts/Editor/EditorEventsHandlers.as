@@ -1,4 +1,6 @@
 // Editor main handlers (add your local handler in proper main handler to prevent losing events)
+const String EDITOR_EVENT_SCENE_LOADED("EditorEventSceneLoaded");
+
 
 void EditorSubscribeToEvents()
 {
@@ -19,6 +21,14 @@ void EditorSubscribeToEvents()
     SubscribeToEvent("EndViewUpdate", "EditorMainHandleEndViewUpdate");
     SubscribeToEvent("BeginViewRender", "EditorMainHandleBeginViewRender");
     SubscribeToEvent("EndViewRender", "EditorMainHandleEndViewRender");
+    SubscribeToEvent(EDITOR_EVENT_SCENE_LOADED, "EditorMainHandleSceneLoaded");
+    
+    SubscribeToEvent("HoverBegin", "EditorMainHandleHoverBegin");
+    SubscribeToEvent("HoverEnd", "EditorMainHandleHoverEnd");
+    
+    
+
+
 }
 
 void EditorMainHandleKeyDown(StringHash eventType, VariantMap& eventData)
@@ -83,6 +93,7 @@ void EditorMainHandleUIMouseClick(StringHash eventType, VariantMap& eventData)
 {
     // EditorView.as handler
     ViewMouseClick();
+    HandleOriginToggled(eventType, eventData);
 }
 
 void EditorMainHandleUIMouseClickEnd(StringHash eventType, VariantMap& eventData)
@@ -111,4 +122,20 @@ void EditorMainHandleBeginViewRender(StringHash eventType, VariantMap& eventData
 void EditorMainHandleEndViewRender(StringHash eventType, VariantMap& eventData)
 {
     HandleEndViewRender(eventType, eventData);
+}}
+
+void EditorMainHandleSceneLoaded(StringHash eventType, VariantMap& eventData)
+{
+    HandleSceneLoadedForOrigins();
 }
+
+void EditorMainHandleHoverBegin(StringHash eventType, VariantMap& eventData)
+{
+    HandleOriginsHoverBegin(eventType, eventData);
+}
+
+void EditorMainHandleHoverEnd(StringHash eventType, VariantMap& eventData)
+{
+    HandleOriginsHoverEnd(eventType, eventData);
+}
+

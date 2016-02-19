@@ -55,7 +55,7 @@ Array<String> ComponentTypes = {"Light",
 
 Array<BillboardSet@> debugIconsSet(ICON_COUNT);
 Node@ debugIconsNode = null;
-int stepDebugIconsUpdate = 100; //ms
+int stepDebugIconsUpdate = 16; //ms
 int timeToNextDebugIconsUpdate = 0;
 int stepDebugIconsUpdateSplinePath = 1000; //ms
 int timeToNextDebugIconsUpdateSplinePath = 0;
@@ -236,7 +236,9 @@ void UpdateViewDebugIcons()
 
                         bb.position = nodes[i].worldPosition;
                         // Blend Icon relatively by distance to it
-                        bb.color = Color(finalIconColor.r, finalIconColor.g, finalIconColor.b, 1.2f - 1.0f / (debugIconsMaxSize.x / bb.size.x));
+                        //bb.color = Color(finalIconColor.r, finalIconColor.g, finalIconColor.b, 1.2f - 1.0f / (debugIconsMaxSize.x / bb.size.x));
+                        bb.color = Color(finalIconColor.r, finalIconColor.g, finalIconColor.b, 2.2f - 1.0f / (debugIconsMaxSize.x / bb.size.x));
+                        
                         bb.enabled = component.enabled;
                         // Discard billboard if it almost transparent
                         if (bb.color.a < 0.25f) bb.enabled = false;
