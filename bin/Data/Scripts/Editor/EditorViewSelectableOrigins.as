@@ -92,7 +92,6 @@ void UpdateOrigins()
     // for other scenes we use the same container
     if (EditorOriginUIContainer is null)
     {
-        MessageBox("DebugOriginsContainer");
         CreateOriginsContainer();
     }
     
