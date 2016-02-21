@@ -122,7 +122,7 @@ void EditorMainHandleBeginViewRender(StringHash eventType, VariantMap& eventData
 void EditorMainHandleEndViewRender(StringHash eventType, VariantMap& eventData)
 {
     HandleEndViewRender(eventType, eventData);
-}}
+}
 
 void EditorMainHandleSceneLoaded(StringHash eventType, VariantMap& eventData)
 {
