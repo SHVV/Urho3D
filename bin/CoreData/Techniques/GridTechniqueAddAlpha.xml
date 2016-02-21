@@ -1,0 +1,6 @@
+<technique vs="GridShader" ps="GridShader" vsdefines="VERTEXCOLOR NOUV" psdefines="VERTEXCOLOR">
+    <pass name="alpha" depthwrite="false" blend="addalpha" />
+    <pass name="prepass" psdefines="PREPASS" />
+    <pass name="material" />
+    <pass name="deferred" psdefines="DEFERRED" />
+</technique>

@@ -1022,7 +1022,7 @@ void CreateGrid()
     gridNode.name = "EditorGrid";
     grid = gridNode.CreateComponent("CustomGeometry");
     grid.numGeometries = 1;
-    grid.material = cache.GetResource("Material", "Materials/VColUnlit.xml");
+    grid.material = cache.GetResource("Material", "Materials/GridAddAlphaMaterial.xml");
     grid.viewMask = 0x80000000; // Editor raycasts use viewmask 0x7fffffff
     grid.occludee = false;
 
@@ -1064,7 +1064,7 @@ void UpdateGrid(bool updateGridGeometry = true)
         size *= subdivisionSize;
         scale /= subdivisionSize;
     }
-
+    float ZFightAvoidingOffset = 0.001f;
     uint halfSize = size / 2;
 
     grid.BeginGeometry(0, LINE_LIST);
@@ -1076,14 +1076,14 @@ void UpdateGrid(bool updateGridGeometry = true)
 
         if (!grid2DMode)
         {
-            grid.DefineVertex(Vector3(lineOffset, 0.0, halfSizeScaled));
+            grid.DefineVertex(Vector3(lineOffset, ZFightAvoidingOffset, halfSizeScaled));
             grid.DefineColor(lineCenter ? gridZColor : (lineSubdiv ? gridSubdivisionColor : gridColor));
-            grid.DefineVertex(Vector3(lineOffset, 0.0, -halfSizeScaled));
+            grid.DefineVertex(Vector3(lineOffset, ZFightAvoidingOffset, -halfSizeScaled));
             grid.DefineColor(lineCenter ? gridZColor : (lineSubdiv ? gridSubdivisionColor : gridColor));
 
-            grid.DefineVertex(Vector3(-halfSizeScaled, 0.0, lineOffset));
+            grid.DefineVertex(Vector3(-halfSizeScaled, ZFightAvoidingOffset, lineOffset));
             grid.DefineColor(lineCenter ? gridXColor : (lineSubdiv ? gridSubdivisionColor : gridColor));
-            grid.DefineVertex(Vector3(halfSizeScaled, 0.0, lineOffset));
+            grid.DefineVertex(Vector3(halfSizeScaled, ZFightAvoidingOffset, lineOffset));
             grid.DefineColor(lineCenter ? gridXColor : (lineSubdiv ? gridSubdivisionColor : gridColor));
         }
         else
