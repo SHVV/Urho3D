@@ -30,7 +30,7 @@ void CreatePaintSelectionTool()
     paintSelectionImage = BorderImage("Icon");
     paintSelectionImage.temporary = true;
     paintSelectionImage.SetFixedSize(psDefaulSize.x,psDefaulSize.y);
-    paintSelectionImage.texture = cache.GetResource("Texture2D", "Textures/Editor/SectionCircle.png");
+    paintSelectionImage.texture = cache.GetResource("Texture2D", "Textures/Editor/SelectionCircle.png");
     paintSelectionImage.imageRect = IntRect(0,0,512,512);
     paintSelectionImage.priority = -5;
     paintSelectionImage.color = Color(1,1,1);
