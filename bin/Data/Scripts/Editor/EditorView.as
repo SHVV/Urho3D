@@ -1264,7 +1264,7 @@ void UpdateView(float timeStep)
         } 
     }
     
-    if (input.mouseMoveWheel != 0 && ui.GetElementAt(ui.cursor.position) is null)
+    if (input.mouseMoveWheel != 0 && ui.GetElementAt(ui.cursor.position) is null && !EditorPaintSelectionShow)
     {
         if (hotKeyMode == HOTKEYS_MODE_STANDARD)
         {

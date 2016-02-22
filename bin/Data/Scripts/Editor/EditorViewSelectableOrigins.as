@@ -54,6 +54,13 @@ void HandleOriginToggled(StringHash eventType, VariantMap& eventData)
     UIElement@ origin = eventData["Element"].GetPtr();
     if (origin is null)
         return;
+        
+    if (EditorPaintSelectionShow) return;
+    
+    //if (hotKeyMode == HOTKEYS_MODE_BLENDER)
+    //    if (!input.mouseButtonDown[MOUSEB_RIGHT]) return;
+    //else
+    //    if (!input.mouseButtonDown[MOUSEB_LEFT]) return;
     
     if (IsSceneOrigin(origin))
     {
@@ -61,7 +68,8 @@ void HandleOriginToggled(StringHash eventType, VariantMap& eventData)
         if (editorScene !is null) 
         {
             bool goBackAndSelectNodeParent = input.qualifierDown[QUAL_CTRL];
-            
+            bool multiSelect = input.qualifierDown[QUAL_SHIFT];
+
             WeakHandle handle = editorScene.GetNode(nodeID);
             if (handle.Get() !is null) {
                 Node@ selectedNodeByOrigin = handle.Get();
@@ -70,7 +78,7 @@ void HandleOriginToggled(StringHash eventType, VariantMap& eventData)
                     if (goBackAndSelectNodeParent)
                         SelectNode(selectedNodeByOrigin.parent, false);
                     else
-                        SelectNode(selectedNodeByOrigin, false);
+                        SelectNode(selectedNodeByOrigin, multiSelect);
                 }
             }
         }
@@ -165,9 +173,9 @@ void UpdateOrigins()
                         // turn on origin and move
                         MoveOrigin(i, true);
                         
-                        if (originsNodes[i] is selectedNode) 
+                        if (isThisNodeOneOfSelected(originsNodes[i])) 
                         {
-                            ShowSelectedNodeOrigin(selectedNode, i);
+                            ShowSelectedNodeOrigin(originsNodes[i], i);
                             originsNames[i].visible = true;
                         }
                         else 
@@ -196,6 +204,20 @@ void UpdateOrigins()
     EditorOriginUITimeToUpdate = time.systemTime + ORIGIN_STEP_UPDATE;
 }
 
+bool isThisNodeOneOfSelected(Node@ node) 
+{
+    if (selectedNodes.length < 1) return false;
+    
+    for (int i = 0; i < selectedNodes.length; i++) 
+    {
+        if (node is selectedNodes[i])
+            return true;
+    }
+    
+    return false;
+    
+}
+
 void ShowSelectedNodeOrigin(Node@ node, int index) 
 {
     if (node !is null)
@@ -214,12 +236,9 @@ void ShowSelectedNodeOrigin(Node@ node, int index)
         {
             if (prevSelectedID != node.id)
             {
-                // NEW ORIGIN SELECTION HAS: INIT DEFAULTS 
-                // save node ID to prevent update info each frame for same selected node
                 prevSelectedID = node.id;
                 selectedNodeInfoState = 0;
                 originsIcons[index].vars[ORIGIN_NODEID_VAR] = node.id;
-                //showNamesForAll = DEFAULT_SHOW_NAMES_FOR_ALL;
             }  
             
             Array<Component@> components = node.GetComponents(); 
@@ -469,6 +488,11 @@ void HandleOriginsHoverBegin(StringHash eventType, VariantMap& eventData)
     
     if (IsSceneOrigin(origin))
     {
+        VariantMap data;
+        data["Element"] = originsIcons[originHoveredIndex];
+        data["Id"] = originHoveredIndex;
+        data["NodeId"] = originsIcons[originHoveredIndex].vars[ORIGIN_NODEID_VAR].GetInt();
+        SendEvent(EDITOR_EVENT_ORIGIN_START_HOVER, data);
         isOriginsHovered = true;
     }
 }
@@ -481,6 +505,11 @@ void HandleOriginsHoverEnd(StringHash eventType, VariantMap& eventData)
     
     if (IsSceneOrigin(origin))
     {
+        VariantMap data;
+        data["Element"] = originsIcons[originHoveredIndex];
+        data["Id"] = originHoveredIndex;
+        data["NodeId"] = originsIcons[originHoveredIndex].vars[ORIGIN_NODEID_VAR].GetInt();
+        SendEvent(EDITOR_EVENT_ORIGIN_END_HOVER, data);
         isOriginsHovered = false;
     }    
 }

@@ -1,6 +1,7 @@
 // Editor main handlers (add your local handler in proper main handler to prevent losing events)
 const String EDITOR_EVENT_SCENE_LOADED("EditorEventSceneLoaded");
-
+const String EDITOR_EVENT_ORIGIN_START_HOVER("EditorEventOriginStartHover");
+const String EDITOR_EVENT_ORIGIN_END_HOVER("EditorEventOriginEndHover");
 
 void EditorSubscribeToEvents()
 {
@@ -26,9 +27,9 @@ void EditorSubscribeToEvents()
     SubscribeToEvent("HoverBegin", "EditorMainHandleHoverBegin");
     SubscribeToEvent("HoverEnd", "EditorMainHandleHoverEnd");
     
+    SubscribeToEvent(EDITOR_EVENT_ORIGIN_START_HOVER, "EditorMainHandleOriginStartHover");
+    SubscribeToEvent(EDITOR_EVENT_ORIGIN_END_HOVER, "EditorMainHandleOriginEndHover");
     
-
-
 }
 
 void EditorMainHandleKeyDown(StringHash eventType, VariantMap& eventData)
@@ -56,6 +57,10 @@ void EditorMainHandleMouseMove(StringHash eventType, VariantMap& eventData)
 
     // EditorLayer.as handler
     HandleHideLayerEditor(eventType, eventData);
+    
+    // PaintSelectionMouseMove
+    HandlePaintSelectionMouseMove(eventType, eventData);
+    
 }
 
 void EditorMainHandleMouseWheel(StringHash eventType, VariantMap& eventData)
@@ -64,7 +69,8 @@ void EditorMainHandleMouseWheel(StringHash eventType, VariantMap& eventData)
     HandleColorWheelMouseWheel(eventType, eventData);
 
     // EditorLayer.as handler
-    HandleMaskTypeScroll(eventType, eventData);    
+    HandleMaskTypeScroll(eventType, eventData);
+    HandlePaintSelectionWheel(eventType, eventData);    
 }
 
 void EditorMainHandleMouseButtonDown(StringHash eventType, VariantMap& eventData)
@@ -74,7 +80,6 @@ void EditorMainHandleMouseButtonDown(StringHash eventType, VariantMap& eventData
 
     // EditorLayer.as handler
     HandleHideLayerEditor(eventType, eventData);
-
 }
 
 void EditorMainHandleMouseButtonUp(StringHash eventType, VariantMap& eventData)
@@ -137,5 +142,19 @@ void EditorMainHandleHoverBegin(StringHash eventType, VariantMap& eventData)
 void EditorMainHandleHoverEnd(StringHash eventType, VariantMap& eventData)
 {
     HandleOriginsHoverEnd(eventType, eventData);
+}
+
+void EditorMainHandleOriginStartHover(StringHash eventType, VariantMap& eventData)
+{
+    //Element = originsIcons[originHoveredIndex];
+    //Id = originHoveredIndex;
+    //MessageBox(String(eventData["NodeId"].GetInt()));
+    HandlePaintSelectionOriginHoverBegin(eventType, eventData);
+}
+
+void EditorMainHandleOriginEndHover(StringHash eventType, VariantMap& eventData)
+{
+    //MessageBox("end hover");
+    HandlePaintSelectionOriginHoverEnd(eventType, eventData);
 }
 

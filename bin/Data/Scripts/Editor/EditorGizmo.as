@@ -326,6 +326,15 @@ bool IsGizmoSelected()
     return gizmo !is null && gizmo.enabled && (gizmoAxisX.selected || gizmoAxisY.selected || gizmoAxisZ.selected);
 }
 
+bool isParentInEditNodes(Node@ node) 
+{
+    if (editNodes.length > 1) 
+        for (int i=0;i<editNodes.length;i++) 
+            if (node.parent is editNodes[i]) return true;
+    
+    return false;
+}
+
 bool MoveNodes(Vector3 adjust)
 {
     bool moved = false;
@@ -334,6 +343,9 @@ bool MoveNodes(Vector3 adjust)
     {
         for (uint i = 0; i < editNodes.length; ++i)
         {
+            if (isParentInEditNodes(editNodes[i])) 
+                continue;
+            
             if (moveSnap)
             {
                 float moveStepScaled = moveStep * snapScale;
@@ -351,7 +363,7 @@ bool MoveNodes(Vector3 adjust)
             Vector3 oldPos = node.position;
 
             worldPos += nodeAdjust;
-
+            
             if (node.parent is null)
                 node.position = worldPos;
             else
