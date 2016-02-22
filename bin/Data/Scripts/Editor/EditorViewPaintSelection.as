@@ -78,10 +78,9 @@ void UpdatePaintSelection()
 
 void PaintSelectionCheckKeyboard() 
 {    
-    //extraInfo = input.qualifierPress[QUAL_ALT];
+    
     bool key = input.keyPress[KEY_C];    
     
-    //(!ui.HasModalElement() || 
     if (key && ui.focusElement is null)
     {
         EditorPaintSelectionShow = !EditorPaintSelectionShow;
@@ -92,7 +91,15 @@ void PaintSelectionCheckKeyboard()
         if (EditorPaintSelectionShow)
             editMode = EDIT_SELECT;
     }
-    //extraInfoHide = input.qualifierDown[QUAL_CTRL];
+    else if (EditorPaintSelectionShow && ui.focusElement is null)  
+    {
+        if (editMode != EDIT_SELECT) 
+        {
+            EditorPaintSelectionShow = false;
+            EditorPaintSelectionUIContainer.visible = false;
+        }         
+    }
+    
     if (input.mouseButtonDown[MOUSEB_RIGHT])
     {
         EditorPaintSelectionShow = false;
