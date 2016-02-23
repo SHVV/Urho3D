@@ -85,6 +85,12 @@ void HandleOriginToggled(StringHash eventType, VariantMap& eventData)
     }
 }
 
+void ShowOrigins(bool isVisible = true) 
+{
+        EditorOriginShow = isVisible;
+        EditorOriginUIContainer.visible = isVisible;
+}
+
 void UpdateOrigins()
 {
     // Early out if Origins are disabled

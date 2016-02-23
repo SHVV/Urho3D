@@ -59,7 +59,7 @@ void CreateToolBar()
     pickModeGroup.AddChild(CreateToolBarToggle("PickUIElements"));
     FinalizeGroupHorizontal(pickModeGroup, "ToolBarToggle");
     toolBar.AddChild(pickModeGroup);
-
+    
     toolBar.AddChild(CreateToolBarSpacer(4));
     UIElement@ fillModeGroup = CreateGroup("FillModeGroup", LM_HORIZONTAL);
     fillModeGroup.AddChild(CreateToolBarToggle("FillPoint"));
@@ -68,6 +68,21 @@ void CreateToolBar()
     FinalizeGroupHorizontal(fillModeGroup, "ToolBarToggle");
     toolBar.AddChild(fillModeGroup);
 
+    // NEW
+    toolBar.AddChild(CreateToolBarSpacer(4));
+    UIElement@ gridModeGroup = CreateGroup("GridModeGroup", LM_HORIZONTAL);
+    gridModeGroup.AddChild(CreateToolBarToggle("ShowGrid"));
+    gridModeGroup.AddChild(CreateToolBarToggle("2DGrid"));
+    gridModeGroup.AddChild(CreateToolBarToggle("3DGrid"));
+    FinalizeGroupHorizontal(gridModeGroup, "ToolBarToggle");
+    toolBar.AddChild(gridModeGroup);
+    
+    toolBar.AddChild(CreateToolBarSpacer(4));
+    UIElement@ originGroup = CreateGroup("OriginGroup", LM_HORIZONTAL);
+    originGroup.AddChild(CreateToolBarToggle("ShowOrigin"));
+    FinalizeGroupHorizontal(originGroup, "ToolBarToggle");
+    toolBar.AddChild(originGroup);
+    
     toolBar.AddChild(CreateToolBarSpacer(4));
     DropDownList@ viewportModeList = DropDownList();
     viewportModeList.style = AUTO_STYLE;
@@ -372,6 +387,56 @@ void ToolBarFillModeSolid(StringHash eventType, VariantMap& eventData)
     toolBarDirty = true;
 }
 
+void ToolBarShowGrid(StringHash eventType, VariantMap& eventData)
+{
+    CheckBox@ edit = eventData["Element"].GetPtr();
+    
+    showGrid = edit.checked;
+    
+    UpdateGrid(true);
+    toolBarDirty = true;
+}
+
+void ToolBarGridMode2D(StringHash eventType, VariantMap& eventData)
+{
+    CheckBox@ edit = eventData["Element"].GetPtr();
+    CheckBox@ grid3DToggle = toolBar.GetChild("3DGrid", true);
+    
+    if (edit.checked)
+    {
+        grid2DMode = true;
+        grid3DToggle.checked = false;
+    }
+    
+    UpdateGrid(true);
+    toolBarDirty = true;
+}
+
+void ToolBarGridMode3D(StringHash eventType, VariantMap& eventData)
+{
+    CheckBox@ edit = eventData["Element"].GetPtr();
+    CheckBox@ grid2DToggle = toolBar.GetChild("2DGrid", true);
+        
+    if (edit.checked)
+    {
+        grid2DMode = false;
+        grid2DToggle.checked = false;
+    }
+
+    UpdateGrid(true);
+    toolBarDirty = true;
+}
+
+void ToolBarShowOrigin(StringHash eventType, VariantMap& eventData)
+{
+    CheckBox@ edit = eventData["Element"].GetPtr();
+    
+    ShowOrigins (edit.checked);
+        
+    toolBarDirty = true;
+}
+
+
 void ToolBarSetViewportMode(StringHash eventType, VariantMap& eventData)
 {
     DropDownList@ dropDown = eventData["Element"].GetPtr();
@@ -473,7 +538,24 @@ void UpdateDirtyToolBar()
     CheckBox@ fillSolidToggle = toolBar.GetChild("FillSolid", true);
     if (fillSolidToggle.checked != (fillMode == FILL_SOLID))
         fillSolidToggle.checked = fillMode == FILL_SOLID;
+        
+    // New
+    CheckBox@ showGridToggle = toolBar.GetChild("ShowGrid", true);
+    if (showGridToggle.checked != (showGrid == true))
+        showGridToggle.checked = showGrid == true;
 
+    CheckBox@ grid2DToggle = toolBar.GetChild("2DGrid", true);
+    if (grid2DToggle.checked != (grid2DMode == true))
+        grid2DToggle.checked = grid2DMode == true;
+        
+    CheckBox@ grid3DToggle = toolBar.GetChild("3DGrid", true);
+    if (grid3DToggle.checked != (grid2DMode == false))
+        grid3DToggle.checked = grid2DMode == false;
+    
+    CheckBox@ showOriginToggle = toolBar.GetChild("ShowOrigin", true);
+    if (showOriginToggle.checked != (EditorOriginShow == true))
+        showOriginToggle.checked = EditorOriginShow == true;
+    
     if (!subscribedToEditorToolBar)
     {
         SubscribeToEvent(runUpdatePlayToggle, "Toggled", "ToolBarRunUpdatePlay");
@@ -498,6 +580,12 @@ void UpdateDirtyToolBar()
         SubscribeToEvent(fillPointToggle, "Toggled", "ToolBarFillModePoint");
         SubscribeToEvent(fillWireFrameToggle, "Toggled", "ToolBarFillModeWireFrame");
         SubscribeToEvent(fillSolidToggle, "Toggled", "ToolBarFillModeSolid");
+        // new
+        SubscribeToEvent(showGridToggle, "Toggled", "ToolBarShowGrid");
+        SubscribeToEvent(grid2DToggle, "Toggled", "ToolBarGridMode2D");
+        SubscribeToEvent(grid3DToggle, "Toggled", "ToolBarGridMode3D");
+        SubscribeToEvent(showOriginToggle, "Toggled", "ToolBarShowOrigin");
+        
         subscribedToEditorToolBar = true;
     }
 

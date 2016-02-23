@@ -87,9 +87,15 @@ void PaintSelectionCheckKeyboard()
         if (EditorPaintSelectionUIContainer !is null)
             EditorPaintSelectionUIContainer.visible = EditorPaintSelectionShow;
         
-        // When we start paint selection we change editmode to select    
-        if (EditorPaintSelectionShow)
+            
+        if (EditorPaintSelectionShow) 
+        {
+            // When we start paint selection we change editmode to select
             editMode = EDIT_SELECT;
+            // and also we show origins for proper origins update
+            ShowOrigins(true);
+            toolBarDirty = true;
+        }
     }
     else if (EditorPaintSelectionShow && ui.focusElement is null)  
     {

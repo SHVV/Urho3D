@@ -427,4 +427,20 @@
         <attribute name="Texture" value="Texture2D;Textures/Editor/EditorIcons.png" />
         <attribute name="Image Rect" value="112 16 126 30" />
     </element>
+    <element type="3DGrid">
+        <attribute name="Texture" value="Texture2D;Textures/Editor/EditorIcons.png" />
+        <attribute name="Image Rect" value="224 160 254 190" />
+    </element>
+    <element type="2DGrid">
+        <attribute name="Texture" value="Texture2D;Textures/Editor/EditorIcons.png" />
+        <attribute name="Image Rect" value="0 192 30 222" />
+    </element>
+    <element type="ShowGrid">
+        <attribute name="Texture" value="Texture2D;Textures/Editor/EditorIcons.png" />
+        <attribute name="Image Rect" value="32 192 62 222" />
+    </element>
+    <element type="ShowOrigin">
+        <attribute name="Texture" value="Texture2D;Textures/Editor/EditorIcons.png" />
+        <attribute name="Image Rect" value="192 160 222 190" />
+    </element>
 </elements>
