@@ -24,6 +24,7 @@
 #include "Scripts/Editor/EditorViewDebugIcons.as"
 #include "Scripts/Editor/EditorViewSelectableOrigins.as"
 #include "Scripts/Editor/EditorViewPaintSelection.as"
+#include "Scripts/Editor/EditorViewProcSky.as"
 
 String configFileName;
 
@@ -128,6 +129,7 @@ void HandleUpdate(StringHash eventType, VariantMap& eventData)
     UpdateViewDebugIcons();
     UpdateOrigins();
     UpdatePaintSelection();
+    UpdateViewProcSky();
 
     // Handle Particle Editor looping.
     if (particleEffectWindow !is null and particleEffectWindow.visible)

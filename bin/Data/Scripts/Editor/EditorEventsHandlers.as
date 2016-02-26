@@ -92,6 +92,7 @@ void EditorMainHandlePostRenderUpdate(StringHash eventType, VariantMap& eventDat
 {
     // EditorView.as handler
     HandlePostRenderUpdate();
+    ProcSkyPostRenderUpdate();
 } 
 
 void EditorMainHandleUIMouseClick(StringHash eventType, VariantMap& eventData)
