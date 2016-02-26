@@ -32,6 +32,9 @@ varying vec4 vWorldPos;
     #ifdef ENVCUBEMAP
         varying vec3 vReflectionVec;
     #endif
+    #ifdef ZONEENVCUBEMAP
+        varying vec3 vZoneReflectionVec;
+    #endif
     #if defined(LIGHTMAP) || defined(AO)
         varying vec2 vTexCoord2;
     #endif
@@ -96,6 +99,10 @@ void VS()
 
         #ifdef ENVCUBEMAP
             vReflectionVec = worldPos - cCameraPos;
+        #endif
+        
+        #ifdef ZONEENVCUBEMAP
+            vZoneReflectionVec = worldPos - cCameraPos;
         #endif
     #endif
 }
@@ -194,6 +201,11 @@ void PS()
         #ifdef ENVCUBEMAP
             finalColor += cMatEnvMapColor * textureCube(sEnvCubeMap, reflect(vReflectionVec, normal)).rgb;
         #endif
+        
+        #ifdef ZONEENVCUBEMAP
+            finalColor += cMatEnvMapColor * textureCube(sZoneCubeMap, reflect(vZoneReflectionVec, normal)).rgb;
+        #endif
+        
         #ifdef LIGHTMAP
             finalColor += texture2D(sEmissiveMap, vTexCoord2).rgb * diffColor.rgb;
         #endif
@@ -227,6 +239,11 @@ void PS()
         #ifdef ENVCUBEMAP
             finalColor += cMatEnvMapColor * textureCube(sEnvCubeMap, reflect(vReflectionVec, normal)).rgb;
         #endif
+        
+        #ifdef ZONEENVCUBEMAP
+            finalColor += cMatEnvMapColor * textureCube(sZoneCubeMap, reflect(vZoneReflectionVec, normal)).rgb;
+        #endif
+        
         #ifdef LIGHTMAP
             finalColor += texture2D(sEmissiveMap, vTexCoord2).rgb * diffColor.rgb;
         #endif
