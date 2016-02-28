@@ -1,0 +1,3 @@
+<technique vs="SkyboxLightScatteringMask" ps="SkyboxLightScatteringMask" psdefines="OUTPUTMRT2 LIGHTSCATTERINGMASK"> 
+    <pass name="postopaque" depthwrite="false" />
+</technique>

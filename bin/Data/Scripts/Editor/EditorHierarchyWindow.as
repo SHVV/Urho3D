@@ -542,6 +542,23 @@ void SelectNode(Node@ node, bool multiselect)
         hierarchyList.ClearSelection();
 }
 
+void DeselectNode(Node@ node)
+{
+    if (node is null)
+    {
+        hierarchyList.ClearSelection();
+        return;
+    }
+
+    uint index = GetListIndex(node);
+    uint numItems = hierarchyList.numItems;
+
+    if (index < numItems)
+    {
+        hierarchyList.ToggleSelection(index);
+    }
+}
+
 void SelectComponent(Component@ component, bool multiselect)
 {
     if (component is null && !multiselect)

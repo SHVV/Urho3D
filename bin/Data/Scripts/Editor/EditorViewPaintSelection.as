@@ -111,10 +111,7 @@ void PaintSelectionCheckKeyboard()
         EditorPaintSelectionShow = false;
         if (EditorPaintSelectionUIContainer !is null)
             EditorPaintSelectionUIContainer.visible = false;
-    }
-    
-    //bool hideChildName = input.qualifierPress[QUAL_SHIFT];
-    
+    }    
 }
 
 void SelectOriginsByPaintSelection(IntVector2 curPos, float brushRadius, bool isOperationAddToSelection = true) 
@@ -126,7 +123,7 @@ void SelectOriginsByPaintSelection(IntVector2 curPos, float brushRadius, bool is
         for (int i=0; i < originsNodes.length; i++) 
         {
             Vector3 v1(originsIcons[i].position.x, originsIcons[i].position.y, 0);
-            Vector3 v2(curPos.x, curPos.y, 0); 
+            Vector3 v2(curPos.x - ORIGINOFFSETICON.x, curPos.y - ORIGINOFFSETICON.y, 0); 
             
             float distance = (v1 - v2).length;
             bool isThisOriginInCircle = distance < brushRadius ? true : false;
@@ -147,25 +144,61 @@ void SelectOriginsByPaintSelection(IntVector2 curPos, float brushRadius, bool is
             
         }
     }
-    else // deselect 
+    else // Deselect origins 
     {
-        
+        for (int i=0; i < originsNodes.length; i++) 
+        {
+            Vector3 v1(originsIcons[i].position.x, originsIcons[i].position.y, 0);
+            Vector3 v2(curPos.x - ORIGINOFFSETICON.x, curPos.y - ORIGINOFFSETICON.y, 0); 
+            
+            float distance = (v1 - v2).length;
+            bool isThisOriginInCircle = distance < brushRadius ? true : false;
+            int nodeID = originsIcons[i].vars[ORIGIN_NODEID_VAR].GetInt();
+            
+            if (isThisOriginInCircle) 
+            {    
+                WeakHandle handle = editorScene.GetNode(nodeID);
+                if (handle.Get() !is null) 
+                {
+                    Node@ node = handle.Get();
+                    if (node !is null && isThisNodeOneOfSelected(node) == true) 
+                    {
+                        DeselectNode(node);
+                    }
+                }
+            }
+            
+        }    
     }
+}
+
+int GetIndexInSelectedNodesArray(int nodeID) 
+{
+    if (!selectedNodes.empty)
+    {
+        for (int i=0; i < selectedNodes.length; i++) 
+        {
+            if (selectedNodes[i].id == nodeID)
+                return i;
+        }
+    }   
+
+    return -1;
 }
 
 void HandlePaintSelectionMouseMove(StringHash eventType, VariantMap& eventData)
 {
     if (!EditorPaintSelectionShow || EditorPaintSelectionUIContainer is null) return;
-    
+        
     int x = eventData["X"].GetInt();
     int y = eventData["Y"].GetInt();
     float sl = ((0.5 * (psCurrentSize.x * psCurrentSize.x)) + (0.5 * (psCurrentSize.y * psCurrentSize.y)));
-    float r = (psCurrentSize.x * 0.5) * 1.1;
+    float r = (psCurrentSize.x * 0.5);
     
     IntVector2 mousePos(x,y);
-    if (input.mouseButtonDown[MOUSEB_LEFT])
+    if (input.mouseButtonDown[MOUSEB_LEFT] && input.qualifierDown[QUAL_ALT] != true)
         SelectOriginsByPaintSelection(mousePos, r, true);
-    else if (input.mouseButtonDown[MOUSEB_MIDDLE]) 
+    else if (input.mouseButtonDown[MOUSEB_LEFT] && input.qualifierDown[QUAL_ALT] == true) 
     {
         SelectOriginsByPaintSelection(mousePos, r, false);
     } 

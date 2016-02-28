@@ -1,5 +1,4 @@
 const bool DEFAULT_SHOW_NAMES_FOR_ALL = false;
-const int MAX_ORIGIN = 128;
 const int ORIGIN_STEP_UPDATE = 16;
 const int ORIGIN_STEP_SCENE_GET_NODES = 3000;
 const int NAMES_SIZE = 10;
@@ -11,6 +10,7 @@ const Color ORIGIN_COLOR_SELECTED_TEXT(1.0f,1.0f,1.0f,1.0f);
 const IntVector2 ORIGIN_ICON_SIZE(12,12);
 const IntVector2 ORIGIN_ICON_SIZE_SELECTED(15,15);
 const float ORIGINS_VISIBLITY_RANGE = 128.0f;
+const IntVector2 ORIGINOFFSETICON(7,7);
 
 bool extraInfo = false;
 bool extraInfoHide = false;
@@ -231,8 +231,8 @@ void ShowSelectedNodeOrigin(Node@ node, int index)
         // just keep node's text and node's origin icon position in actual view
         Viewport@ vp = activeViewport.viewport;
         Vector2 sp = activeViewport.camera.WorldToScreenPoint(node.worldPosition); 
-        originsIcons[index].position = IntVector2(10+int(vp.rect.left + sp.x * vp.rect.right), -5 + int(vp.rect.top + sp.y* vp.rect.bottom));
-        originsIcons[index].position = IntVector2(int(vp.rect.left + sp.x * vp.rect.right) - 7, int(vp.rect.top + sp.y* vp.rect.bottom) - 7);
+        //originsIcons[index].position = IntVector2(10+int(vp.rect.left + sp.x * vp.rect.right), -5 + int(vp.rect.top + sp.y* vp.rect.bottom));
+        originsIcons[index].position = IntVector2(int(vp.rect.left + sp.x * vp.rect.right) - ORIGINOFFSETICON.x, int(vp.rect.top + sp.y* vp.rect.bottom) - ORIGINOFFSETICON.y);
         originsNames[index].color = ORIGIN_COLOR_SELECTED_TEXT;
         originsIcons[index].color = ORIGIN_COLOR_SELECTED;
         originsIcons[index].SetFixedSize(ORIGIN_ICON_SIZE_SELECTED.x,ORIGIN_ICON_SIZE_SELECTED.y);
@@ -322,7 +322,7 @@ void MoveOrigin(int index, bool isVisible = false)
     
     originsIcons[index].SetFixedSize(ORIGIN_ICON_SIZE.x,ORIGIN_ICON_SIZE.y);
     originsIcons[index].color = ORIGIN_COLOR;
-    originsIcons[index].position = IntVector2(int(vp.rect.left + sp.x * vp.rect.right) - 7, int(vp.rect.top + sp.y* vp.rect.bottom) - 7);
+    originsIcons[index].position = IntVector2(int(vp.rect.left + sp.x * vp.rect.right) - ORIGINOFFSETICON.x, int(vp.rect.top + sp.y* vp.rect.bottom) - ORIGINOFFSETICON.y);
     originsIcons[index].visible = isVisible;
     originsIcons[index].vars[ORIGIN_NODEID_VAR] = originsNodes[index].id;
     

@@ -161,11 +161,16 @@ out vec4 fragData[4];
 #elif defined(PREPASS)
 out vec4 fragData[2];
 #else
-out vec4 fragData[1];
+    #ifdef OUTPUTMRT2
+    out vec4 fragData[2];
+    #else 
+    out vec4 fragData[1];
+    #endif
 #endif
 
 #define gl_FragColor fragData[0]
 #define gl_FragData fragData
+
 #endif
 
 #endif

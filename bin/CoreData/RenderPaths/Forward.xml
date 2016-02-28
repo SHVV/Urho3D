@@ -1,11 +1,38 @@
 <renderpath>
+    <rendertarget name="suncircle" tag="LS" sizedivisor="1 1" format="a" filter="true" />
+    <rendertarget name="lightscattering" tag="LS" sizedivisor="2 2" format="a" filter="true" />
+    
     <command type="clear" color="fog" depth="1.0" stencil="0" />
+    <command type="clear" color="fog" output="suncircle" />
+        
     <command type="scenepass" pass="base" vertexlights="true" metadata="base" />
     <command type="forwardlights" pass="light" />
-    <command type="scenepass" pass="postopaque" />
+    <command type="scenepass" pass="postopaque" >
+        <output index="0" name="viewport" />
+        <output index="1" name="suncircle" />
+    </command>
     <command type="scenepass" pass="refract">
         <texture unit="environment" name="viewport" />
     </command>
     <command type="scenepass" pass="alpha" vertexlights="true" sort="backtofront" metadata="alpha" />
     <command type="scenepass" pass="postalpha" sort="backtofront" />
+    <!-- process mask rtt -->    
+    <command type="quad" tag="LS" vs="LightScattering" ps="LightScattering" blend="replace" output="lightscattering">
+        <parameter name="NumSamples" value="100" />
+        <parameter name="Exposure" value="0.25" />
+        <parameter name="Decay" value="1.0" />
+        <parameter name="Density" value="1.0" />
+        <parameter name="Weight" value="0.01" />
+        <parameter name="LightPositionOnScreen" value="0.5 0.5" />
+        <texture unit="diffuse" name="suncircle" />
+    </command>
+    <!-- blend with main scene -->  
+    <command type="quad" tag="LS" vs="CopyFramebuffer8" ps="CopyFramebuffer8" blend="add" output="viewport">
+        <texture unit="diffuse" name="lightscattering" />
+    </command>
+    
+    <command type="quad" enabled="false" tag="debugViewMask" vs="CopyFramebuffer8" ps="CopyFramebuffer8" blend="replace" output="viewport">
+        <texture unit="diffuse" name="suncircle" />
+    </command>
+    
 </renderpath>
