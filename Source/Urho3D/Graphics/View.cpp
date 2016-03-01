@@ -1135,9 +1135,9 @@ void View::GetLightBatches()
                     volumeBatch.geometryShader_ = 0;
                     volumeBatch.pass_ = 0;
                     volumeBatch.zone_ = 0;
-                    renderer_->SetLightVolumeBatchShaders(volumeBatch, cullCamera_, lightVolumeCommand_->vertexShaderName_,
-                        lightVolumeCommand_->pixelShaderName_, lightVolumeCommand_->vertexShaderDefines_,
-                        lightVolumeCommand_->pixelShaderDefines_);
+                    renderer_->SetLightVolumeBatchShaders(volumeBatch, cullCamera_, 
+                        lightVolumeCommand_->vertexShaderName_, lightVolumeCommand_->pixelShaderName_, 
+                        lightVolumeCommand_->vertexShaderDefines_, lightVolumeCommand_->pixelShaderDefines_);
                     lightQueue.volumeBatches_.Push(volumeBatch);
                 }
             }

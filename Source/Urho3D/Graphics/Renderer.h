@@ -66,6 +66,18 @@ enum LightVSVariation
     MAX_LIGHT_VS_VARIATIONS
 };
 
+/// Light geometry shader variations.
+enum LightGSVariation
+{
+    LGS_DIR = 0,
+    LGS_SPOT,
+    LGS_POINT,
+    LGS_SHADOW,
+    LGS_SPOTSHADOW,
+    LGS_POINTSHADOW,
+    MAX_LIGHT_GS_VARIATIONS
+};
+
 /// Per-vertex light vertex shader variations.
 enum VertexLightVSVariation
 {
@@ -75,6 +87,17 @@ enum VertexLightVSVariation
     VLVS_3LIGHTS,
     VLVS_4LIGHTS,
     MAX_VERTEXLIGHT_VS_VARIATIONS
+};
+
+/// Per-vertex light geometry shader variations.
+enum VertexLightGSVariation
+{
+    VLGS_NOLIGHTS = 0,
+    VLGS_1LIGHT,
+    VLGS_2LIGHTS,
+    VLGS_3LIGHTS,
+    VLGS_4LIGHTS,
+    MAX_VERTEXLIGHT_GS_VARIATIONS
 };
 
 /// Light pixel shader variations.
@@ -107,6 +130,16 @@ enum DeferredLightVSVariation
     DLVS_ORTHO,
     DLVS_ORTHODIR,
     MAX_DEFERRED_LIGHT_VS_VARIATIONS
+};
+
+/// Deferred light volume geometry shader variations.
+enum DeferredLightGSVariation
+{
+    DLGS_NONE = 0,
+    DLGS_DIR,
+    DLGS_ORTHO,
+    DLGS_ORTHODIR,
+    MAX_DEFERRED_LIGHT_GS_VARIATIONS
 };
 
 /// Deferred light volume pixels shader variations.
@@ -370,7 +403,8 @@ public:
     void SetBatchShaders(Batch& batch, Technique* tech, bool allowShadows = true);
     /// Choose shaders for a deferred light volume batch.
     void SetLightVolumeBatchShaders
-        (Batch& batch, Camera* camera, const String& vsName, const String& psName, const String& vsDefines, const String& psDefines);
+        (Batch& batch, Camera* camera, const String& vsName, const String& psName, const String& vsDefines, const String& psDefines, 
+        const String& gsName = "", const String& gsDefines = "");
     /// Set cull mode while taking possible projection flipping into account.
     void SetCullMode(CullMode mode, Camera* camera);
     /// Ensure sufficient size of the instancing vertex buffer. Return true if successful.

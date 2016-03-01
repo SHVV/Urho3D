@@ -184,7 +184,26 @@ static const char* geometryVSVariations[] =
     "DIRBILLBOARD "
 };
 
+static const char* geometryGSVariations[] =
+{
+    "",
+    "SKINNED ",
+    "INSTANCED ",
+    "BILLBOARD ",
+    "DIRBILLBOARD "
+};
+
 static const char* lightVSVariations[] =
+{
+    "PERPIXEL DIRLIGHT ",
+    "PERPIXEL SPOTLIGHT ",
+    "PERPIXEL POINTLIGHT ",
+    "PERPIXEL DIRLIGHT SHADOW ",
+    "PERPIXEL SPOTLIGHT SHADOW ",
+    "PERPIXEL POINTLIGHT SHADOW ",
+};
+
+static const char* lightGSVariations[] =
 {
     "PERPIXEL DIRLIGHT ",
     "PERPIXEL SPOTLIGHT ",
@@ -203,7 +222,24 @@ static const char* vertexLightVSVariations[] =
     "NUMVERTEXLIGHTS=4 ",
 };
 
+static const char* vertexLightGSVariations[] =
+{
+    "",
+    "NUMVERTEXLIGHTS=1 ",
+    "NUMVERTEXLIGHTS=2 ",
+    "NUMVERTEXLIGHTS=3 ",
+    "NUMVERTEXLIGHTS=4 ",
+};
+
 static const char* deferredLightVSVariations[] =
+{
+    "",
+    "DIRLIGHT ",
+    "ORTHO ",
+    "DIRLIGHT ORTHO "
+};
+
+static const char* deferredLightGSVariations[] =
 {
     "",
     "DIRLIGHT ",
@@ -1187,7 +1223,9 @@ void Renderer::SetBatchShaders(Batch& batch, Technique* tech, bool allowShadows)
             Light* light = lightQueue->light_;
             unsigned vsi = 0;
             unsigned psi = 0;
+            unsigned gsi = 0;
             vsi = batch.geometryType_ * MAX_LIGHT_VS_VARIATIONS;
+            gsi = batch.geometryType_ * MAX_LIGHT_GS_VARIATIONS;
 
             bool materialHasSpecular = batch.material_ ? batch.material_->GetSpecular() : true;
             if (specularLighting_ && light->GetSpecularIntensity() > 0.0f && materialHasSpecular)
@@ -1195,6 +1233,7 @@ void Renderer::SetBatchShaders(Batch& batch, Technique* tech, bool allowShadows)
             if (allowShadows && lightQueue->shadowMap_)
             {
                 vsi += LVS_SHADOW;
+                gsi += LGS_SHADOW;
                 psi += LPS_SHADOW;
             }
 
@@ -1202,11 +1241,13 @@ void Renderer::SetBatchShaders(Batch& batch, Technique* tech, bool allowShadows)
             {
             case LIGHT_DIRECTIONAL:
                 vsi += LVS_DIR;
+                gsi += LGS_DIR;
                 break;
 
             case LIGHT_SPOT:
                 psi += LPS_SPOT;
                 vsi += LVS_SPOT;
+                gsi += LGS_SPOT;
                 break;
 
             case LIGHT_POINT:
@@ -1214,7 +1255,8 @@ void Renderer::SetBatchShaders(Batch& batch, Technique* tech, bool allowShadows)
                     psi += LPS_POINTMASK;
                 else
                     psi += LPS_POINT;
-                vsi += LVS_POINT;
+                    vsi += LVS_POINT;
+                    gsi += LGS_POINT;
                 break;
             }
 
@@ -1223,6 +1265,8 @@ void Renderer::SetBatchShaders(Batch& batch, Technique* tech, bool allowShadows)
 
             batch.vertexShader_ = vertexShaders[vsi];
             batch.pixelShader_ = pixelShaders[psi];
+            batch.geometryShader_ = geometryShaders[psi];
+
         }
         else
         {
@@ -1234,20 +1278,28 @@ void Renderer::SetBatchShaders(Batch& batch, Technique* tech, bool allowShadows)
                     numVertexLights = batch.lightQueue_->vertexLights_.Size();
 
                 unsigned vsi = batch.geometryType_ * MAX_VERTEXLIGHT_VS_VARIATIONS + numVertexLights;
+                unsigned gsi = batch.geometryType_ * MAX_VERTEXLIGHT_GS_VARIATIONS + numVertexLights;
+
                 batch.vertexShader_ = vertexShaders[vsi];
+                batch.geometryShader_ = geometryShaders[gsi];
+
             }
             else
             {
                 unsigned vsi = batch.geometryType_;
+                unsigned gsi = batch.geometryType_;
+
                 batch.vertexShader_ = vertexShaders[vsi];
+                batch.geometryShader_ = geometryShaders[gsi];
+
             }
 
             batch.pixelShader_ = pixelShaders[heightFog ? 1 : 0];
         }
     }
 
-    if (geometryShaders.Size())
-        batch.geometryShader_ = geometryShaders[0];
+    //if (geometryShaders.Size())
+    //    batch.geometryShader_ = geometryShaders[0];
 
     // Log error if shaders could not be assigned, but only once per technique
     if (!batch.vertexShader_ || !batch.pixelShader_)
@@ -1261,18 +1313,21 @@ void Renderer::SetBatchShaders(Batch& batch, Technique* tech, bool allowShadows)
 }
 
 void Renderer::SetLightVolumeBatchShaders(Batch& batch, Camera* camera, const String& vsName, const String& psName, const String& vsDefines,
-    const String& psDefines)
+    const String& psDefines, const String& gsName, const String& gsDefines)
 {
     assert(deferredLightPSVariations_.Size());
 
     unsigned vsi = DLVS_NONE;
+    unsigned gsi = DLGS_NONE;
     unsigned psi = DLPS_NONE;
+
     Light* light = batch.lightQueue_->light_;
 
     switch (light->GetLightType())
     {
     case LIGHT_DIRECTIONAL:
         vsi += DLVS_DIR;
+        gsi += DLVS_DIR;
         break;
 
     case LIGHT_SPOT:
@@ -1296,6 +1351,7 @@ void Renderer::SetLightVolumeBatchShaders(Batch& batch, Camera* camera, const St
     if (camera->IsOrthographic())
     {
         vsi += DLVS_ORTHO;
+        gsi += DLVS_ORTHO;
         psi += DLPS_ORTHO;
     }
 
@@ -1303,6 +1359,14 @@ void Renderer::SetLightVolumeBatchShaders(Batch& batch, Camera* camera, const St
         batch.vertexShader_ = graphics_->GetShader(VS, vsName, deferredLightVSVariations[vsi] + vsDefines);
     else
         batch.vertexShader_ = graphics_->GetShader(VS, vsName, deferredLightVSVariations[vsi]);
+
+    if (gsName.Length()) 
+    {
+        if (gsDefines.Length())
+            batch.geometryShader_ = graphics_->GetShader(GS, gsName, deferredLightGSVariations[gsi] + gsDefines);
+        else
+            batch.geometryShader_ = graphics_->GetShader(GS, gsName, deferredLightGSVariations[gsi]);
+    }
 
     if (psDefines.Length())
         batch.pixelShader_ = graphics_->GetShader(PS, psName, deferredLightPSVariations_[psi] + psDefines);
@@ -1564,7 +1628,7 @@ void Renderer::LoadShaders()
 
     // Construct new names for deferred light volume pixel shaders based on rendering options
     deferredLightPSVariations_.Resize(MAX_DEFERRED_LIGHT_PS_VARIATIONS);
-    
+
     for (unsigned i = 0; i < MAX_DEFERRED_LIGHT_PS_VARIATIONS; ++i)
     {
         deferredLightPSVariations_[i] = lightPSVariations[i % DLPS_ORTHO];
@@ -1601,6 +1665,7 @@ void Renderer::LoadPassShaders(Pass* pass)
     {
         // Load forward pixel lit variations
         vertexShaders.Resize(MAX_GEOMETRYTYPES * MAX_LIGHT_VS_VARIATIONS);
+        geometryShaders.Resize(MAX_GEOMETRYTYPES * MAX_LIGHT_GS_VARIATIONS); // primitiveTypeMode also?
         pixelShaders.Resize(MAX_LIGHT_PS_VARIATIONS * 2);
 
         for (unsigned j = 0; j < MAX_GEOMETRYTYPES * MAX_LIGHT_VS_VARIATIONS; ++j)
@@ -1610,6 +1675,14 @@ void Renderer::LoadPassShaders(Pass* pass)
 
             vertexShaders[j] = graphics_->GetShader(VS, pass->GetVertexShader(),
                 pass->GetVertexShaderDefines() + extraShaderDefines + lightVSVariations[l] + geometryVSVariations[g]);
+        }
+        for (unsigned k = 0; k < MAX_GEOMETRYTYPES * MAX_LIGHT_GS_VARIATIONS; ++k)
+        {
+            unsigned g = k / MAX_LIGHT_GS_VARIATIONS;
+            unsigned l = k % MAX_LIGHT_GS_VARIATIONS;
+
+            geometryShaders[k] = graphics_->GetShader(GS, pass->GetGeometryShader(),
+                pass->GetGeometryShaderDefines() + extraShaderDefines + lightGSVariations[l] + geometryGSVariations[g]);
         }
         for (unsigned j = 0; j < MAX_LIGHT_PS_VARIATIONS * 2; ++j)
         {
@@ -1633,6 +1706,7 @@ void Renderer::LoadPassShaders(Pass* pass)
         if (pass->GetLightingMode() == LIGHTING_PERVERTEX)
         {
             vertexShaders.Resize(MAX_GEOMETRYTYPES * MAX_VERTEXLIGHT_VS_VARIATIONS);
+            geometryShaders.Resize(MAX_GEOMETRYTYPES * MAX_LIGHT_GS_VARIATIONS);
             for (unsigned j = 0; j < MAX_GEOMETRYTYPES * MAX_VERTEXLIGHT_VS_VARIATIONS; ++j)
             {
                 unsigned g = j / MAX_VERTEXLIGHT_VS_VARIATIONS;
@@ -1640,14 +1714,28 @@ void Renderer::LoadPassShaders(Pass* pass)
                 vertexShaders[j] = graphics_->GetShader(VS, pass->GetVertexShader(),
                     pass->GetVertexShaderDefines() + extraShaderDefines + vertexLightVSVariations[l] + geometryVSVariations[g]);
             }
+            for (unsigned k = 0; k < MAX_GEOMETRYTYPES * MAX_VERTEXLIGHT_GS_VARIATIONS; ++k)
+            {
+                unsigned g = k / MAX_VERTEXLIGHT_GS_VARIATIONS;
+                unsigned l = k % MAX_VERTEXLIGHT_GS_VARIATIONS;
+
+                geometryShaders[k] = graphics_->GetShader(GS, pass->GetGeometryShader(),
+                    pass->GetGeometryShaderDefines() + extraShaderDefines + vertexLightGSVariations[l] + geometryGSVariations[g]);
+            }
         }
         else
         {
             vertexShaders.Resize(MAX_GEOMETRYTYPES);
+            geometryShaders.Resize(MAX_GEOMETRYTYPES);
             for (unsigned j = 0; j < MAX_GEOMETRYTYPES; ++j)
             {
                 vertexShaders[j] = graphics_->GetShader(VS, pass->GetVertexShader(),
                     pass->GetVertexShaderDefines() + extraShaderDefines + geometryVSVariations[j]);
+            }
+            for (unsigned k = 0; k < MAX_GEOMETRYTYPES; ++k)
+            {
+                geometryShaders[k] = graphics_->GetShader(GS, pass->GetGeometryShader(),
+                    pass->GetGeometryShaderDefines() + extraShaderDefines + geometryGSVariations[k]);
             }
         }
 
@@ -1660,11 +1748,11 @@ void Renderer::LoadPassShaders(Pass* pass)
     }
     
     // Load common geometry shader for all passes
-    if (!pass->GetGeometryShader().Empty())
-    {
-        geometryShaders.Resize(1);
-        geometryShaders[0] = graphics_->GetShader(GS, pass->GetGeometryShader(), pass->GetGeometryShaderDefines() + " ");
-    }
+    //if (!pass->GetGeometryShader().Empty())
+    //{
+    //    geometryShaders.Resize(1);
+    //    geometryShaders[0] = graphics_->GetShader(GS, pass->GetGeometryShader(), pass->GetGeometryShaderDefines() + " ");
+    //}
 
     pass->MarkShadersLoaded(shadersChangedFrameNumber_);
 }
