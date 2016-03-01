@@ -50,6 +50,7 @@ ShaderPrecache::ShaderPrecache(Context* context, const String& fileName) :
         while (shader)
         {
             String oldCombination = shader.GetAttribute("vs") + " " + shader.GetAttribute("vsdefines") + " " +
+                                    shader.GetAttribute("gs") + " " + shader.GetAttribute("gsdefines") + " " +
                                     shader.GetAttribute("ps") + " " + shader.GetAttribute("psdefines");
             usedCombinations_.Insert(oldCombination);
 

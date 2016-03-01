@@ -75,6 +75,13 @@ static void RegisterCamera(asIScriptEngine* engine)
     engine->RegisterEnumValue("FillMode", "FILL_WIREFRAME", FILL_WIREFRAME);
     engine->RegisterEnumValue("FillMode", "FILL_POINT", FILL_POINT);
 
+    engine->RegisterEnum("PrimitivesInputMode");
+    engine->RegisterEnumValue("PrimitivesInputMode", "PRIMITIVES_POINTS_LIST", PRIMITIVES_POINTS_LIST);
+    engine->RegisterEnumValue("PrimitivesInputMode", "PRIMITIVES_LINES_LIST", PRIMITIVES_LINES_LIST);
+    engine->RegisterEnumValue("PrimitivesInputMode", "PRIMITIVES_LINES_STRIP", PRIMITIVES_LINES_STRIP);
+    engine->RegisterEnumValue("PrimitivesInputMode", "PRIMITIVES_TRIANGLES_LIST", PRIMITIVES_TRIANGLES_LIST);
+    engine->RegisterEnumValue("PrimitivesInputMode", "PRIMITIVES_TRIANGLES_STRIP", PRIMITIVES_TRIANGLES_STRIP);
+
     RegisterComponent<Camera>(engine, "Camera");
     engine->RegisterObjectMethod("Camera", "void SetOrthoSize(const Vector2&in)", asMETHODPR(Camera, SetOrthoSize, (const Vector2&), void), asCALL_THISCALL);
     engine->RegisterObjectMethod("Camera", "Frustum GetSplitFrustum(float, float) const", asMETHOD(Camera, GetSplitFrustum), asCALL_THISCALL);
@@ -877,6 +884,8 @@ static void RegisterMaterial(asIScriptEngine* engine)
     engine->RegisterObjectMethod("Material", "CullMode get_shadowCullMode() const", asMETHOD(Material, GetShadowCullMode), asCALL_THISCALL);
     engine->RegisterObjectMethod("Material", "void set_fillMode(FillMode)", asMETHOD(Material, SetFillMode), asCALL_THISCALL);
     engine->RegisterObjectMethod("Material", "FillMode get_fillMode() const", asMETHOD(Material, GetFillMode), asCALL_THISCALL);
+    engine->RegisterObjectMethod("Material", "void set_primitivesInputMode(PrimitivesInputMode)", asMETHOD(Material, SetPrimitivesInputMode), asCALL_THISCALL);
+    engine->RegisterObjectMethod("Material", "PrimitivesInputMode get_primitivesInputMode() const", asMETHOD(Material, GetPrimitivesInputMode), asCALL_THISCALL);
     engine->RegisterObjectMethod("Material", "void set_depthBias(const BiasParameters&in)", asMETHOD(Material, SetDepthBias), asCALL_THISCALL);
     engine->RegisterObjectMethod("Material", "const BiasParameters& get_depthBias() const", asMETHOD(Material, GetDepthBias), asCALL_THISCALL);
     engine->RegisterObjectMethod("Material", "void set_renderOrder(uint8)", asMETHOD(Material, SetRenderOrder), asCALL_THISCALL);
