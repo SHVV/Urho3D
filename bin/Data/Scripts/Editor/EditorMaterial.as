@@ -50,6 +50,7 @@ void CreateMaterialEditor()
     SubscribeToEvent(materialWindow.GetChild("CullModeEdit", true), "ItemSelected", "EditCullMode");
     SubscribeToEvent(materialWindow.GetChild("ShadowCullModeEdit", true), "ItemSelected", "EditShadowCullMode");
     SubscribeToEvent(materialWindow.GetChild("FillModeEdit", true), "ItemSelected", "EditFillMode");
+    SubscribeToEvent(materialWindow.GetChild("PrimitivesModeEdit", true), "ItemSelected", "EditPrimitivesMode");
 }
 
 bool ToggleMaterialEditor()
@@ -344,6 +345,9 @@ void RefreshMaterialMiscParameters()
     attrList.selection = editMaterial.shadowCullMode;
     attrList = materialWindow.GetChild("FillModeEdit", true);
     attrList.selection = editMaterial.fillMode;
+    attrList = materialWindow.GetChild("PrimitivesModeEdit", true);
+    attrList.selection = editMaterial.primitivesInputMode;
+    
 
     inMaterialRefresh = false;
 }
@@ -906,6 +910,19 @@ void EditFillMode(StringHash eventType, VariantMap& eventData)
     
     DropDownList@ attrEdit = eventData["Element"].GetPtr();
     editMaterial.fillMode = FillMode(attrEdit.selection);
+
+    EndMaterialEdit();
+}
+
+void EditPrimitivesMode(StringHash eventType, VariantMap& eventData)
+{
+    if (editMaterial is null || inMaterialRefresh)
+        return;
+        
+    BeginMaterialEdit();
+    
+    DropDownList@ attrEdit = eventData["Element"].GetPtr();
+    editMaterial.primitivesInputMode = PrimitivesInputMode(attrEdit.selection);
 
     EndMaterialEdit();
 }
