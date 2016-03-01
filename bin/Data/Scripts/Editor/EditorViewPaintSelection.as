@@ -192,7 +192,6 @@ void HandlePaintSelectionMouseMove(StringHash eventType, VariantMap& eventData)
         
     int x = eventData["X"].GetInt();
     int y = eventData["Y"].GetInt();
-    float sl = ((0.5 * (psCurrentSize.x * psCurrentSize.x)) + (0.5 * (psCurrentSize.y * psCurrentSize.y)));
     float r = (psCurrentSize.x * 0.5);
     
     IntVector2 mousePos(x,y);

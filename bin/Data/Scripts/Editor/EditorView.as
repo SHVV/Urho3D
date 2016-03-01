@@ -1022,7 +1022,7 @@ void CreateGrid()
     gridNode.name = "EditorGrid";
     grid = gridNode.CreateComponent("CustomGeometry");
     grid.numGeometries = 1;
-    grid.material = cache.GetResource("Material", "Materials/GridAddAlphaMaterial.xml");
+    grid.material = cache.GetResource("Material", "Materials/GridAlphaMaterial.xml");
     grid.viewMask = 0x80000000; // Editor raycasts use viewmask 0x7fffffff
     grid.occludee = false;
 
@@ -1102,6 +1102,12 @@ void UpdateGrid(bool updateGridGeometry = true)
         lineOffset  += scale;
     }
     grid.Commit();
+    
+    if (grid2DMode)
+        grid.materials[0].shaderParameters["Use2DGrid"] = Variant(1.0f);
+    else
+        grid.materials[0].shaderParameters["Use2DGrid"] = Variant(0.0f);
+
 }
 
 void CreateStatsBar()

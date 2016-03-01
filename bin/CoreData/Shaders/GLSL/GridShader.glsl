@@ -11,6 +11,8 @@ varying vec3 vViewPos;
     varying vec4 vColor;
 #endif
 
+uniform float cUse2DGrid;
+
 #ifdef COMPILEVS
 
 vec3 GetViewPos(mat4 modelMatrix) 
@@ -36,8 +38,8 @@ void VS()
 
 void PS()
 {
-    //float howFar = 1.0 / length(vViewPos.xyz);
-    float howFar = 1.0 / vViewPos.z;
+    float howFar = 1.0 / length(vViewPos.xyz);
+    //float howFar = 1.0 / vViewPos.z;
     
     // Get material diffuse albedo
     #ifdef DIFFMAP
@@ -56,12 +58,17 @@ void PS()
     
     vec3 planeNormalUp = vec3(0.0, 1.0, 0.0);
     vec3 planeNormalDown = vec3(0.0, -1.0, 0.0);
+    vec3 planeNormalForward  = vec3(0.0,0.0, 1.0);
+    vec3 planeNormalBack  = vec3(0.0,0.0, -1.0);
+    
     vec3 eyeNormalToGrid = normalize(cCameraPosPS - vWorldPos.xyz);
+    vec3 planeNormalA = mix(planeNormalUp, planeNormalForward, cUse2DGrid);
+    vec3 planeNormalB = mix(planeNormalDown, planeNormalBack, cUse2DGrid);
     
-    float dotWithUpGridSide = mix(-0.5, 32.0, clamp(dot(planeNormalUp, eyeNormalToGrid), 0, 1.0));
-    float dotWithDownGridSide = mix(-0.5, 32.0, clamp(dot(planeNormalDown, eyeNormalToGrid), 0, 1.0));
+    float dotWithGridSideA = mix(-0.5, 32.0, clamp(dot(planeNormalA, eyeNormalToGrid), 0, 1.0));
+    float dotWithGridSideB = mix(-0.5, 32.0, clamp(dot(planeNormalB, eyeNormalToGrid), 0, 1.0));
     
-    diffColor.a = howFar * (dotWithUpGridSide + dotWithDownGridSide);
+    diffColor.a = howFar * (dotWithGridSideA + dotWithGridSideB);
 
     // Get fog factor
     #ifdef HEIGHTFOG

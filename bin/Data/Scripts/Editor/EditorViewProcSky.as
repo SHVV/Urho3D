@@ -3,8 +3,7 @@ const int PROCSKY_STEP_RENDER = 100;
 float timeToNextProcSkyUpdate = 0;
 float timeToNextProcSkyRender = 0;
 
-int psParam = 256;
-float psFOV = 89.5f;
+float psFOV = 89.5f; // It's important to keep this value with nearClip (0.5f) to have nice seamless cubemap 
 bool procSkyShow = true;
 Node@ procSkyNode;
 Node@ procSkyLightNode;
@@ -22,6 +21,7 @@ bool procSkyRenderQueued = false;
 const int MAX_CUBEMAP_FACES = 6;
 Array<Quaternion> procSkyFaceRotations;
 Array<RenderPathCommand> cmd;
+bool dumpingTexCube = false;
 
 Vector3 Kr = Vector3(0.18867780436772762f, 0.4978442963618773f, 0.6616065586417131f); // Absorption profile of air.
 float rayleighBrightness = 3.9f;    //3.3f
@@ -39,9 +39,65 @@ bool isRenderPathForLSInjected = false;
 Texture2D@  LSTextureSunHalo;
 Node@ sunOriginNode;
 
+Window@ procSkyWindow;
+
+void ProcSkyCreateWindow() 
+{
+    procSkyWindow = ui.root.GetChild("ProcSkyWindow", true);
+    if (procSkyWindow !is null) return;
+    
+    procSkyWindow = Window();
+    procSkyWindow.name = "ProcSkyWindow";
+    procSkyWindow.SetStyleAuto();
+    procSkyWindow.movable = true;
+    procSkyWindow.resizable = true;
+    procSkyWindow.SetLayout(LM_VERTICAL, 2, IntRect(2,2,2,2));
+    procSkyWindow.SetAlignment(HA_LEFT, VA_TOP);
+    procSkyWindow.opacity = 0.8f;
+    
+    IntVector2 scrSize(graphics.width, graphics.height);
+    IntVector2 winSize(scrSize);
+    winSize.x = int(0.3f * winSize.x); winSize.y = int(0.5f * winSize.y);
+    IntVector2 uiPos(ui.root.position);
+    procSkyWindow.size = IntVector2(500,400);//winSize;
+    procSkyWindow.position = IntVector2(50, (scrSize.y - winSize.y) / 2);
+    procSkyWindow.visible = true;
+    
+    ui.root.AddChild(procSkyWindow);
+    
+    // Create Window 'titlebar' container
+    UIElement@ titleBar = UIElement();
+    titleBar.SetMinSize(0, 16);
+    titleBar.verticalAlignment = VA_TOP;
+    titleBar.layoutMode = LM_HORIZONTAL;
+    Text@ windowTitle = Text();
+    windowTitle.text = "ProcSky Parameters";
+    titleBar.AddChild(windowTitle);
+    procSkyWindow.AddChild(titleBar);
+    windowTitle.SetStyleAuto();
+}
+
+Color FromH255S100V100(float h, float s, float v, float a = 1.0f) 
+{
+    // Gimp HSV color ranges
+    h = Clamp(h, 0.0f, 255.0f);
+    s = Clamp(s, 0.0f, 100.0f);
+    v = Clamp(v, 0.0f, 100.0f);
+    
+    float normalizedH = h / 255.0f;
+    float normalizedS = s / 100.0f;
+    float normalizedV = v / 100.0f;
+    
+    Color ret;
+    ret.FromHSV(normalizedH, normalizedS, normalizedV , a);
+    return ret;
+}
+
 void CheckOrCreateProSkyStuff(bool newOpenedScene) 
 {
     if (editorScene is null || procSkyNode is null) return;
+    
+    ProcSkyCreateWindow();
     
     if (procSkyCamera is null || newOpenedScene) 
     {
@@ -61,8 +117,7 @@ void CheckOrCreateProSkyStuff(bool newOpenedScene)
         {   
             procSkyLight = procSkyLightNode.CreateComponent("Light");
             procSkyLight.lightType = LIGHT_DIRECTIONAL;
-            procSkyLightColor.Clip(true);
-            procSkyLightColor.FromHSV(57.0f, 9.9f, 73.0f , 1.0);
+            procSkyLightColor = FromH255S100V100(57.0f, 9.9f, 73.0f , 1.0);
             procSkyLight.color = procSkyLightColor;
         }
         
@@ -73,7 +128,7 @@ void CheckOrCreateProSkyStuff(bool newOpenedScene)
         }
     }
     
-    if (procSkySkyBox is null || newOpenedScene) 
+    if (procSkySkyBox is null || newOpenedScene)
     {
         procSkySkyBox = procSkyNode.CreateComponent("Skybox");
         procSkySkyBox.model = cache.GetResource("Model","Models/Box.mdl");
@@ -193,7 +248,7 @@ void AddRenderPathCmdForLightScattering()
     isRenderPathForLSInjected = true;
 }
 
-void AddMRT1InPostopaquePassOutput() 
+void AddMRT1InPostopaquePassOutput()
 {
     for (int i=0; i<procSkyRenderPath.numCommands-1; i++) 
     {
@@ -203,7 +258,7 @@ void AddMRT1InPostopaquePassOutput()
         {
             
             cmd.SetOutput(0, "viewport");
-            cmd.SetOutput(1, "SunHalo");
+            cmd.SetOutput(1, "suncircle");
             //renderPath.RemoveCommand(i);
             procSkyRenderPath.commands[i] = cmd;
             //renderPath.commands[i] = cmd;
@@ -220,11 +275,12 @@ bool SetRenderSize(int size)
     {
         procSkyCubeTexture = TextureCube();
         procSkyCubeTexture.name = "DiffProcSky";
-        procSkyCubeTexture.SetSize(size, GetRGBAFormat(), TEXTURE_RENDERTARGET);
-        procSkyCubeTexture.filterMode = FILTER_TRILINEAR; //FILTER_BILINEAR;
+        procSkyCubeTexture.SetSize(size, GetRGBFormat(), TEXTURE_RENDERTARGET);
+        procSkyCubeTexture.filterMode = FILTER_BILINEAR;
         procSkyCubeTexture.addressMode[COORD_U] = ADDRESS_CLAMP;
         procSkyCubeTexture.addressMode[COORD_V] = ADDRESS_CLAMP;
         procSkyCubeTexture.addressMode[COORD_W] = ADDRESS_CLAMP;
+
         cache.AddManualResource(procSkyCubeTexture);
         if (procSkySkyBoxMaterial !is null ) 
             procSkySkyBoxMaterial.textures[TU_DIFFUSE] = procSkyCubeTexture;
@@ -240,7 +296,6 @@ bool SetRenderSize(int size)
 
 void SetProcSkyAsEnvCubemapForZonesByTag(String tagZone, bool forAll = false) 
 {
-	
 	Array<Node@> nodesWithZones; 
 	if (!forAll)
         nodesWithZones = editorScene.GetChildrenWithTag(tagZone);
@@ -290,8 +345,6 @@ void UpdateViewProcSky()
     // 32 ms
     if ((timeToNextProcSkyRender < time.systemTime) || (procSkyLightNodeLastRotation != procSkyLightNode.worldRotation)) 
     {
-		ProcSkyCheckKeys();
-		
 		if (procSkyRenderPath !is null) 
 		{
 			
@@ -309,6 +362,7 @@ void UpdateViewProcSky()
     
     
     // Each frame update stuff
+    ProcSkyCheckKeys();
     UpdateShaderParameters(procSkyRenderPath);
     
 } 
@@ -337,13 +391,7 @@ void UpdateShaderParameters(RenderPath@ renderPath)
     
     Vector2 SunScreen = activeViewport.viewport.camera.WorldToScreenPoint(sunOriginNode.worldPosition);
     SunScreen.y = 1.0 - SunScreen.y;
-    //Matrix4 translate;
-    //translate.SetTranslation(Vector3(0,0,-1000000));
-    //Vector4 t = translate * Vector4(0,0,0,1);
-    //Vector3 SunOrigin;
-    //SunOrigin = procSkyLightNode.worldRotation.rotationMatrix.Inverse()  * Vector3(t.x, t.y, t.z);
-    //Vector2 SunScreen = activeViewport.viewport.camera.WorldToScreenPoint(SunOrigin);
-    
+     
     renderPath.shaderParameters["LightPositionOnScreen"] = Variant(SunScreen);
 }
 
@@ -357,7 +405,46 @@ void SetRenderQueued(bool isQueued = true)
 
 void ProcSkyPostRenderUpdate()
 {
+    if (input.keyPress[KEY_T] ) 
+    {
+        DumpTextureCube(procSkyCubeTexture, "C:/Urho3D/bin/Data/Textures/");
+    }
+    
     if (!procSkyRenderQueued) return;
     
     //
+}
+
+void DumpTextureCube(TextureCube@ texCube, String filePath) 
+{
+    if (texCube is null) return;
+    
+    //TextureCube@ tc = cast<TextureCube>(procSkySkyBoxMaterial.textures[TU_DIFFUSE]);
+    
+    //(TU_DIFFUSE)
+     
+    Texture2D@ faceTex = null;
+    for (int i = 0; i < MAX_CUBEMAP_FACES; i++) 
+    {
+        //TextureCube@ tc = texCube.backupTexture;
+        //Texture@ t  = 
+        faceTex = procSkyCubeTexture.renderSurfaces[CubeMapFace(i)].parentTexture;
+        
+        if (faceTex !is null)
+        {
+            MessageBox("OK - get Texture2D from cubemap face" + String(i));
+            Image@ texImage = faceTex.GetImage();
+            fileSystem.CreateDir(filePath);
+            String path(filePath + String(i) + ".png");
+            if (texImage !is null) 
+            {
+                texImage.SavePNG(path);
+                MessageBox(path);
+            }
+        }
+        else 
+        {
+            MessageBox("Failure get Texture2D from cubemap face" + String(i));
+        }
+    }
 }

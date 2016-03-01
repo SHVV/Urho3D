@@ -237,41 +237,37 @@ void ShowSelectedNodeOrigin(Node@ node, int index)
         originsIcons[index].color = ORIGIN_COLOR_SELECTED;
         originsIcons[index].SetFixedSize(ORIGIN_ICON_SIZE_SELECTED.x,ORIGIN_ICON_SIZE_SELECTED.y);
         
-        // if we need to update info for some reason
-        if (extraInfo || extraInfoHide || (prevSelectedID != node.id))
+        // if selected node chaged, reset some vars
+        if (prevSelectedID != node.id)
         {
-            if (prevSelectedID != node.id)
-            {
-                prevSelectedID = node.id;
-                selectedNodeInfoState = 0;
-                originsIcons[index].vars[ORIGIN_NODEID_VAR] = node.id;
-            }  
-            
-            Array<Component@> components = node.GetComponents(); 
-            Array<String> componentsShortInfo;
-            Array<String> componentsDetailInfo;
-            componentsShortInfo.Resize(components.length);
-            componentsDetailInfo.Resize(components.length);
-            
-            // Add std info node name + tags
-            originsNames[index].text = NodeInfo(node, selectedNodeInfoState) + "\n";
+            prevSelectedID = node.id;
+            selectedNodeInfoState = 0;
+            originsIcons[index].vars[ORIGIN_NODEID_VAR] = node.id;
+        }  
+        
+        // We always update to keep and feed alt-info with actual info about node components 
+        Array<Component@> components = node.GetComponents(); 
+        Array<String> componentsShortInfo;
+        Array<String> componentsDetailInfo;
+        componentsShortInfo.Resize(components.length);
+        componentsDetailInfo.Resize(components.length);
+        // Add std info node name + tags
+        originsNames[index].text = NodeInfo(node, selectedNodeInfoState) + "\n";
 
-            // Add short info and detail info
-            for (int i=0; i < components.length; i++ )
+        // Add short info and detail info
+        for (int i=0; i < components.length; i++ )
+        {
+            // Get SM, but also works well for AnimatedModel
+            StaticModel@ sm = cast<StaticModel>(components[i]);
+            if (sm !is null) 
             {
-                // Get SM, but also works well for AnimatedModel
-                StaticModel@ sm = cast<StaticModel>(components[i]);
-                if (sm !is null) 
-                {
-                    // Process info for Model 
-                    CollectStaticModelInfo(sm, componentsShortInfo[i], componentsDetailInfo[i], selectedNodeInfoState);                            
-                    originsNames[index].text = originsNames[index].text + 
-                    (selectedNodeInfoState > 0 ? componentsShortInfo[i] +"\n" : "") + (selectedNodeInfoState > 1 ? componentsDetailInfo[i]: ""); 
-                    continue;
-                }
-                
-                // TODO: Add info view for other components      
-            }                    
+                // Process info for Model 
+                CollectStaticModelInfo(sm, componentsShortInfo[i], componentsDetailInfo[i], selectedNodeInfoState);                            
+                originsNames[index].text = originsNames[index].text + 
+                (selectedNodeInfoState > 0 ? componentsShortInfo[i] +"\n" : "") + (selectedNodeInfoState > 1 ? componentsDetailInfo[i]: ""); 
+                continue;
+            }
+            // TODO: Add info view for other components      
         }
     }
 }
