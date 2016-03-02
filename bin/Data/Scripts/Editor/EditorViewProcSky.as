@@ -405,46 +405,60 @@ void SetRenderQueued(bool isQueued = true)
 
 void ProcSkyPostRenderUpdate()
 {
-    if (input.keyPress[KEY_T] ) 
+    if (input.keyPress[KEY_F10] ) 
     {
-        DumpTextureCube(procSkyCubeTexture, "C:/Urho3D/bin/Data/Textures/");
+        DumpTextureCube(procSkyCubeTexture, "Data/Textures/Cubemaps/ProcSky/");
     }
     
     if (!procSkyRenderQueued) return;
+}
+
+String GetTextureCubeFaceName(CubeMapFace f) 
+{
+    String ret = "Unknown";
     
-    //
+    switch (f)
+    {
+        case FACE_POSITIVE_X:
+            ret = "POSITIVE_X";
+            break;
+            
+        case FACE_NEGATIVE_X:
+            ret = "NEGATIVE_X";
+            break;
+            
+        case FACE_POSITIVE_Y:
+            ret = "POSITIVE_Y";
+            break;
+            
+        case FACE_NEGATIVE_Y:
+            ret = "NEGATIVE_Y";
+            break;
+            
+        case FACE_POSITIVE_Z:
+            ret = "POSITIVE_Z";
+            break;
+            
+        case FACE_NEGATIVE_Z:
+            ret = "NEGATIVE_Z";
+            break;
+    }
+    
+    return ret;
 }
 
 void DumpTextureCube(TextureCube@ texCube, String filePath) 
 {
     if (texCube is null) return;
-    
-    //TextureCube@ tc = cast<TextureCube>(procSkySkyBoxMaterial.textures[TU_DIFFUSE]);
-    
-    //(TU_DIFFUSE)
-     
-    Texture2D@ faceTex = null;
     for (int i = 0; i < MAX_CUBEMAP_FACES; i++) 
     {
-        //TextureCube@ tc = texCube.backupTexture;
-        //Texture@ t  = 
-        faceTex = procSkyCubeTexture.renderSurfaces[CubeMapFace(i)].parentTexture;
-        
-        if (faceTex !is null)
-        {
-            MessageBox("OK - get Texture2D from cubemap face" + String(i));
-            Image@ texImage = faceTex.GetImage();
-            fileSystem.CreateDir(filePath);
-            String path(filePath + String(i) + ".png");
-            if (texImage !is null) 
-            {
-                texImage.SavePNG(path);
-                MessageBox(path);
-            }
-        }
-        else 
-        {
-            MessageBox("Failure get Texture2D from cubemap face" + String(i));
+        Image@ texImage = texCube.GetImage(CubeMapFace(i));
+        fileSystem.CreateDir(filePath);
+        String path(filePath +"ProcSkyCubemap_" + GetTextureCubeFaceName(CubeMapFace(i)) + ".png");
+        if (texImage !is null) 
+        {       
+            texImage.SavePNG(path);
+            MessageBox(path);
         }
     }
 }
