@@ -117,73 +117,35 @@ void PaintSelectionCheckKeyboard()
 void SelectOriginsByPaintSelection(IntVector2 curPos, float brushRadius, bool isOperationAddToSelection = true) 
 {
     if (!EditorPaintSelectionShow || EditorPaintSelectionUIContainer is null) return;
-    
-    if (isOperationAddToSelection) 
+
+    for (int i=0; i < originsNodes.length; i++) 
     {
-        for (int i=0; i < originsNodes.length; i++) 
-        {
-            Vector3 v1(originsIcons[i].position.x, originsIcons[i].position.y, 0);
-            Vector3 v2(curPos.x - ORIGINOFFSETICON.x, curPos.y - ORIGINOFFSETICON.y, 0); 
-            
-            float distance = (v1 - v2).length;
-            bool isThisOriginInCircle = distance < brushRadius ? true : false;
-            int nodeID = originsIcons[i].vars[ORIGIN_NODEID_VAR].GetInt();
-            
-            if (isThisOriginInCircle) 
-            {    
-                WeakHandle handle = editorScene.GetNode(nodeID);
-                if (handle.Get() !is null) 
+        Vector3 v1(originsIcons[i].position.x, originsIcons[i].position.y, 0);
+        Vector3 v2(curPos.x - ORIGINOFFSETICON.x, curPos.y - ORIGINOFFSETICON.y, 0); 
+        
+        float distance = (v1 - v2).length;
+        bool isThisOriginInCircle = distance < brushRadius ? true : false;
+        int nodeID = originsIcons[i].vars[ORIGIN_NODEID_VAR].GetInt();
+        
+        if (isThisOriginInCircle) 
+        {    
+            WeakHandle handle = editorScene.GetNode(nodeID);
+            if (handle.Get() !is null) 
+            {
+                Node@ node = handle.Get();
+                if (isOperationAddToSelection)
                 {
-                    Node@ node = handle.Get();
                     if (node !is null && isThisNodeOneOfSelected(node) == false) 
-                    {
                         SelectNode(node, true);
-                    }
                 }
-            }
-            
-        }
-    }
-    else // Deselect origins 
-    {
-        for (int i=0; i < originsNodes.length; i++) 
-        {
-            Vector3 v1(originsIcons[i].position.x, originsIcons[i].position.y, 0);
-            Vector3 v2(curPos.x - ORIGINOFFSETICON.x, curPos.y - ORIGINOFFSETICON.y, 0); 
-            
-            float distance = (v1 - v2).length;
-            bool isThisOriginInCircle = distance < brushRadius ? true : false;
-            int nodeID = originsIcons[i].vars[ORIGIN_NODEID_VAR].GetInt();
-            
-            if (isThisOriginInCircle) 
-            {    
-                WeakHandle handle = editorScene.GetNode(nodeID);
-                if (handle.Get() !is null) 
+                else // Deselect origins operation 
                 {
-                    Node@ node = handle.Get();
                     if (node !is null && isThisNodeOneOfSelected(node) == true) 
-                    {
                         DeselectNode(node);
-                    }
                 }
             }
-            
-        }    
-    }
-}
-
-int GetIndexInSelectedNodesArray(int nodeID) 
-{
-    if (!selectedNodes.empty)
-    {
-        for (int i=0; i < selectedNodes.length; i++) 
-        {
-            if (selectedNodes[i].id == nodeID)
-                return i;
-        }
-    }   
-
-    return -1;
+        }   
+    }  
 }
 
 void HandlePaintSelectionMouseMove(StringHash eventType, VariantMap& eventData)
