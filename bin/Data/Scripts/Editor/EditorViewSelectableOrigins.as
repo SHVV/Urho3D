@@ -1,10 +1,10 @@
 const bool DEFAULT_SHOW_NAMES_FOR_ALL = false;
-const int ORIGIN_STEP_UPDATE = 16;
-const int ORIGIN_STEP_SCENE_GET_NODES = 3000;
+const int ORIGIN_STEP_UPDATE = 10;
 const int NAMES_SIZE = 10;
 const StringHash ORIGIN_NODEID_VAR("OriginNodeID");
 const Color ORIGIN_COLOR(1.0f,1.0f,1.0f,1.0f);
 const Color ORIGIN_COLOR_SELECTED(0.0f,1.0f,1.0f,1.0f);
+const Color ORIGIN_COLOR_DISABLED(1.0f,0.0f,0.0f,1.0f);
 const Color ORIGIN_COLOR_TEXT(1.0f,1.0f,1.0f,0.3f);
 const Color ORIGIN_COLOR_SELECTED_TEXT(1.0f,1.0f,1.0f,1.0f);
 const IntVector2 ORIGIN_ICON_SIZE(12,12);
@@ -118,7 +118,7 @@ void UpdateOrigins()
             EditorOriginUIContainer.visible = false;
         
         // Forced read nodes for some reason:
-        if ((originsNodes.length < 1) || rebuildSceneOrigins || (EditorOriginUITimeToSceneNodeRead < time.systemTime)) 
+        if ((originsNodes.length < 1) || rebuildSceneOrigins)
         {
             originsNodes = editorScene.GetChildren(true);
             
@@ -141,12 +141,9 @@ void UpdateOrigins()
                 }
             }
             
-            // If this rebuild pass after new scene loading reset flag
+            // If this rebuild pass after new scene loading or add/delete node - reset flag to default
             if (rebuildSceneOrigins) 
                 rebuildSceneOrigins = false;
-            
-            // if this grab pass or else update time
-            EditorOriginUITimeToSceneNodeRead =  time.systemTime + ORIGIN_STEP_SCENE_GET_NODES;
         }
         
         if (originsNodes.length > 0)
@@ -206,7 +203,6 @@ void UpdateOrigins()
         }
     }
     
-    
     EditorOriginUITimeToUpdate = time.systemTime + ORIGIN_STEP_UPDATE;
 }
 
@@ -234,7 +230,12 @@ void ShowSelectedNodeOrigin(Node@ node, int index)
         //originsIcons[index].position = IntVector2(10+int(vp.rect.left + sp.x * vp.rect.right), -5 + int(vp.rect.top + sp.y* vp.rect.bottom));
         originsIcons[index].position = IntVector2(int(vp.rect.left + sp.x * vp.rect.right) - ORIGINOFFSETICON.x, int(vp.rect.top + sp.y* vp.rect.bottom) - ORIGINOFFSETICON.y);
         originsNames[index].color = ORIGIN_COLOR_SELECTED_TEXT;
-        originsIcons[index].color = ORIGIN_COLOR_SELECTED;
+        
+        if (originsNodes[index].enabled)
+            originsIcons[index].color = ORIGIN_COLOR_SELECTED;
+        else
+            originsIcons[index].color = ORIGIN_COLOR_DISABLED;
+        
         originsIcons[index].SetFixedSize(ORIGIN_ICON_SIZE_SELECTED.x,ORIGIN_ICON_SIZE_SELECTED.y);
         
         // if selected node chaged, reset some vars
@@ -317,7 +318,12 @@ void MoveOrigin(int index, bool isVisible = false)
     Vector2 sp = activeViewport.camera.WorldToScreenPoint(originsNodes[index].worldPosition); 
     
     originsIcons[index].SetFixedSize(ORIGIN_ICON_SIZE.x,ORIGIN_ICON_SIZE.y);
-    originsIcons[index].color = ORIGIN_COLOR;
+    
+    if (originsNodes[index].enabled)
+        originsIcons[index].color = ORIGIN_COLOR;
+    else
+        originsIcons[index].color = ORIGIN_COLOR_DISABLED;
+        
     originsIcons[index].position = IntVector2(int(vp.rect.left + sp.x * vp.rect.right) - ORIGINOFFSETICON.x, int(vp.rect.top + sp.y* vp.rect.bottom) - ORIGINOFFSETICON.y);
     originsIcons[index].visible = isVisible;
     originsIcons[index].vars[ORIGIN_NODEID_VAR] = originsNodes[index].id;

@@ -30,6 +30,9 @@ void EditorSubscribeToEvents()
     SubscribeToEvent(EDITOR_EVENT_ORIGIN_START_HOVER, "EditorMainHandleOriginStartHover");
     SubscribeToEvent(EDITOR_EVENT_ORIGIN_END_HOVER, "EditorMainHandleOriginEndHover");
     
+    SubscribeToEvent("NodeAdded", "EditorMainHandlerNodeAdded");
+    SubscribeToEvent("NodeRemoved", "EditorMainHandlerNodeRemoved");
+    
 }
 
 void EditorMainHandleKeyDown(StringHash eventType, VariantMap& eventData)
@@ -147,15 +150,22 @@ void EditorMainHandleHoverEnd(StringHash eventType, VariantMap& eventData)
 
 void EditorMainHandleOriginStartHover(StringHash eventType, VariantMap& eventData)
 {
-    //Element = originsIcons[originHoveredIndex];
-    //Id = originHoveredIndex;
-    //MessageBox(String(eventData["NodeId"].GetInt()));
     HandlePaintSelectionOriginHoverBegin(eventType, eventData);
 }
 
 void EditorMainHandleOriginEndHover(StringHash eventType, VariantMap& eventData)
 {
-    //MessageBox("end hover");
     HandlePaintSelectionOriginHoverEnd(eventType, eventData);
+}
+
+void EditorMainHandlerNodeAdded(StringHash eventType, VariantMap& eventData)
+{
+    HandleNodeAdded(eventType, eventData);
+    rebuildSceneOrigins = true;
+}
+void EditorMainHandlerNodeRemoved(StringHash eventType, VariantMap& eventData)
+{
+    HandleNodeRemoved(eventType, eventData);
+    rebuildSceneOrigins = true;
 }
 

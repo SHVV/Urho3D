@@ -1765,7 +1765,7 @@ void ViewRaycast(bool mouseClick)
     Ray cameraRay = GetActiveViewportCameraRay();
     Component@ selectedComponent;
 
-    if (pickMode < PICK_RIGIDBODIES)
+    if (pickMode < PICK_RIGIDBODIES && !EditorPaintSelectionShow)
     {
         if (editorScene.octree is null)
             return;
@@ -1850,7 +1850,7 @@ void ViewRaycast(bool mouseClick)
         multiselect = input.qualifierDown[QUAL_SHIFT];
     }
     
-    if (mouseClick && mouseButtonPressRL)
+    if (mouseClick && mouseButtonPressRL && !EditorPaintSelectionShow)
     {
         if (selectedComponent !is null)
         {

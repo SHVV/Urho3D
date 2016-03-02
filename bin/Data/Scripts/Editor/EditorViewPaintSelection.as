@@ -92,6 +92,7 @@ void PaintSelectionCheckKeyboard()
         {
             // When we start paint selection we change editmode to select
             editMode = EDIT_SELECT;
+            //selectedNodes.Clear();
             // and also we show origins for proper origins update
             ShowOrigins(true);
             toolBarDirty = true;
