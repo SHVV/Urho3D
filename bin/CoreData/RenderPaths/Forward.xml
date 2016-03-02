@@ -27,12 +27,7 @@
         <texture unit="diffuse" name="suncircle" />
     </command>
     <!-- blend with main scene -->  
-    <command type="quad" tag="LS" vs="CopyFramebuffer8" ps="CopyFramebuffer8" blend="add" output="viewport">
+    <command type="quad" tag="LS" vs="CopyFramebuffer" ps="CopyFramebuffer" psdefines="REDTORGB" blend="add" output="viewport">
         <texture unit="diffuse" name="lightscattering" />
-    </command>
-    
-    <command type="quad" enabled="false" tag="debugViewMask" vs="CopyFramebuffer8" ps="CopyFramebuffer8" blend="replace" output="viewport">
-        <texture unit="diffuse" name="suncircle" />
-    </command>
-    
+    </command>    
 </renderpath>

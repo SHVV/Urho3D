@@ -15,6 +15,10 @@ void VS()
 
 void PS()
 {
+#ifdef REDTORGB
+    gl_FragColor.rgb = texture2D(sDiffMap, vScreenPos).rrr;
+#else
     gl_FragColor = texture2D(sDiffMap, vScreenPos);
+#endif
 }
 
