@@ -2117,7 +2117,8 @@ void HandleEndViewRender(StringHash eventType, VariantMap& eventData)
         if (debug !is null)
         {
             suppressSceneChanges = true; // Do not want UI update now
-            debug.enabled = debugWasEnabled;
+            //debug.enabled = debugWasEnabled;
+            debug.enabled = true; // fix issue with preview camera selection and debug render dissapears  
             suppressSceneChanges = false;
         }
     }
