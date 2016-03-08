@@ -150,12 +150,12 @@ void EditorMainHandleHoverEnd(StringHash eventType, VariantMap& eventData)
 
 void EditorMainHandleOriginStartHover(StringHash eventType, VariantMap& eventData)
 {
-    HandlePaintSelectionOriginHoverBegin(eventType, eventData);
+
 }
 
 void EditorMainHandleOriginEndHover(StringHash eventType, VariantMap& eventData)
 {
-    HandlePaintSelectionOriginHoverEnd(eventType, eventData);
+
 }
 
 void EditorMainHandlerNodeAdded(StringHash eventType, VariantMap& eventData)

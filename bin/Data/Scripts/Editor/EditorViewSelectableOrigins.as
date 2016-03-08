@@ -12,8 +12,6 @@ const IntVector2 ORIGIN_ICON_SIZE_SELECTED(15,15);
 const float ORIGINS_VISIBLITY_RANGE = 128.0f;
 const IntVector2 ORIGINOFFSETICON(7,7);
 
-bool extraInfo = false;
-bool extraInfoHide = false;
 bool showNamesForAll = DEFAULT_SHOW_NAMES_FOR_ALL;
 bool EditorOriginShow = true;
 bool rebuildSceneOrigins = true;
@@ -368,18 +366,17 @@ bool IsSceneOrigin(UIElement@ element)
 void CheckKeyboardQualifers() 
 {    
     // if pressed alt we inc state for info
-    //extraInfo = input.qualifierPress[QUAL_ALT];
-    extraInfo = input.keyPress[KEY_ALT];    
-    if (extraInfo) 
+    bool showAltInfo = input.keyPress[KEY_ALT];    
+    if (showAltInfo)
         if (selectedNodeInfoState < 3) selectedNodeInfoState += 1;
     
     // if pressed ctrl we reset info state
-    extraInfoHide = input.qualifierDown[QUAL_CTRL];
-    if (extraInfoHide)
+    bool hideAltInfo = input.qualifierDown[QUAL_CTRL];
+    if (hideAltInfo)
         selectedNodeInfoState = 0;
     
-    bool hideChildName = input.qualifierPress[QUAL_SHIFT];
-    if (hideChildName)
+    bool showNameForOther = input.qualifierPress[QUAL_SHIFT];
+    if (showNameForOther)
         showNamesForAll =!showNamesForAll;
     
 }

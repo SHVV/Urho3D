@@ -1,15 +1,17 @@
 const int PAINT_STEP_UPDATE = 16;
+const int PAINT_SELECTION_KEY = KEY_C;
+
 bool EditorPaintSelectionShow = false;
 int EditorPaintSelectionUITimeToUpdate = 0;
 
 UIElement@ EditorPaintSelectionUIContainer = null;
 BorderImage@ paintSelectionImage = null;
 
-IntVector2 psDefaulSize(96,96);
-IntVector2 psCurrentSize = psDefaulSize;
-IntVector2 psMinSize(64,64);
-IntVector2 psMaxSize(512,512);
-IntVector2 psStepSizeChange(16,16);
+IntVector2 paintSelectionBrushDefaultSize(96,96);
+IntVector2 paintSelectionBrushCurrentSize = paintSelectionBrushDefaultSize;
+IntVector2 paintSelectionBrushMinSize(64,64);
+IntVector2 paintSelectionBrushMaxSize(512,512);
+IntVector2 paintSelectionBrushStepSizeChange(16,16);
 
 void CreatePaintSelectionContainer()
 {
@@ -29,7 +31,7 @@ void CreatePaintSelectionTool()
 {      
     paintSelectionImage = BorderImage("Icon");
     paintSelectionImage.temporary = true;
-    paintSelectionImage.SetFixedSize(psDefaulSize.x,psDefaulSize.y);
+    paintSelectionImage.SetFixedSize(paintSelectionBrushDefaultSize.x,paintSelectionBrushDefaultSize.y);
     paintSelectionImage.texture = cache.GetResource("Texture2D", "Textures/Editor/SelectionCircle.png");
     paintSelectionImage.imageRect = IntRect(0,0,512,512);
     paintSelectionImage.priority = -5;
@@ -45,7 +47,7 @@ void UpdatePaintSelection()
 {
     PaintSelectionCheckKeyboard();
         
-    // Early out if are disabled
+    // Early out if disabled
     if (!EditorPaintSelectionShow) return; 
           
     if (editorScene is null || EditorPaintSelectionUITimeToUpdate > time.systemTime) return;
@@ -69,7 +71,7 @@ void UpdatePaintSelection()
         if (EditorPaintSelectionShow) 
         {
                 IntVector2 mp = input.mousePosition;
-                paintSelectionImage.position = IntVector2(mp.x - (psCurrentSize.x * 0.5f), mp.y - (psCurrentSize.y * 0.5f));
+                paintSelectionImage.position = IntVector2(mp.x - (paintSelectionBrushCurrentSize.x * 0.5f), mp.y - (paintSelectionBrushCurrentSize.y * 0.5f));
         }
     }
     
@@ -79,7 +81,7 @@ void UpdatePaintSelection()
 void PaintSelectionCheckKeyboard() 
 {    
     
-    bool key = input.keyPress[KEY_C];    
+    bool key = input.keyPress[PAINT_SELECTION_KEY];    
     
     if (key && ui.focusElement is null)
     {
@@ -155,11 +157,15 @@ void HandlePaintSelectionMouseMove(StringHash eventType, VariantMap& eventData)
         
     int x = eventData["X"].GetInt();
     int y = eventData["Y"].GetInt();
-    float r = (psCurrentSize.x * 0.5);
+    float r = (paintSelectionBrushCurrentSize.x * 0.5);
     
     IntVector2 mousePos(x,y);
+    // Select by mouse
     if (input.mouseButtonDown[MOUSEB_LEFT] && input.qualifierDown[QUAL_ALT] != true)
+    {
         SelectOriginsByPaintSelection(mousePos, r, true);
+    }
+    // Deselect by mouse
     else if (input.mouseButtonDown[MOUSEB_LEFT] && input.qualifierDown[QUAL_ALT] == true) 
     {
         SelectOriginsByPaintSelection(mousePos, r, false);
@@ -177,37 +183,16 @@ void HandlePaintSelectionWheel(StringHash eventType, VariantMap& eventData)
         if (wheelValue > 0)
         {
             
-            psCurrentSize = psCurrentSize - psStepSizeChange;
-            psCurrentSize = IntVector2(Max(psCurrentSize.x, psMinSize.x), Max(psCurrentSize.y, psMinSize.y)); 
+            paintSelectionBrushCurrentSize = paintSelectionBrushCurrentSize - paintSelectionBrushStepSizeChange;
+            paintSelectionBrushCurrentSize = IntVector2(Max(paintSelectionBrushCurrentSize.x, paintSelectionBrushMinSize.x), Max(paintSelectionBrushCurrentSize.y, paintSelectionBrushMinSize.y)); 
         }
         else if (wheelValue < 0)
         {
-            psCurrentSize = psCurrentSize + psStepSizeChange;
-            psCurrentSize = IntVector2(Min(psCurrentSize.x, psMaxSize.x), Min(psCurrentSize.y, psMaxSize.y)); 
+            paintSelectionBrushCurrentSize = paintSelectionBrushCurrentSize + paintSelectionBrushStepSizeChange;
+            paintSelectionBrushCurrentSize = IntVector2(Min(paintSelectionBrushCurrentSize.x, paintSelectionBrushMaxSize.x), Min(paintSelectionBrushCurrentSize.y, paintSelectionBrushMaxSize.y)); 
         }
         
-        paintSelectionImage.SetFixedSize(psCurrentSize.x, psCurrentSize.y);
+        paintSelectionImage.SetFixedSize(paintSelectionBrushCurrentSize.x, paintSelectionBrushCurrentSize.y);
     }
 }
 
-void HandlePaintSelectionOriginHoverBegin(StringHash eventType, VariantMap& eventData)
-{
-    UIElement@ origin = eventData["Element"].GetPtr();
-    if (origin is null)
-        return;
-    
-    int OriginArrayID = eventData["Id"].GetInt();
-    int NodeID = eventData["NodeId"].GetInt();
-        
-}
-
-void HandlePaintSelectionOriginHoverEnd(StringHash eventType, VariantMap& eventData)
-{
-    UIElement@ origin = eventData["Element"].GetPtr();
-    if (origin is null)
-        return;
-    
-    int OriginArrayID = eventData["Id"].GetInt();
-    int NodeID = eventData["NodeId"].GetInt();
-   
-}

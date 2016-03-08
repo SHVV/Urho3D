@@ -97,7 +97,7 @@ void CheckOrCreateProSkyStuff(bool newOpenedScene)
 {
     if (editorScene is null || procSkyNode is null) return;
     
-    ProcSkyCreateWindow();
+    //ProcSkyCreateWindow();
     
     if (procSkyCamera is null || newOpenedScene) 
     {
@@ -140,8 +140,10 @@ void CheckOrCreateProSkyStuff(bool newOpenedScene)
     }
     
     if (procSkyRenderSizeLast != procSkyRenderSize || newOpenedScene)
+    {
         if (SetRenderSize(procSkyRenderSize))
             procSkyRenderSizeLast = procSkyRenderSize;
+    }
     
     if (procSkyFaceRotations.length < MAX_CUBEMAP_FACES || newOpenedScene)
     {     
@@ -154,49 +156,56 @@ void CheckOrCreateProSkyStuff(bool newOpenedScene)
         procSkyFaceRotations[FACE_NEGATIVE_Z] = Quaternion(0, 180, 0);
     }
     
-    VariantMap atmoParams;
-    atmoParams["Kr"] = Kr;
-    atmoParams["RayleighBrightness"] = rayleighBrightness;
-    atmoParams["MieBrightness"] = mieBrightness;
-    atmoParams["SpotBrightness"] = spotBrightness;
-    atmoParams["ScatterStrength"] = scatterStrength;
-    atmoParams["RayleighStrength"] = rayleighStrength;
-    atmoParams["MieStrength"] = mieStrength;
-    atmoParams["RayleighCollectionPower"] = rayleighCollectionPower;
-    atmoParams["MieCollectionPower"] = mieCollectionPower;
-    atmoParams["MieDistribution"] = mieDistribution;
-    atmoParams["LightDir"] = Vector3(0.0f,-1.0f, 0.0f);
-    atmoParams["InvProj"] = procSkyCamera.projection.Inverse();
-    
-    cmd.Resize(MAX_CUBEMAP_FACES);
-    for (int i = 0; i < MAX_CUBEMAP_FACES; ++i) 
+    if (!isRenderPathForLSInjected) 
     {
-        cmd[i].enabled = true;
-        cmd[i].blendMode = BLEND_REPLACE;
-        cmd[i].tag = "ProcSky";
-        cmd[i].type = CMD_QUAD;
-        cmd[i].sortMode = SORT_BACKTOFRONT;
-        cmd[i].pass = "postopaque";
-        cmd[i].SetOutput(0, "DiffProcSky", CubeMapFace(i));
-        cmd[i].vertexShaderName = "ProcSky";
-        cmd[i].vertexShaderDefines = "";
-        cmd[i].pixelShaderName = "ProcSky";
-        cmd[i].pixelShaderDefines = "";     
-        cmd[i].shaderParameters["Kr"] = atmoParams["Kr"];
-        cmd[i].shaderParameters["RayleighBrightness"] = atmoParams["RayleighBrightness"];
-        cmd[i].shaderParameters["MieBrightness"] = atmoParams["MieBrightness"];
-        cmd[i].shaderParameters["SpotBrightness"] = atmoParams["SpotBrightness"];
-        cmd[i].shaderParameters["ScatterStrength"] = atmoParams["ScatterStrength"];
-        cmd[i].shaderParameters["RayleighStrength"] = atmoParams["RayleighStrength"];
-        cmd[i].shaderParameters["MieStrength"] = atmoParams["MieStrength"];
-        cmd[i].shaderParameters["RayleighCollectionPower"] = atmoParams["RayleighCollectionPower"];
-        cmd[i].shaderParameters["MieDistribution"] = atmoParams["MieDistribution"];
-        cmd[i].shaderParameters["LightDir"] = atmoParams["LightDir"];
-        cmd[i].shaderParameters["InvProj"] = atmoParams["InvProj"]; 
-        cmd[i].shaderParameters["InvViewRot"] = Variant(procSkyFaceRotations[i].rotationMatrix);
+        VariantMap atmoParams;
+        atmoParams["Kr"] = Kr;
+        atmoParams["RayleighBrightness"] = rayleighBrightness;
+        atmoParams["MieBrightness"] = mieBrightness;
+        atmoParams["SpotBrightness"] = spotBrightness;
+        atmoParams["ScatterStrength"] = scatterStrength;
+        atmoParams["RayleighStrength"] = rayleighStrength;
+        atmoParams["MieStrength"] = mieStrength;
+        atmoParams["RayleighCollectionPower"] = rayleighCollectionPower;
+        atmoParams["MieCollectionPower"] = mieCollectionPower;
+        atmoParams["MieDistribution"] = mieDistribution;
+        atmoParams["LightDir"] = Vector3(0.0f,-1.0f, 0.0f);
+        atmoParams["InvProj"] = procSkyCamera.projection.Inverse();
         
-        procSkyRenderPath.AddCommand(cmd[i]);
+        cmd.Clear();
+        cmd.Resize(MAX_CUBEMAP_FACES);
+        for (int i = 0; i < MAX_CUBEMAP_FACES; ++i) 
+        {
+            cmd[i].enabled = true;
+            cmd[i].blendMode = BLEND_REPLACE;
+            cmd[i].tag = "ProcSky";
+            cmd[i].type = CMD_QUAD;
+            cmd[i].sortMode = SORT_BACKTOFRONT;
+            cmd[i].pass = "postopaque";
+            cmd[i].SetOutput(0, "DiffProcSky", CubeMapFace(i));
+            cmd[i].vertexShaderName = "ProcSky";
+            cmd[i].vertexShaderDefines = "";
+            cmd[i].pixelShaderName = "ProcSky";
+            cmd[i].pixelShaderDefines = "";     
+            cmd[i].shaderParameters["Kr"] = atmoParams["Kr"];
+            cmd[i].shaderParameters["RayleighBrightness"] = atmoParams["RayleighBrightness"];
+            cmd[i].shaderParameters["MieBrightness"] = atmoParams["MieBrightness"];
+            cmd[i].shaderParameters["SpotBrightness"] = atmoParams["SpotBrightness"];
+            cmd[i].shaderParameters["ScatterStrength"] = atmoParams["ScatterStrength"];
+            cmd[i].shaderParameters["RayleighStrength"] = atmoParams["RayleighStrength"];
+            cmd[i].shaderParameters["MieStrength"] = atmoParams["MieStrength"];
+            cmd[i].shaderParameters["RayleighCollectionPower"] = atmoParams["RayleighCollectionPower"];
+            cmd[i].shaderParameters["MieDistribution"] = atmoParams["MieDistribution"];
+            cmd[i].shaderParameters["LightDir"] = atmoParams["LightDir"];
+            cmd[i].shaderParameters["InvProj"] = atmoParams["InvProj"]; 
+            cmd[i].shaderParameters["InvViewRot"] = Variant(procSkyFaceRotations[i].rotationMatrix);
+            
+            procSkyRenderPath.AddCommand(cmd[i]);
+        }
     }
+    
+    if (isRenderPathForLSInjected == false)
+        isRenderPathForLSInjected = true;
     
     //AddRenderPathCmdForLightScattering();
 }
@@ -319,7 +328,7 @@ void ProcSkyCheckKeys()
         SetProcSkyAsEnvCubemapForZonesByTag("tagProcSky", true);
 }
 
-void UpdateViewProcSky() 
+void UpdateViewProcSky()
 {
     // Early out
     if (editorScene is null || !procSkyShow) return;
@@ -330,13 +339,12 @@ void UpdateViewProcSky()
     
 		procSkyNode = editorScene.GetChild("ProcSkyContainer", true);
 
-		if (procSkyNode is null) 
+		if (procSkyNode is null)
 		{
 			procSkyNode = editorScene.CreateChild("ProcSkyContainer", LOCAL);
 			//procSkyNode.temporary = true;
 			procSkyRenderPath = activeViewport.viewport.renderPath;
 			CheckOrCreateProSkyStuff(true);
-			
 		}
         
         timeToNextProcSkyUpdate = time.systemTime + PROCSKY_STEP_UPDATE;
