@@ -30,8 +30,11 @@ void EditorSubscribeToEvents()
     SubscribeToEvent(EDITOR_EVENT_ORIGIN_START_HOVER, "EditorMainHandleOriginStartHover");
     SubscribeToEvent(EDITOR_EVENT_ORIGIN_END_HOVER, "EditorMainHandleOriginEndHover");
     
-    SubscribeToEvent("NodeAdded", "EditorMainHandlerNodeAdded");
-    SubscribeToEvent("NodeRemoved", "EditorMainHandlerNodeRemoved");
+    SubscribeToEvent("NodeAdded", "EditorMainHandleNodeAdded");
+    SubscribeToEvent("NodeRemoved", "EditorMainHandleNodeRemoved");
+    
+    SubscribeToEvent("NodeNameChanged", "EditorMainHandleNodeNameChanged");
+    
     
 }
 
@@ -158,14 +161,23 @@ void EditorMainHandleOriginEndHover(StringHash eventType, VariantMap& eventData)
 
 }
 
-void EditorMainHandlerNodeAdded(StringHash eventType, VariantMap& eventData)
+void EditorMainHandleNodeAdded(StringHash eventType, VariantMap& eventData)
 {
     HandleNodeAdded(eventType, eventData);
     rebuildSceneOrigins = true;
 }
-void EditorMainHandlerNodeRemoved(StringHash eventType, VariantMap& eventData)
+
+void EditorMainHandleNodeRemoved(StringHash eventType, VariantMap& eventData)
 {
     HandleNodeRemoved(eventType, eventData);
+    HandleSkyProcHelperNodeRemoved(eventType, eventData);
     rebuildSceneOrigins = true;
 }
+
+void EditorMainHandleNodeNameChanged(StringHash eventType, VariantMap& eventData)
+{
+    HandleNodeNameChanged(eventType, eventData);
+    HandleSkyProcHelperCheckNewNodeName(eventType, eventData);
+}
+
 

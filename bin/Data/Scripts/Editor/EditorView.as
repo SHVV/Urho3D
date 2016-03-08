@@ -2107,11 +2107,13 @@ void HandleBeginViewRender(StringHash eventType, VariantMap& eventData)
         }
     }
     
-    // Update light scattering params for split view
+    // Update ProcSky for each split view
     Camera@ cam = eventData["Camera"].GetPtr(); 
     if ( cam !is null) 
     {
-        UpdateSunPositionForLightScattering(cam);
+        suppressSceneChanges = true;
+        UpdateProcSkyPerViewSplit(cam);
+        suppressSceneChanges = false;
     }
 }
 

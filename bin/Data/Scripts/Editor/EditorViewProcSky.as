@@ -12,7 +12,7 @@ Skybox@ procSkySkyBox;
 Material@ procSkySkyBoxMaterial;
 TextureCube@  procSkyCubeTexture;
 RenderPath@ procSkyRenderPath;
-int procSkyRenderSize = 256;
+int procSkyRenderSize = 512;
 int procSkyRenderSizeLast = 0;
 bool procSkyRenderQueued = false;
 const int MAX_CUBEMAP_FACES = 6;
@@ -37,6 +37,7 @@ Texture2D@  LSTextureSunHalo;
 Node@ sunOriginNode;
 Window@ procSkyWindow;
 bool isNewSceneWasOpened = true;
+Node@ sunRotateNode;
 
 void ProcSkyCreateWindow() 
 {
@@ -110,6 +111,7 @@ void CheckOrCreateProSkyStuff(bool newOpenedScene, bool procSkyAllStuffTemporary
         procSkyLightNode = procSkyNode.CreateChild("ProcSkyLightNode");
         procSkyLightNode.worldRotation = Quaternion(40, 180, 0);
         procSkyLightNode.temporary = procSkyAllStuffTemporary;
+        
         
         if (procSkyLight is null || newOpenedScene) 
         {   
@@ -313,7 +315,7 @@ void SetProcSkyAsEnvCubemapForZonesByTag(String tagZone, bool forAll = false)
         nodesWithZones = editorScene.GetChildrenWithComponent("Zone", true);
 	
 	if (nodesWithZones.length > 0) 
-		for (int i=0 ; i<nodesWithZones.length; i++) 
+		for (int i=0; i<nodesWithZones.length; i++) 
 		{
             Zone@ zone = nodesWithZones[i].GetComponent("Zone");
             if (zone !is null && procSkyCubeTexture !is null) 
@@ -329,10 +331,10 @@ void ProcSkyCheckKeys()
         SetProcSkyAsEnvCubemapForZonesByTag("tagProcSky", true);
 }
 
-void UpdateViewProcSky()
+void UpdateProcSkyCommon() 
 {
     // Early out
-    if (editorScene is null || !procSkyShow) return;
+    //if (editorScene is null || !procSkyShow) return;
     
     // Check for container and other procSky stuff (1sec delay)
     if (timeToNextProcSkyUpdate < time.systemTime) 
@@ -348,10 +350,15 @@ void UpdateViewProcSky()
 			procSkyRenderPath = activeViewport.viewport.renderPath;
 			CheckOrCreateProSkyStuff(isNewSceneWasOpened, procSkyNode.temporary);
 		}
-        
+		        
         timeToNextProcSkyUpdate = time.systemTime + PROCSKY_STEP_UPDATE;
     }
     
+    // Copy roration from user's node into hidded ProSkyLight node
+    if (sunRotateNode !is null) 
+    {
+        procSkyLightNode.worldRotation = sunRotateNode.worldRotation;
+    }
    
     // Render ProcSky only: first time scene load, sun orientation was changed 
     if (isNewSceneWasOpened || (procSkyLightNodeLastRotation != procSkyLightNode.worldRotation)) 
@@ -369,13 +376,42 @@ void UpdateViewProcSky()
 		if (procSkyRenderQueued)
 			SetRenderQueued(false);
     }
+
+}
+
+void UpdateProcSkyPerViewSplit(Camera@ camera) 
+{
+    // Early out
+    if (editorScene is null || !procSkyShow) return;
     
+    // Check if camera in ortho mode hide ProcSky
+    if (camera.orthographic)
+    {
+        ProcSkyStuffEnabled(false);
+        return;
+    } 
+    else 
+    {
+        ProcSkyStuffEnabled(true);
+    }
+    
+    
+    Vector2 sunScreen = camera.WorldToScreenPoint(sunOriginNode.worldPosition);
+    sunScreen.y = 1.0 - sunScreen.y; 
+    renderPath.shaderParameters["LightPositionOnScreen"] = Variant(sunScreen);
+
+}
+
+void UpdateViewProcSky()
+{
+    if (editorScene is null || !procSkyShow) return;
+    
+    UpdateProcSkyCommon();
     
     // Each frame update stuff
     ProcSkyCheckKeys();
     UpdateShaderParameters(procSkyRenderPath);
-    
-    
+     
     if (isNewSceneWasOpened) isNewSceneWasOpened = false;
 } 
 
@@ -401,19 +437,12 @@ void UpdateShaderParameters(RenderPath@ renderPath)
     renderPath.shaderParameters["MieDistribution"] = Variant(mieDistribution);
     renderPath.shaderParameters["InvProj"] = Variant(procSkyCamera.projection.Inverse());
     
-    Vector2 sunScreen = activeViewport.viewport.camera.WorldToScreenPoint(sunOriginNode.worldPosition);
-    sunScreen.y = 1.0 - sunScreen.y;
-     
-    renderPath.shaderParameters["LightPositionOnScreen"] = Variant(sunScreen);
 }
 
-void UpdateSunPositionForLightScattering(Camera@ camera)
-{
-    if (!procSkyShow || renderPath is null || sunOriginNode is null) return;
-    //Camera@ camera = cast<Camera>(vcamera.Get());
-    Vector2 sunScreen = camera.WorldToScreenPoint(sunOriginNode.worldPosition);
-    sunScreen.y = 1.0 - sunScreen.y; 
-    renderPath.shaderParameters["LightPositionOnScreen"] = Variant(sunScreen);
+void ProcSkyStuffEnabled(bool visible) 
+{        
+    if (procSkyNode !is null)
+        procSkyNode.enabled = visible;
 }
 
 void SetRenderQueued(bool isQueued = true) 
@@ -468,6 +497,7 @@ String GetTextureCubeFaceName(CubeMapFace f)
     return ret;
 }
 
+
 void DumpTextureCube(TextureCube@ texCube, String filePath) 
 {
     if (texCube is null) return;
@@ -482,4 +512,31 @@ void DumpTextureCube(TextureCube@ texCube, String filePath)
             MessageBox(path);
         }
     }
+}
+
+void HandleSkyProcHelperCheckNewNodeName(StringHash eventType, VariantMap& eventData) 
+{
+    Node@ node = eventData["Node"].GetPtr();
+    if (node !is null)
+    {
+        // Try to find user's node for rotation sun (node for copy rotation)
+		if (sunRotateNode is null && node.name == "Sun")
+		{
+            sunRotateNode = node;
+		}
+    }
+}
+
+void HandleSkyProcHelperNodeRemoved(StringHash eventType, VariantMap& eventData) 
+{
+    Node@ node = eventData["Node"].GetPtr();
+    
+    if (node !is null) 
+    {
+		if (sunRotateNode is node) 
+		{
+            sunRotateNode = null;
+		}
+    }
+
 }

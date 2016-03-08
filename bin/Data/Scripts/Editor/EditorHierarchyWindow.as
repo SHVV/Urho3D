@@ -87,7 +87,6 @@ void CreateHierarchyWindow()
     SubscribeToEvent("DragDropFinish", "HandleDragDropFinish");
     SubscribeToEvent(editorScene, "ComponentAdded", "HandleComponentAdded");
     SubscribeToEvent(editorScene, "ComponentRemoved", "HandleComponentRemoved");
-    SubscribeToEvent(editorScene, "NodeNameChanged", "HandleNodeNameChanged");
     SubscribeToEvent(editorScene, "NodeEnabledChanged", "HandleNodeEnabledChanged");
     SubscribeToEvent(editorScene, "ComponentEnabledChanged", "HandleComponentEnabledChanged");
     SubscribeToEvent("TemporaryChanged", "HandleTemporaryChanged");
