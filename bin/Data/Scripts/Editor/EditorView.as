@@ -2106,6 +2106,13 @@ void HandleBeginViewRender(StringHash eventType, VariantMap& eventData)
             suppressSceneChanges = false;
         }
     }
+    
+    // Update light scattering params for split view
+    Camera@ cam = eventData["Camera"].GetPtr(); 
+    if ( cam !is null) 
+    {
+        UpdateSunPositionForLightScattering(cam);
+    }
 }
 
 void HandleEndViewRender(StringHash eventType, VariantMap& eventData)

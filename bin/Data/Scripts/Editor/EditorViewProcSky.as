@@ -1,8 +1,5 @@
 const int PROCSKY_STEP_UPDATE = 1000;
-const int PROCSKY_STEP_RENDER = 100;
 float timeToNextProcSkyUpdate = 0;
-float timeToNextProcSkyRender = 0;
-
 float psFOV = 89.5f; // It's important to keep this value with nearClip (0.5f) to have nice seamless cubemap 
 bool procSkyShow = true;
 Node@ procSkyNode;
@@ -38,8 +35,8 @@ const String tagLS = "LS";
 bool isRenderPathForLSInjected = false;
 Texture2D@  LSTextureSunHalo;
 Node@ sunOriginNode;
-
 Window@ procSkyWindow;
+bool isNewSceneWasOpened = true;
 
 void ProcSkyCreateWindow() 
 {
@@ -93,10 +90,9 @@ Color FromH255S100V100(float h, float s, float v, float a = 1.0f)
     return ret;
 }
 
-void CheckOrCreateProSkyStuff(bool newOpenedScene) 
+void CheckOrCreateProSkyStuff(bool newOpenedScene, bool procSkyAllStuffTemporary = true) 
 {
     if (editorScene is null || procSkyNode is null) return;
-    
     //ProcSkyCreateWindow();
     
     if (procSkyCamera is null || newOpenedScene) 
@@ -106,12 +102,14 @@ void CheckOrCreateProSkyStuff(bool newOpenedScene)
         procSkyCamera.farClip = 50.0f;
         procSkyCamera.nearClip = 0.5f;
         procSkyCamera.aspectRatio = 1.0;
+        procSkyCamera.temporary = procSkyAllStuffTemporary;
     }
     
     if (procSkyLightNode is null || newOpenedScene) 
     {
         procSkyLightNode = procSkyNode.CreateChild("ProcSkyLightNode");
         procSkyLightNode.worldRotation = Quaternion(40, 180, 0);
+        procSkyLightNode.temporary = procSkyAllStuffTemporary;
         
         if (procSkyLight is null || newOpenedScene) 
         {   
@@ -119,12 +117,14 @@ void CheckOrCreateProSkyStuff(bool newOpenedScene)
             procSkyLight.lightType = LIGHT_DIRECTIONAL;
             procSkyLightColor = FromH255S100V100(57.0f, 9.9f, 73.0f , 1.0);
             procSkyLight.color = procSkyLightColor;
+            procSkyLight.temporary = procSkyAllStuffTemporary;
         }
         
         if (sunOriginNode is null || newOpenedScene) 
         {
             sunOriginNode = procSkyLightNode.CreateChild("sunOriginNode");
             sunOriginNode.position = Vector3(0, 0, -100000);
+            sunOriginNode.temporary = procSkyAllStuffTemporary;
         }
     }
     
@@ -136,6 +136,7 @@ void CheckOrCreateProSkyStuff(bool newOpenedScene)
         procSkySkyBoxMaterial.SetTechnique(0, cache.GetResource("Technique","Techniques/DiffSkyboxLightScatteringMask.xml"));
         procSkySkyBoxMaterial.cullMode = CULL_NONE;
         procSkySkyBox.material = procSkySkyBoxMaterial;
+        procSkySkyBox.temporary = procSkyAllStuffTemporary;
         
     }
     
@@ -341,17 +342,19 @@ void UpdateViewProcSky()
 
 		if (procSkyNode is null)
 		{
+            isNewSceneWasOpened = true;
 			procSkyNode = editorScene.CreateChild("ProcSkyContainer", LOCAL);
-			//procSkyNode.temporary = true;
+			procSkyNode.temporary = true;
 			procSkyRenderPath = activeViewport.viewport.renderPath;
-			CheckOrCreateProSkyStuff(true);
+			CheckOrCreateProSkyStuff(isNewSceneWasOpened, procSkyNode.temporary);
 		}
         
         timeToNextProcSkyUpdate = time.systemTime + PROCSKY_STEP_UPDATE;
     }
     
-    // 32 ms
-    if ((timeToNextProcSkyRender < time.systemTime) || (procSkyLightNodeLastRotation != procSkyLightNode.worldRotation)) 
+   
+    // Render ProcSky only: first time scene load, sun orientation was changed 
+    if (isNewSceneWasOpened || (procSkyLightNodeLastRotation != procSkyLightNode.worldRotation)) 
     {
 		if (procSkyRenderPath !is null) 
 		{
@@ -360,7 +363,6 @@ void UpdateViewProcSky()
         }
         
         procSkyLightNodeLastRotation = procSkyLightNode.worldRotation;
-        timeToNextProcSkyRender = time.systemTime + PROCSKY_STEP_RENDER;
     } 
     else 
     {
@@ -373,6 +375,8 @@ void UpdateViewProcSky()
     ProcSkyCheckKeys();
     UpdateShaderParameters(procSkyRenderPath);
     
+    
+    if (isNewSceneWasOpened) isNewSceneWasOpened = false;
 } 
 
 void UpdateShaderParameters(RenderPath@ renderPath) 
@@ -397,10 +401,19 @@ void UpdateShaderParameters(RenderPath@ renderPath)
     renderPath.shaderParameters["MieDistribution"] = Variant(mieDistribution);
     renderPath.shaderParameters["InvProj"] = Variant(procSkyCamera.projection.Inverse());
     
-    Vector2 SunScreen = activeViewport.viewport.camera.WorldToScreenPoint(sunOriginNode.worldPosition);
-    SunScreen.y = 1.0 - SunScreen.y;
+    Vector2 sunScreen = activeViewport.viewport.camera.WorldToScreenPoint(sunOriginNode.worldPosition);
+    sunScreen.y = 1.0 - sunScreen.y;
      
-    renderPath.shaderParameters["LightPositionOnScreen"] = Variant(SunScreen);
+    renderPath.shaderParameters["LightPositionOnScreen"] = Variant(sunScreen);
+}
+
+void UpdateSunPositionForLightScattering(Camera@ camera)
+{
+    if (!procSkyShow || renderPath is null || sunOriginNode is null) return;
+    //Camera@ camera = cast<Camera>(vcamera.Get());
+    Vector2 sunScreen = camera.WorldToScreenPoint(sunOriginNode.worldPosition);
+    sunScreen.y = 1.0 - sunScreen.y; 
+    renderPath.shaderParameters["LightPositionOnScreen"] = Variant(sunScreen);
 }
 
 void SetRenderQueued(bool isQueued = true) 

@@ -153,7 +153,8 @@ void UpdateViewDebugIcons()
                 {
                     Component@ component = nodes[i].GetComponent(ComponentTypes[iconType]);
                     if (component is null) continue;
-
+                    if (component.temporary) continue;
+                    
                     Billboard@ bb = null;
                     Color finalIconColor = debugIconsColors[ICON_COLOR_DEFAULT];
                     float distance = (camPos - nodes[i].worldPosition).length;
