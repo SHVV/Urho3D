@@ -764,7 +764,7 @@ void View::SetCameraShaderParameters(Camera* camera, bool setProjection)
     }
 }
 
-void View::SetGBufferShaderParameters(const IntVector2& texSize, const IntRect& viewRect)
+void View::SetGBufferShaderParameters(const IntVector2& texSize, const IntRect& viewRect, const Vector2& viewOffset)
 {
     float texWidth = (float)texSize.x_;
     float texHeight = (float)texSize.y_;
@@ -784,6 +784,7 @@ void View::SetGBufferShaderParameters(const IntVector2& texSize, const IntRect& 
     float invSizeX = 1.0f / texWidth;
     float invSizeY = 1.0f / texHeight;
     graphics_->SetShaderParameter(PSP_GBUFFERINVSIZE, Vector2(invSizeX, invSizeY));
+    graphics_->SetShaderParameter(PSP_GBUFFEROFFSET, viewOffset);
 }
 
 void View::GetDrawables()
@@ -1811,7 +1812,8 @@ void View::RenderQuad(RenderPathCommand& command)
     // During renderpath commands the G-Buffer or viewport texture is assumed to always be viewport-sized
     IntRect viewport = graphics_->GetViewport();
     IntVector2 viewSize = IntVector2(viewport.Width(), viewport.Height());
-    SetGBufferShaderParameters(viewSize, IntRect(0, 0, viewSize.x_, viewSize.y_));
+    Vector2 viewOffset = Vector2(viewport.left_, viewport.top_);
+    SetGBufferShaderParameters(viewSize, IntRect(0, 0, viewSize.x_, viewSize.y_), viewOffset);
 
     // Set per-rendertarget inverse size / offset shader parameters as necessary
     for (unsigned i = 0; i < renderPath_->renderTargets_.Size(); ++i)
@@ -2079,7 +2081,7 @@ void View::BlitFramebuffer(Texture* source, RenderSurface* destination, bool dep
     static const String shaderName("CopyFramebuffer");
     graphics_->SetShaders(graphics_->GetShader(VS, shaderName), graphics_->GetShader(PS, shaderName));
 
-    SetGBufferShaderParameters(srcSize, srcRect);
+    SetGBufferShaderParameters(srcSize, srcRect, Vector2(0, 0));
 
     graphics_->SetTexture(TU_DIFFUSE, source);
     DrawFullscreenQuad(false);

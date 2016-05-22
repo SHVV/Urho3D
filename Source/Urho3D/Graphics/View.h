@@ -179,7 +179,7 @@ public:
     /// Set camera-specific shader parameters. Called by Batch and internally by View.
     void SetCameraShaderParameters(Camera* camera, bool setProjectionMatrix);
     /// Set G-buffer offset and inverse size shader parameters. Called by Batch and internally by View.
-    void SetGBufferShaderParameters(const IntVector2& texSize, const IntRect& viewRect);
+    void SetGBufferShaderParameters(const IntVector2& texSize, const IntRect& viewRect, const Vector2& viewOffset);
 
     /// Draw a fullscreen quad. Shaders and renderstates must have been set beforehand.
     void DrawFullscreenQuad(bool nearQuad);

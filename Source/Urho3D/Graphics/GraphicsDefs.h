@@ -336,6 +336,7 @@ extern URHO3D_API const StringHash PSP_ELAPSEDTIME;
 extern URHO3D_API const StringHash PSP_FOGCOLOR;
 extern URHO3D_API const StringHash PSP_FOGPARAMS;
 extern URHO3D_API const StringHash PSP_GBUFFERINVSIZE;
+extern URHO3D_API const StringHash PSP_GBUFFEROFFSET;
 extern URHO3D_API const StringHash PSP_LIGHTCOLOR;
 extern URHO3D_API const StringHash PSP_LIGHTDIR;
 extern URHO3D_API const StringHash PSP_LIGHTPOS;

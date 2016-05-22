@@ -1996,7 +1996,7 @@ void Renderer::BlurShadowMap(View* view, Texture2D* shadowMap)
     ShaderVariation* ps = graphics_->GetShader(PS, shaderName);
     graphics_->SetShaders(vs, ps);
 
-    view->SetGBufferShaderParameters(IntVector2(shadowMap->GetWidth(), shadowMap->GetHeight()), IntRect(0, 0, shadowMap->GetWidth(), shadowMap->GetHeight()));
+    view->SetGBufferShaderParameters(IntVector2(shadowMap->GetWidth(), shadowMap->GetHeight()), IntRect(0, 0, shadowMap->GetWidth(), shadowMap->GetHeight()), Vector2(0, 0));
 
     // Horizontal blur of the shadow map
     static const StringHash blurOffsetParam("BlurOffsets");
