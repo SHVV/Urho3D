@@ -45,6 +45,7 @@ class RenderSurface;
 class ResourceCache;
 class Skeleton;
 class OcclusionBuffer;
+class Technique;
 class Texture;
 class Texture2D;
 class TextureCube;
@@ -63,6 +64,9 @@ enum LightVSVariation
     LVS_SHADOW,
     LVS_SPOTSHADOW,
     LVS_POINTSHADOW,
+    LVS_SHADOWNORMALOFFSET,
+    LVS_SPOTSHADOWNORMALOFFSET,
+    LVS_POINTSHADOWNORMALOFFSET,
     MAX_LIGHT_VS_VARIATIONS
 };
 
@@ -161,6 +165,14 @@ enum DeferredLightPSVariation
     DLPS_SPOTSHADOWSPEC,
     DLPS_POINTSHADOWSPEC,
     DLPS_POINTMASKSHADOWSPEC,
+    DLPS_SHADOWNORMALOFFSET,
+    DLPS_SPOTSHADOWNORMALOFFSET,
+    DLPS_POINTSHADOWNORMALOFFSET,
+    DLPS_POINTMASKSHADOWNORMALOFFSET,
+    DLPS_SHADOWSPECNORMALOFFSET,
+    DLPS_SPOTSHADOWSPECNORMALOFFSET,
+    DLPS_POINTSHADOWSPECNORMALOFFSET,
+    DLPS_POINTMASKSHADOWSPECNORMALOFFSET,
     DLPS_ORTHO,
     DLPS_ORTHOSPOT,
     DLPS_ORTHOPOINT,
@@ -177,6 +189,14 @@ enum DeferredLightPSVariation
     DLPS_ORTHOSPOTSHADOWSPEC,
     DLPS_ORTHOPOINTSHADOWSPEC,
     DLPS_ORTHOPOINTMASKSHADOWSPEC,
+    DLPS_ORTHOSHADOWNORMALOFFSET,
+    DLPS_ORTHOSPOTSHADOWNORMALOFFSET,
+    DLPS_ORTHOPOINTSHADOWNORMALOFFSET,
+    DLPS_ORTHOPOINTMASKSHADOWNORMALOFFSET,
+    DLPS_ORTHOSHADOWSPECNORMALOFFSET,
+    DLPS_ORTHOSPOTSHADOWSPECNORMALOFFSET,
+    DLPS_ORTHOPOINTSHADOWSPECNORMALOFFSET,
+    DLPS_ORTHOPOINTMASKSHADOWSPECNORMALOFFSET,
     MAX_DEFERRED_LIGHT_PS_VARIATIONS
 };
 
@@ -201,6 +221,8 @@ public:
     void SetDefaultRenderPath(RenderPath* renderPath);
     /// Set default renderpath from an XML file.
     void SetDefaultRenderPath(XMLFile* file);
+    /// Set default non-textured material technique.
+    void SetDefaultTechnique(Technique* tech);
     /// Set HDR rendering on/off.
     void SetHDRRendering(bool enable);
     /// Set specular lighting on/off.
@@ -245,8 +267,10 @@ public:
     void SetThreadedOcclusion(bool enable);
     /// Set shadow depth bias multiplier for mobile platforms (OpenGL ES.) No effect on desktops. Default 2.
     void SetMobileShadowBiasMul(float mul);
-    /// Set shadow depth bias addition for mobile platforms (OpenGL ES.)  No effect on desktops. Default 0.0001.
+    /// Set shadow depth bias addition for mobile platforms (OpenGL ES.) No effect on desktops. Default 0.0001.
     void SetMobileShadowBiasAdd(float add);
+    /// Set shadow normal offset multiplier for mobile platforms (OpenGL ES.) No effect on desktops. Default 2.
+    void SetMobileNormalOffsetMul(float mul);
     /// Force reload of shaders.
     void ReloadShaders();
 
@@ -260,6 +284,8 @@ public:
     Viewport* GetViewport(unsigned index) const;
     /// Return default renderpath.
     RenderPath* GetDefaultRenderPath() const;
+    /// Return default non-textured material technique.
+    Technique* GetDefaultTechnique() const;
 
     /// Return whether HDR rendering is enabled.
     bool GetHDRRendering() const { return hdrRendering_; }
@@ -326,6 +352,9 @@ public:
 
     /// Return shadow depth bias addition for mobile platforms.
     float GetMobileShadowBiasAdd() const { return mobileShadowBiasAdd_; }
+
+    /// Return shadow normal offset multiplier for mobile platforms.
+    float GetMobileNormalOffsetMul() const { return mobileNormalOffsetMul_; }
 
     /// Return number of views rendered.
     unsigned GetNumViews() const { return views_.Size(); }
@@ -440,6 +469,8 @@ private:
     void CreateInstancingBuffer();
     /// Create point light shadow indirection texture data.
     void SetIndirectionTextureData();
+    /// Update a queued viewport for rendering.
+    void UpdateQueuedViewport(unsigned index);
     /// Prepare for rendering of a new view.
     void PrepareViewRender();
     /// Remove unused occlusion and screen buffers.
@@ -458,13 +489,15 @@ private:
     void HandleScreenMode(StringHash eventType, VariantMap& eventData);
     /// Handle render update event.
     void HandleRenderUpdate(StringHash eventType, VariantMap& eventData);
-    /// Blur the shadow map
+    /// Blur the shadow map.
     void BlurShadowMap(View* view, Texture2D* shadowMap);
 
     /// Graphics subsystem.
     WeakPtr<Graphics> graphics_;
     /// Default renderpath.
     SharedPtr<RenderPath> defaultRenderPath_;
+    /// Default non-textured material technique.
+    SharedPtr<Technique> defaultTechnique_;
     /// Default zone.
     SharedPtr<Zone> defaultZone_;
     /// Directional light quad geometry.
@@ -557,6 +590,8 @@ private:
     float mobileShadowBiasMul_;
     /// Mobile platform shadow depth bias addition.
     float mobileShadowBiasAdd_;
+    /// Mobile platform shadow normal offset multiplier.
+    float mobileNormalOffsetMul_;
     /// Number of occlusion buffers in use.
     unsigned numOcclusionBuffers_;
     /// Number of temporary shadow cameras in use.
