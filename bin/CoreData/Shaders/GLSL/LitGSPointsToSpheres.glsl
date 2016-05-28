@@ -59,7 +59,7 @@ layout(triangle_strip, max_vertices = 4) out;
   out vec4 gColor;
 #endif
 
-out vec4 gWorldPos;
+out vec3 gWorldPos;
 
 in vec3 vVertexLight[1];
 out vec3 gVertexLight;
@@ -89,7 +89,12 @@ void GS()
 
   float size = cRadius * 1;
 
+#ifndef SHADOW_MAP
   toCamera *= size;
+#else
+  toCamera = vec3(0);
+#endif
+  //size *= 2;
   quad[0] = iPos.xyz - (right + up) * size;
   quad[1] = iPos.xyz - (right - up) * size;
   quad[2] = iPos.xyz + (right - up) * size;
@@ -98,11 +103,20 @@ void GS()
   for (int i = 0; i < 4; i++) {
     vec4 quadVertexWp = vec4(quad[i].xyz + toCamera, iPos.w);
     gl_Position = quadVertexWp * cProj;
-    gWorldPos = vec4(iPos.xyz, GetDepth(gl_Position));
+#ifdef SHADOW_MAP
+    if (ortographic) {
+      gWorldPos = vec3(iPos.xy, 0);
+    } else {
+      gWorldPos = vec3(iPos.xyz);
+    }
+#else 
+    gWorldPos = vec3(iPos.xyz);
+#endif
+
 #ifdef VERTEXCOLOR
     gColor = vColor[0];
 #endif
-    vec4 WorldPos = vec4(iPos.xyz, 1.0) * cViewInv;
+    //vec4 WorldPos = vec4(iPos.xyz, 1.0) * cViewInv;
     gVertexLight = vVertexLight[0];
     EmitVertex();
   }
@@ -113,7 +127,7 @@ void GS()
 //---------------------------------------------PS-----------------------------------------------------
 #ifdef COMPILEPS
 
-in vec4 gWorldPos;
+in vec3 gWorldPos;
 
 #ifdef VERTEXCOLOR
 varying vec4 gColor;
@@ -165,31 +179,33 @@ vec4 GetShadowPos(int index, vec4 projWorldPos)
 
 void PS()
 {
+  //return;
 #ifdef SHADOW_MAP
-  return;
+  //return;
 #endif
-  vec3 ray_vec = cDepthReconstruct.x == 1.0 ?
-    vec3(0, 0, 1) :
-    normalize(vec3(((gl_FragCoord.xy - cGBufferOffset) * cGBufferInvSize.xy - vec2(0.5, 0.5)) * 2 * cFrustumSize.xy, cFrustumSize.z));
+  bool ortho = cDepthReconstruct.x == 1.0;
+  vec2 uv = ((gl_FragCoord.xy - cGBufferOffset) * cGBufferInvSize.xy - vec2(0.5, 0.5)) * 2 * cFrustumSize.xy;
+  vec3 ray_vec = ortho ? vec3(0, 0, 1.0) : normalize(vec3(uv, cFrustumSize.z));
   ray_vec.y = -ray_vec.y;
-  vec3 origin = cDepthReconstruct.x == 1.0 ?
-    vec3(((gl_FragCoord.xy - cGBufferOffset) * cGBufferInvSize.xy - vec2(0.5, 0.5)) * 2 * cFrustumSize.xy, 0) :
-    vec3(0, 0, 0);
+  vec3 origin = ortho ? vec3(uv, 0) : vec3(0, 0, 0);
   origin.y = -origin.y;
   //vec3 ray_vec = vec3((gl_FragCoord.xy - cGBufferOffset) * cGBufferInvSize.xy, 0);
   //vec3 norm_pos = gWorldPos.xyz - origin;
   //gl_FragColor = vec4(ray_vec.xyz, 1.0);
   //return;
+  //gWorldPos.z *= 1.5;
+  vec3 vew_pos = gWorldPos - origin;
+
   float a = 1;
-  float b = -2 * dot(ray_vec, gWorldPos.xyz - origin);
-  float c = dot(gWorldPos.xyz - origin, gWorldPos.xyz - origin) - cRadius * cRadius;
+  float b = -2 * dot(ray_vec, vew_pos);
+  float c = dot(vew_pos, vew_pos) - cRadius * cRadius;
   float D = b * b - 4 * a * c;
   if (D < 0) {
     discard;
   }
   float t = (-b - sqrt(D)) / (2 * a);
   vec3 pos = ray_vec * t + origin;
-  vec3 normal = normalize(pos - gWorldPos.xyz);
+  vec3 normal = normalize(pos - gWorldPos);
   vec4 proj_pos = vec4(pos, 1.0) * cProj;
   vec4 WorldPos = vec4((vec4(pos, 1.0) * cViewInv).xyz, GetDepth(proj_pos));
   gl_FragDepth = 0.5 * (proj_pos.z / proj_pos.w) + 0.5;
