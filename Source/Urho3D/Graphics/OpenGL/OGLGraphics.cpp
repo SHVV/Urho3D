@@ -2851,18 +2851,17 @@ PrimitiveType Graphics::GetEffectivePrimitiveTypeOverGSInput(PrimitiveType primi
             return LINE_STRIP;
             break;
         }
-        case PrimitivesInputMode::PRIMITIVES_TRIANGLES_LIST:
-        {
-            return TRIANGLE_LIST;
-            break;
-        }
         case PrimitivesInputMode::PRIMITIVES_TRIANGLES_STRIP:
         {
             return TRIANGLE_STRIP;
             break;
         }
+        case PrimitivesInputMode::PRIMITIVES_TRIANGLES_LIST:
         default:
-            return TRIANGLE_LIST;
+        {
+            return primitiveType_;
+            break;
+        }
     }
 }
 
