@@ -51,6 +51,7 @@ class Texture2D;
 class TextureCube;
 class View;
 class Zone;
+struct BatchQueue;
 
 static const int SHADOW_MIN_PIXELS = 64;
 static const int INSTANCING_BUFFER_DEFAULT_SIZE = 1024;
@@ -194,9 +195,9 @@ public:
     void SetHDRRendering(bool enable);
     /// Set specular lighting on/off.
     void SetSpecularLighting(bool enable);
-    /// Set texture anisotropy.
+    /// Set default texture max anisotropy level.
     void SetTextureAnisotropy(int level);
-    /// Set texture filtering.
+    /// Set default texture filtering.
     void SetTextureFilterMode(TextureFilterMode mode);
     /// Set texture quality level. See the QUALITY constants in GraphicsDefs.h.
     void SetTextureQuality(int quality);
@@ -212,14 +213,18 @@ public:
     void SetShadowSoftness(float shadowSoftness);
     /// Set shadow parameters when VSM is used, they help to reduce light bleeding. LightBleeding must be in [0, 1[
     void SetVSMShadowParameters(float minVariance, float lightBleedingReduction);
+    /// Set VSM shadow map multisampling level. Default 1 (no multisampling.)
+    void SetVSMMultiSample(int multiSample);
     /// Set post processing filter to the shadow map
     void SetShadowMapFilter(Object* instance, ShadowMapFilter functionPtr);
     /// Set reuse of shadow maps. Default is true. If disabled, also transparent geometry can be shadowed.
     void SetReuseShadowMaps(bool enable);
     /// Set maximum number of shadow maps created for one resolution. Only has effect if reuse of shadow maps is disabled.
     void SetMaxShadowMaps(int shadowMaps);
-    /// Set dynamic instancing on/off.
+    /// Set dynamic instancing on/off. When on (default), drawables using the same static-type geometry and material will be automatically combined to an instanced draw call.
     void SetDynamicInstancing(bool enable);
+    /// Set number of extra instancing buffer elements. Default is 0. Extra 4-vectors are available through TEXCOORD7 and further.
+    void SetNumExtraInstancingBufferElements(int elements);
     /// Set minimum number of instances required in a batch group to render as instanced.
     void SetMinInstances(int instances);
     /// Set maximum number of sorted instances per batch group. If exceeded, instances are rendered unsorted.
@@ -232,11 +237,11 @@ public:
     void SetOccluderSizeThreshold(float screenSize);
     /// Set whether to thread occluder rendering. Default false.
     void SetThreadedOcclusion(bool enable);
-    /// Set shadow depth bias multiplier for mobile platforms (OpenGL ES.) No effect on desktops. Default 2.
+    /// Set shadow depth bias multiplier for mobile platforms to counteract possible worse shadow map precision. Default 1.0 (no effect.)
     void SetMobileShadowBiasMul(float mul);
-    /// Set shadow depth bias addition for mobile platforms (OpenGL ES.) No effect on desktops. Default 0.0001.
+    /// Set shadow depth bias addition for mobile platforms to counteract possible worse shadow map precision. Default 0.0 (no effect.)
     void SetMobileShadowBiasAdd(float add);
-    /// Set shadow normal offset multiplier for mobile platforms (OpenGL ES.) No effect on desktops. Default 2.
+    /// Set shadow normal offset multiplier for mobile platforms to counteract possible worse shadow map precision. Default 1.0 (no effect.)
     void SetMobileNormalOffsetMul(float mul);
     /// Force reload of shaders.
     void ReloadShaders();
@@ -263,10 +268,10 @@ public:
     /// Return whether drawing shadows is enabled.
     bool GetDrawShadows() const { return drawShadows_; }
 
-    /// Return texture anisotropy.
+    /// Return default texture max. anisotropy level.
     int GetTextureAnisotropy() const { return textureAnisotropy_; }
 
-    /// Return texture filtering.
+    /// Return default texture filtering mode.
     TextureFilterMode GetTextureFilterMode() const { return textureFilterMode_; }
 
     /// Return texture quality level.
@@ -284,8 +289,11 @@ public:
     /// Return shadow softness.
     float GetShadowSoftness() const { return shadowSoftness_; }
 
-    /// Return VSM shadow parameters
+    /// Return VSM shadow parameters.
     Vector2 GetVSMShadowParameters() const { return vsmShadowParams_; };
+
+    /// Return VSM shadow multisample level.
+    int GetVSMMultiSample() const { return vsmMultiSample_; }
 
     /// Return whether shadow maps are reused.
     bool GetReuseShadowMaps() const { return reuseShadowMaps_; }
@@ -295,6 +303,9 @@ public:
 
     /// Return whether dynamic instancing is in use.
     bool GetDynamicInstancing() const { return dynamicInstancing_; }
+
+    /// Return number of extra instancing buffer elements.
+    int GetNumExtraInstancingBufferElements() const { return numExtraInstancingBufferElements_; };
 
     /// Return minimum number of instances required in a batch group to render as instanced.
     int GetMinInstances() const { return minInstances_; }
@@ -384,9 +395,9 @@ public:
     Texture2D* GetShadowMap(Light* light, Camera* camera, unsigned viewWidth, unsigned viewHeight);
     /// Allocate a rendertarget or depth-stencil texture for deferred rendering or postprocessing. Should only be called during actual rendering, not before.
     Texture* GetScreenBuffer
-        (int width, int height, unsigned format, bool cubemap, bool filtered, bool srgb, unsigned persistentKey = 0);
+        (int width, int height, unsigned format, int multiSample, bool autoResolve, bool cubemap, bool filtered, bool srgb, unsigned persistentKey = 0);
     /// Allocate a depth-stencil surface that does not need to be readable. Should only be called during actual rendering, not before.
-    RenderSurface* GetDepthStencil(int width, int height);
+    RenderSurface* GetDepthStencil(int width, int height, int multiSample, bool autoResolve);
     /// Allocate an occlusion buffer.
     OcclusionBuffer* GetOcclusionBuffer(Camera* camera);
     /// Allocate a temporary shadow camera and a scene node for it. Is thread-safe.
@@ -395,8 +406,8 @@ public:
     void StorePreparedView(View* view, Camera* cullCamera);
     /// Return a prepared view if exists for the specified camera. Used to avoid duplicate view preparation CPU work.
     View* GetPreparedView(Camera* cullCamera);
-    /// Choose shaders for a forward rendering batch.
-    void SetBatchShaders(Batch& batch, Technique* tech, bool allowShadows = true);
+    /// Choose shaders for a forward rendering batch. The related batch queue is provided in case it has extra shader compilation defines.
+    void SetBatchShaders(Batch& batch, Technique* tech, bool allowShadows, const BatchQueue& queue);
     /// Choose shaders for a deferred light volume batch.
     void SetLightVolumeBatchShaders
         (Batch& batch, Camera* camera, const String& vsName, const String& psName, const String& vsDefines, const String& psDefines);
@@ -423,8 +434,8 @@ private:
     void Initialize();
     /// Reload shaders.
     void LoadShaders();
-    /// Reload shaders for a material pass.
-    void LoadPassShaders(Pass* pass);
+    /// Reload shaders for a material pass. The related batch queue is provided in case it has extra shader compilation defines.
+    void LoadPassShaders(Pass* pass, Vector<SharedPtr<ShaderVariation> >& vertexShaders, Vector<SharedPtr<ShaderVariation> >& pixelShaders, const BatchQueue& queue);
     /// Release shaders used in materials.
     void ReleaseMaterialShaders();
     /// Reload textures.
@@ -540,6 +551,8 @@ private:
     float shadowSoftness_;
     /// Shadow parameters when VSM is used, they help to reduce light bleeding.
     Vector2 vsmShadowParams_;
+    /// Multisample level for VSM shadows.
+    int vsmMultiSample_;
     /// Maximum number of shadow maps per resolution.
     int maxShadowMaps_;
     /// Minimum number of instances required in a batch group to render as instanced.
@@ -580,6 +593,8 @@ private:
     bool reuseShadowMaps_;
     /// Dynamic instancing flag.
     bool dynamicInstancing_;
+    /// Number of extra instancing data elements.
+    int numExtraInstancingBufferElements_;
     /// Threaded occlusion rendering flag.
     bool threadedOcclusion_;
     /// Shaders need reloading flag.

@@ -212,6 +212,10 @@ public:
     bool RemoveGesture(unsigned gestureID);
     /// Remove all in-memory gestures.
     void RemoveAllGestures();
+    /// Set the mouse cursor position.
+    void SetMousePosition(const IntVector2& position);
+    /// Center the mouse position.
+    void CenterMousePosition();
 
     /// Return keycode from key name.
     int GetKeyFromName(const String& name) const;
@@ -328,10 +332,6 @@ private:
     void SetKey(int key, int scancode, bool newState);
     /// Handle mouse wheel change.
     void SetMouseWheel(int delta);
-    /// Internal function to set the mouse cursor position.
-    void SetMousePosition(const IntVector2& position);
-    /// Center the mouse position.
-    void CenterMousePosition();
     /// Suppress next mouse movement.
     void SuppressNextMouseMove();
     /// Unsuppress mouse movement.
@@ -423,16 +423,12 @@ private:
     bool focusedThisFrame_;
     /// Next mouse move suppress flag.
     bool suppressNextMouseMove_;
-    /// Handling a window resize event flag.
-    bool inResize_;
-    /// Flag for automatic focus (without click inside window) after screen mode change, needed on Linux.
-    bool screenModeChanged_;
     /// Initialized flag.
     bool initialized_;
 
 #ifdef __EMSCRIPTEN__
     /// Emscripten Input glue instance.
-    EmscriptenInput* emscriptenInput_;
+    UniquePtr<EmscriptenInput> emscriptenInput_;
     /// Flag used to detect mouse jump when exiting pointer-lock.
     bool emscriptenExitingPointerLock_;
     /// Flag used to detect mouse jump on initial mouse click when entering pointer-lock.

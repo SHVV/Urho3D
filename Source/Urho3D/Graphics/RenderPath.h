@@ -43,7 +43,8 @@ enum RenderCommandType
     CMD_QUAD,
     CMD_FORWARDLIGHTS,
     CMD_LIGHTVOLUMES,
-    CMD_RENDERUI
+    CMD_RENDERUI,
+    CMD_SENDEVENT
 };
 
 /// Rendering path sorting modes.
@@ -68,6 +69,8 @@ struct URHO3D_API RenderTargetInfo
     RenderTargetInfo() :
         size_(Vector2::ZERO),
         sizeMode_(SIZE_ABSOLUTE),
+        multiSample_(1),
+        autoResolve_(true),
         enabled_(true),
         cubemap_(false),
         filtered_(false),
@@ -89,6 +92,10 @@ struct URHO3D_API RenderTargetInfo
     Vector2 size_;
     /// Size mode.
     RenderTargetSizeMode sizeMode_;
+    /// Multisampling level (1 = no multisampling).
+    int multiSample_;
+    /// Multisampling autoresolve flag.
+    bool autoResolve_;
     /// Enabled flag.
     bool enabled_;
     /// Cube map flag.
@@ -199,6 +206,8 @@ struct URHO3D_API RenderPathCommand
     bool useLitBase_;
     /// Vertex lights flag.
     bool vertexLights_;
+    /// Event name.
+    String eventName_;
 };
 
 /// Rendering path definition. A sequence of commands (e.g. clear screen, draw objects with specific pass) that yields the scene rendering result.

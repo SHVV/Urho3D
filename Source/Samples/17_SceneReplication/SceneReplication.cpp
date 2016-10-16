@@ -99,7 +99,6 @@ void SceneReplication::CreateScene()
 {
     scene_ = new Scene(context_);
 
-    // Create scene content on the server only
     ResourceCache* cache = GetSubsystem<ResourceCache>();
 
     // Create octree and physics world with default settings. Create them as local so that they are not needlessly replicated
@@ -366,10 +365,10 @@ void SceneReplication::HandlePhysicsPreStep(StringHash eventType, VariantMap& ev
         // Only apply WASD controls if there is no focused UI element
         if (!ui->GetFocusElement())
         {
-            controls.Set(CTRL_FORWARD, input->GetKeyDown('W'));
-            controls.Set(CTRL_BACK, input->GetKeyDown('S'));
-            controls.Set(CTRL_LEFT, input->GetKeyDown('A'));
-            controls.Set(CTRL_RIGHT, input->GetKeyDown('D'));
+            controls.Set(CTRL_FORWARD, input->GetKeyDown(KEY_W));
+            controls.Set(CTRL_BACK, input->GetKeyDown(KEY_S));
+            controls.Set(CTRL_LEFT, input->GetKeyDown(KEY_A));
+            controls.Set(CTRL_RIGHT, input->GetKeyDown(KEY_D));
         }
 
         serverConnection->SetControls(controls);

@@ -243,6 +243,19 @@ void DynamicGeometry::CreateScene()
         fromScratchModel->SetGeometry(0, 0, geom);
         fromScratchModel->SetBoundingBox(BoundingBox(Vector3(-0.5f, -0.5f, -0.5f), Vector3(0.5f, 0.5f, 0.5f)));
 
+        // Though not necessary to render, the vertex & index buffers must be listed in the model so that it can be saved properly
+        Vector<SharedPtr<VertexBuffer> > vertexBuffers;
+        Vector<SharedPtr<IndexBuffer> > indexBuffers;
+        vertexBuffers.Push(vb);
+        indexBuffers.Push(ib);
+        // Morph ranges could also be not defined. Here we simply define a zero range (no morphing) for the vertex buffer
+        PODVector<unsigned> morphRangeStarts;
+        PODVector<unsigned> morphRangeCounts;
+        morphRangeStarts.Push(0);
+        morphRangeCounts.Push(0);
+        fromScratchModel->SetVertexBuffers(vertexBuffers, morphRangeStarts, morphRangeCounts);
+        fromScratchModel->SetIndexBuffers(indexBuffers);
+
         Node* node = scene_->CreateChild("FromScratchObject");
         node->SetPosition(Vector3(0.0f, 3.0f, 0.0f));
         StaticModel* object = node->CreateComponent<StaticModel>();
@@ -315,13 +328,13 @@ void DynamicGeometry::MoveCamera(float timeStep)
     cameraNode_->SetRotation(Quaternion(pitch_, yaw_, 0.0f));
 
     // Read WASD keys and move the camera scene node to the corresponding direction if they are pressed
-    if (input->GetKeyDown('W'))
+    if (input->GetKeyDown(KEY_W))
         cameraNode_->Translate(Vector3::FORWARD * MOVE_SPEED * timeStep);
-    if (input->GetKeyDown('S'))
+    if (input->GetKeyDown(KEY_S))
         cameraNode_->Translate(Vector3::BACK * MOVE_SPEED * timeStep);
-    if (input->GetKeyDown('A'))
+    if (input->GetKeyDown(KEY_A))
         cameraNode_->Translate(Vector3::LEFT * MOVE_SPEED * timeStep);
-    if (input->GetKeyDown('D'))
+    if (input->GetKeyDown(KEY_D))
         cameraNode_->Translate(Vector3::RIGHT * MOVE_SPEED * timeStep);
 }
 

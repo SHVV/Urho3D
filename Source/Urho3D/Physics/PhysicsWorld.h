@@ -96,6 +96,34 @@ struct DelayedWorldTransform
     Quaternion worldRotation_;
 };
 
+/// Manifold pointers stored during collision processing.
+struct ManifoldPair
+{
+    /// Construct with defaults.
+    ManifoldPair() :
+        manifold_(0),
+        flippedManifold_(0)
+    {
+    }
+
+    /// Manifold without the body pointers flipped.
+    btPersistentManifold* manifold_;
+    /// Manifold with the body pointers flipped.
+    btPersistentManifold* flippedManifold_;
+};
+
+/// Custom overrides of physics internals. To use overrides, must be set before the physics component is created.
+struct PhysicsWorldConfig
+{
+    PhysicsWorldConfig() :
+        collisionConfig_(0)
+    {
+    }
+
+    /// Override for the collision configuration (default btDefaultCollisionConfiguration).
+    btCollisionConfiguration* collisionConfig_;
+};
+
 static const float DEFAULT_MAX_NETWORK_ANGULAR_VELOCITY = 100.0f;
 
 /// Physics simulation world component. Should be added only to the root scene node.
@@ -233,7 +261,7 @@ public:
     void SetDebugDepthTest(bool enable);
 
     /// Return the Bullet physics world.
-    btDiscreteDynamicsWorld* GetWorld() { return world_; }
+    btDiscreteDynamicsWorld* GetWorld() { return world_.Get(); }
 
     /// Clean up the geometry cache.
     void CleanupGeometryCache();
@@ -253,6 +281,9 @@ public:
     /// Return whether is currently inside the Bullet substep loop.
     bool IsSimulating() const { return simulating_; }
 
+    /// Overrides of the internal configuration.
+    static struct PhysicsWorldConfig config;
+
 protected:
     /// Handle scene being assigned.
     virtual void OnSceneSet(Scene* scene);
@@ -270,13 +301,13 @@ private:
     /// Bullet collision configuration.
     btCollisionConfiguration* collisionConfiguration_;
     /// Bullet collision dispatcher.
-    btDispatcher* collisionDispatcher_;
+    UniquePtr<btDispatcher> collisionDispatcher_;
     /// Bullet collision broadphase.
-    btBroadphaseInterface* broadphase_;
+    UniquePtr<btBroadphaseInterface> broadphase_;
     /// Bullet constraint solver.
-    btConstraintSolver* solver_;
+    UniquePtr<btConstraintSolver> solver_;
     /// Bullet physics world.
-    btDiscreteDynamicsWorld* world_;
+    UniquePtr<btDiscreteDynamicsWorld> world_;
     /// Extra weak pointer to scene to allow for cleanup in case the world is destroyed before other components.
     WeakPtr<Scene> scene_;
     /// Rigid bodies in the world.
@@ -286,9 +317,9 @@ private:
     /// Constraints in the world.
     PODVector<Constraint*> constraints_;
     /// Collision pairs on this frame.
-    HashMap<Pair<WeakPtr<RigidBody>, WeakPtr<RigidBody> >, btPersistentManifold*> currentCollisions_;
+    HashMap<Pair<WeakPtr<RigidBody>, WeakPtr<RigidBody> >, ManifoldPair> currentCollisions_;
     /// Collision pairs on the previous frame. Used to check if a collision is "new." Manifolds are not guaranteed to exist anymore.
-    HashMap<Pair<WeakPtr<RigidBody>, WeakPtr<RigidBody> >, btPersistentManifold*> previousCollisions_;
+    HashMap<Pair<WeakPtr<RigidBody>, WeakPtr<RigidBody> >, ManifoldPair> previousCollisions_;
     /// Delayed (parented) world transform assignments.
     HashMap<RigidBody*, DelayedWorldTransform> delayedWorldTransforms_;
     /// Cache for trimesh geometry data by model and LOD level.
