@@ -1,0 +1,10 @@
+<technique gs="PBRLitGSPlates1" vs="PBRLitGSPlates1" ps="PBRLitGSPlates1" vsdefines="NOUV PBR IBL" psdefines="PBR IBL">
+    <pass name="base" />
+    <pass name="light" depthtest="equal" depthwrite="false" blend="add" />
+    <pass name="prepass" psdefines="PREPASS" />
+    <pass name="material" psdefines="MATERIAL" depthtest="equal" depthwrite="false" />
+    <pass name="deferred" psdefines="DEFERRED" />
+    <pass name="depth" vs="Depth" ps="Depth" />
+    <pass name="shadow" vs="SHADOW" gs="" ps="SHADOW" />
+    <!--pass name="shadow" psdefines="SHADOW_MAP" /-->
+</technique>

@@ -179,15 +179,14 @@ set (SDL_CFLAGS)
 # restore back to that afterwards. For check_function_exists() to work in
 # Emscripten, this value must be at its default value.
 # Urho3D - also due to a CMake's try_compile() bug on iOS platform, the CMAKE_REQUIRED_FLAGS contains our SmileyHack-injection on iOS platform
-set(ORIG_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+set (ORIG_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
 # Urho3D - save the original CMake global settings, do not leave them to chances
 set (ORIG_CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES})
 set (ORIG_CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
 
 if (RPI)
   # Urho3D - TODO - move the find_package(VideoCore REQUIRED) call from Urho3D common module to here later after we have refactored the library dependency handling
-  # Urho3D - bug fix - adjust the header search path for subsequent for pthread, EGL and OpenGLES2 checks
-  listtostr (VIDEOCORE_INCLUDE_DIRS VIDEO_RPI_INCLUDE_FLAGS "-I")
+  # Urho3D - bug fix - adjust the header search path for subsequent pthread, EGL and OpenGLES2 checks
   list (APPEND CMAKE_REQUIRED_INCLUDES ${VIDEOCORE_INCLUDE_DIRS})
 endif ()
 
@@ -488,12 +487,9 @@ if(LIBC)
     set(STDC_HEADERS 1)
   else()
     set(HAVE_LIBC TRUE)
-    # Urho3D - bug fix - starting since Raspbian Jessie the __USE_EXTERN_INLINE is defined in <features.h> causing stdlib.h to look for <bits/stdlib-bsearch.h> which is not in the system header search path on Raspberry-Pi platform
-    if (RPI)
-      find_path (STDLIB_BITS_INCLUDE_DIR NAMES bits/stdlib-bsearch.h PATH_SUFFIXES arm-linux-gnueabihf DOC "Raspberry-Pi stdlib's bits include directory")
-      if (STDLIB_BITS_INCLUDE_DIR)
-        include_directories (${STDLIB_BITS_INCLUDE_DIR})
-      endif ()
+    # Urho3D - temporary bug fix - starting since Raspbian Jessie some of the headers are installed in the arch-specific directory and it seems that older CMake (prior to release 3.2.3) does not include this directory by default yet, so we have to do that manually
+    if (RPI AND CMAKE_LIBRARY_ARCHITECTURE)
+      include_directories (${SYSROOT}/usr/include/${CMAKE_LIBRARY_ARCHITECTURE})    # SYSROOT is empty when we are not cross-compiling
     endif ()
     # Urho3D - bug fix - when cross-compiling the headers are rooted, either use "--sysroot" compiler flag or use CMAKE_REQUIRED_INCLUDES (e.g. on RPI) to cater for it
     set (CMAKE_REQUIRED_INCLUDES_SYS_TYPES_SAVED ${CMAKE_REQUIRED_INCLUDES})
@@ -981,14 +977,13 @@ elseif(UNIX)    # Urho3D - at this point both UNIX and UNIX_SYS should be equiva
     endif ()
     # Urho3D - bug fix - dbus/dbus.h is installed under path suffix 'dbus-1.0', so the following find_path() is needed even when not cross-compiling
     find_path (DBUS_H_INCLUDE_DIRS NAMES dbus/dbus.h PATH_SUFFIXES dbus-1.0)
-    # Cater for both 32/64bit Redhat-based/Debian-based distros and 32-bit Raspberry-Pi as dbus-arch-deps header search paths are a little bit unusual
-    # FIXME: Is there a better way than hardcoding these?
+    # Cater for both multilib and multiarch, native and cross-compiling build
     if (URHO3D_64BIT)
-      set (DBUS_INC_SEARCH_PATH /usr/lib64/dbus-1.0/include /usr/lib/x86_64-linux-gnu/dbus-1.0/include)
+      set (DBUS_INC_SEARCH_PATH /usr/lib64/dbus-1.0/include)
     else ()
-      set (DBUS_INC_SEARCH_PATH /usr/lib/dbus-1.0/include /usr/lib/i386-linux-gnu/dbus-1.0/include /usr/lib/arm-linux-gnueabihf/dbus-1.0/include)
+      set (DBUS_INC_SEARCH_PATH /usr/lib/dbus-1.0/include)
     endif ()
-    find_path (DBUS_ARCH_DEPS_H_INCLUDE_DIRS NAMES dbus/dbus-arch-deps.h PATHS ${DBUS_INC_SEARCH_PATH})
+    find_path (DBUS_ARCH_DEPS_H_INCLUDE_DIRS NAMES dbus/dbus-arch-deps.h PATHS ${DBUS_INC_SEARCH_PATH} /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/dbus-1.0/include)
     set (CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES_UDEV_DBUS_SAVED} ${DBUS_H_INCLUDE_DIRS} ${DBUS_ARCH_DEPS_H_INCLUDE_DIRS})
     check_include_file("dbus/dbus.h" HAVE_DBUS_DBUS_H)
     if (HAVE_DBUS_DBUS_H AND DBUS_H_INCLUDE_DIRS AND DBUS_ARCH_DEPS_H_INCLUDE_DIRS)
@@ -1391,7 +1386,7 @@ set (TARGET_NAME SDL)
 # Setup target as STATIC library (as the result we never use EXTRA_LDFLAGS linker flags)
 setup_library ()
 
-# Install headers for building and using the Urho3D library (install dependency for D3D9GraphicsImpl.h, OGLGraphicsImpl.h, InputEvents.h, File.h, and Cursor.h)
+# Install headers for building and using the Urho3D library (install dependency for InputEvents.h)
 install_header_files (DIRECTORY include/ DESTINATION ${DEST_INCLUDE_DIR}/ThirdParty/SDL FILES_MATCHING PATTERN *.h USE_FILE_SYMLINK)    # Note: the trailing slash is significant
 install_header_files (FILES ${SDL2_BINARY_DIR}/include/generated/SDL_config.h DESTINATION ${DEST_INCLUDE_DIR}/ThirdParty/SDL)
 # Install dependency for SDL_android_main.c

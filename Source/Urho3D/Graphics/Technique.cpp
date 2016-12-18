@@ -79,8 +79,8 @@ Pass::Pass(const String& name) :
     depthTestMode_(CMP_LESSEQUAL),
     lightingMode_(LIGHTING_UNLIT),
     shadersLoadedFrameNumber_(0),
+    alphaToCoverage_(false),
     depthWrite_(true),
-    alphaMask_(false),
     isDesktop_(false)
 {
     name_ = name.ToLower();
@@ -123,10 +123,11 @@ void Pass::SetDepthWrite(bool enable)
     depthWrite_ = enable;
 }
 
-void Pass::SetAlphaMask(bool enable)
+void Pass::SetAlphaToCoverage(bool enable)
 {
-    alphaMask_ = enable;
+    alphaToCoverage_ = enable;
 }
+
 
 void Pass::SetIsDesktop(bool enable)
 {
@@ -169,16 +170,75 @@ void Pass::SetGeometryShaderDefines(const String& defines)
     ReleaseShaders();
 }
 
+void Pass::SetVertexShaderDefineExcludes(const String& excludes)
+{
+    vertexShaderDefineExcludes_ = excludes;
+    ReleaseShaders();
+}
+
+void Pass::SetPixelShaderDefineExcludes(const String& excludes)
+{
+    pixelShaderDefineExcludes_ = excludes;
+    ReleaseShaders();
+}
+
 void Pass::ReleaseShaders()
 {
     vertexShaders_.Clear();
     pixelShaders_.Clear();
     geometryShaders_.Clear();
+    extraVertexShaders_.Clear();
+    extraPixelShaders_.Clear();
 }
 
 void Pass::MarkShadersLoaded(unsigned frameNumber)
 {
     shadersLoadedFrameNumber_ = frameNumber;
+}
+
+String Pass::GetEffectiveVertexShaderDefines() const
+{
+    // Prefer to return just the original defines if possible
+    if (vertexShaderDefineExcludes_.Empty())
+        return vertexShaderDefines_;
+
+    Vector<String> vsDefines = vertexShaderDefines_.Split(' ');
+    Vector<String> vsExcludes = vertexShaderDefineExcludes_.Split(' ');
+    for (unsigned i = 0; i < vsExcludes.Size(); ++i)
+        vsDefines.Remove(vsExcludes[i]);
+
+    return String::Joined(vsDefines, " ");
+}
+
+String Pass::GetEffectivePixelShaderDefines() const
+{
+    // Prefer to return just the original defines if possible
+    if (pixelShaderDefineExcludes_.Empty())
+        return pixelShaderDefines_;
+
+    Vector<String> psDefines = pixelShaderDefines_.Split(' ');
+    Vector<String> psExcludes = pixelShaderDefineExcludes_.Split(' ');
+    for (unsigned i = 0; i < psExcludes.Size(); ++i)
+        psDefines.Remove(psExcludes[i]);
+
+    return String::Joined(psDefines, " ");
+}
+
+Vector<SharedPtr<ShaderVariation> >& Pass::GetVertexShaders(const StringHash& extraDefinesHash)
+{
+    // If empty hash, return the base shaders
+    if (!extraDefinesHash.Value())
+        return vertexShaders_;
+    else
+        return extraVertexShaders_[extraDefinesHash];
+}
+
+Vector<SharedPtr<ShaderVariation> >& Pass::GetPixelShaders(const StringHash& extraDefinesHash)
+{
+    if (!extraDefinesHash.Value())
+        return pixelShaders_;
+    else
+        return extraPixelShaders_[extraDefinesHash];
 }
 
 unsigned Technique::basePassIndex = 0;
@@ -189,6 +249,7 @@ unsigned Technique::lightPassIndex = 0;
 unsigned Technique::litBasePassIndex = 0;
 unsigned Technique::litAlphaPassIndex = 0;
 unsigned Technique::shadowPassIndex = 0;
+
 HashMap<String, unsigned> Technique::passIndices;
 
 Technique::Technique(Context* context) :
@@ -214,6 +275,7 @@ void Technique::RegisterObject(Context* context)
 bool Technique::BeginLoad(Deserializer& source)
 {
     passes_.Clear();
+    cloneTechniques_.Clear();
 
     SetMemoryUse(sizeof(Technique));
 
@@ -238,9 +300,6 @@ bool Technique::BeginLoad(Deserializer& source)
         globalPSDefines += ' ';
     if (!globalGSDefines.Empty())
         globalGSDefines += ' ';
-    bool globalAlphaMask = false;
-    if (rootElem.HasAttribute("alphamask"))
-        globalAlphaMask = rootElem.GetBool("alphamask");
 
     XMLElement passElem = rootElem.GetChild("pass");
     while (passElem)
@@ -285,6 +344,9 @@ bool Technique::BeginLoad(Deserializer& source)
                 newPass->SetGeometryShaderDefines(globalGSDefines + passElem.GetAttribute("gsdefines"));
             }
 
+            // TODO SHW: add extra defines for geometry shaders
+            newPass->SetVertexShaderDefineExcludes(passElem.GetAttribute("vsexcludes"));
+            newPass->SetPixelShaderDefineExcludes(passElem.GetAttribute("psexcludes"));
             if (passElem.HasAttribute("lighting"))
             {
                 String lighting = passElem.GetAttributeLower("lighting");
@@ -316,10 +378,8 @@ bool Technique::BeginLoad(Deserializer& source)
             if (passElem.HasAttribute("depthwrite"))
                 newPass->SetDepthWrite(passElem.GetBool("depthwrite"));
 
-            if (passElem.HasAttribute("alphamask"))
-                newPass->SetAlphaMask(passElem.GetBool("alphamask"));
-            else
-                newPass->SetAlphaMask(globalAlphaMask);
+            if (passElem.HasAttribute("alphatocoverage"))
+                newPass->SetAlphaToCoverage(passElem.GetBool("alphatocoverage"));
         }
         else
             URHO3D_LOGERROR("Missing pass name");
@@ -363,12 +423,18 @@ SharedPtr<Technique> Technique::Clone(const String& cloneName) const
         newPass->SetDepthTestMode(srcPass->GetDepthTestMode());
         newPass->SetLightingMode(srcPass->GetLightingMode());
         newPass->SetDepthWrite(srcPass->GetDepthWrite());
-        newPass->SetAlphaMask(srcPass->GetAlphaMask());
+        newPass->SetAlphaToCoverage(srcPass->GetAlphaToCoverage());
         newPass->SetIsDesktop(srcPass->IsDesktop());
         newPass->SetVertexShader(srcPass->GetVertexShader());
         newPass->SetPixelShader(srcPass->GetPixelShader());
+        newPass->SetGeometryShader(srcPass->GetGeometryShader());
         newPass->SetVertexShaderDefines(srcPass->GetVertexShaderDefines());
         newPass->SetPixelShaderDefines(srcPass->GetPixelShaderDefines());
+        newPass->SetGeometryShaderDefines(srcPass->GetGeometryShaderDefines());
+        newPass->SetVertexShaderDefineExcludes(srcPass->GetVertexShaderDefineExcludes());
+        newPass->SetPixelShaderDefineExcludes(srcPass->GetPixelShaderDefineExcludes());
+        // TODO: add geometry shader excludes
+        //newPass->SetGeometryShaderDefineExcludes(srcPass->GetGeometryShaderDefineExcludes());
     }
 
     return ret;
@@ -461,6 +527,42 @@ PODVector<Pass*> Technique::GetPasses() const
     }
 
     return ret;
+}
+
+SharedPtr<Technique> Technique::CloneWithDefines(const String& vsDefines, const String& psDefines, const String& gsDefines)
+{
+    // Return self if no actual defines
+    if (vsDefines.Empty() && psDefines.Empty() && gsDefines.Empty())
+        return SharedPtr<Technique>(this);
+
+    Pair<Pair<StringHash, StringHash>, StringHash> key = 
+      MakePair(MakePair(StringHash(vsDefines), StringHash(psDefines)), StringHash(gsDefines));
+
+    // Return existing if possible
+    HashMap<Pair<Pair<StringHash, StringHash>, StringHash>, SharedPtr<Technique> >::Iterator i = 
+      cloneTechniques_.Find(key);
+    if (i != cloneTechniques_.End())
+        return i->second_;
+
+    // Set same name as the original for the clones to ensure proper serialization of the material. This should not be a problem
+    // since the clones are never stored to the resource cache
+    i = cloneTechniques_.Insert(MakePair(key, Clone(GetName())));
+
+    for (Vector<SharedPtr<Pass> >::ConstIterator j = i->second_->passes_.Begin(); j != i->second_->passes_.End(); ++j)
+    {
+        Pass* pass = (*j);
+        if (!pass)
+            continue;
+
+        if (!vsDefines.Empty())
+            pass->SetVertexShaderDefines(pass->GetVertexShaderDefines() + " " + vsDefines);
+        if (!psDefines.Empty())
+            pass->SetPixelShaderDefines(pass->GetPixelShaderDefines() + " " + psDefines);
+        if (!gsDefines.Empty())
+            pass->SetGeometryShaderDefines(pass->GetGeometryShaderDefines() + " " + gsDefines);
+    }
+
+    return i->second_;
 }
 
 unsigned Technique::GetPassIndex(const String& passName)

@@ -97,7 +97,8 @@ void Sample::Start()
 
 void Sample::Stop()
 {
-    engine_->DumpResources(true);
+  engine_->DumpResources(true);
+  engine_->DumpProfiler();
 }
 
 void Sample::InitTouchInput()
@@ -222,7 +223,7 @@ void Sample::HandleKeyUp(StringHash eventType, VariantMap& eventData)
     int key = eventData[P_KEY].GetInt();
 
     // Close console (if open) or exit when ESC is pressed
-    if (key == KEY_ESC)
+    if (key == KEY_ESCAPE)
     {
         Console* console = GetSubsystem<Console>();
         if (console->IsVisible())
@@ -253,21 +254,7 @@ void Sample::HandleKeyDown(StringHash eventType, VariantMap& eventData)
 
     // Toggle debug HUD with F2
     else if (key == KEY_F2)
-    {
-        DebugHud* debugHud = GetSubsystem<DebugHud>();
-        if (debugHud->GetMode() == 0 || debugHud->GetMode() == DEBUGHUD_SHOW_ALL_MEMORY)
-            debugHud->SetMode(DEBUGHUD_SHOW_ALL);
-        else
-            debugHud->SetMode(DEBUGHUD_SHOW_NONE);
-    }
-    else if (key == KEY_F3)
-    {
-        DebugHud* debugHud = GetSubsystem<DebugHud>();
-        if (debugHud->GetMode() == 0 || debugHud->GetMode() == DEBUGHUD_SHOW_ALL)
-            debugHud->SetMode(DEBUGHUD_SHOW_ALL_MEMORY);
-        else
-            debugHud->SetMode(DEBUGHUD_SHOW_NONE);
-    }
+        GetSubsystem<DebugHud>()->ToggleAll();
 
     // Common rendering quality controls, only when UI has no focused element
     else if (!GetSubsystem<UI>()->GetFocusElement())

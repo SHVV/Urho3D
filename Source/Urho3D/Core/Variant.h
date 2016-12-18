@@ -63,7 +63,7 @@ enum VariantType
     MAX_VAR_TYPES
 };
 
-/// Union for the possible variant values. Also stores non-POD objects such as String and math objects (excluding Matrix) which must not exceed 16 bytes in size. Objects exceeding 16 bytes size are stored in the heap pointed by _ptr.
+/// Union for the possible variant values. Also stores non-POD objects such as String and math objects (excluding Matrix) which must not exceed 16 bytes in size (or 32 bytes in a 64-bit build.) Objects exceeding the limit are allocated on the heap and pointed to by _ptr.
 struct VariantValue
 {
     union
@@ -143,7 +143,7 @@ struct URHO3D_API ResourceRef
     {
     }
 
-    // Construct from another ResourceRef.
+    /// Construct from another ResourceRef.
     ResourceRef(const ResourceRef& rhs) :
         type_(rhs.type_),
         name_(rhs.name_)
@@ -591,7 +591,7 @@ public:
         return *this;
     }
 
-    // Assign from a string vector.
+    /// Assign from a string vector.
     Variant& operator =(const StringVector& rhs)
     {
         SetType(VAR_STRINGVECTOR);

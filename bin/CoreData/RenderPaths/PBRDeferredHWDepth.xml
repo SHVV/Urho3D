@@ -8,8 +8,8 @@
     <command type="clear" color="0 0 0 0" output="specular" depthstencil="depth" />
     <command type="clear" color="0 0 0 0" output="normal" depthstencil="depth" />
     <command type="clear" color="0 0 0 0" depth="1.0" output="depth" depthstencil="depth" />
-    <command type="scenepass" pass="base" vertexlights="true" metadata="base" depthstencil="depth" />
-    <command type="scenepass" pass="deferred" marktostencil="true" vertexlights="true" metadata="gbuffer" depthstencil="depth">
+    <command type="scenepass" pass="base" vertexlights="true" metadata="base" depthstencil="depth" psdefines="PBR" />
+    <command type="scenepass" pass="deferred" marktostencil="true" vertexlights="true" metadata="gbuffer" depthstencil="depth" psdefines="PBR">
         <output index="0" name="specular" />
         <output index="1" name="albedo" />
         <output index="2" name="normal" />

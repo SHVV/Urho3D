@@ -33,7 +33,7 @@ class ShaderVariation;
 /// Lighting mode of a pass.
 enum PassLightingMode
 {
-    LIGHTING_UNLIT,
+    LIGHTING_UNLIT = 0,
     LIGHTING_PERVERTEX,
     LIGHTING_PERPIXEL
 };
@@ -57,8 +57,8 @@ public:
     void SetLightingMode(PassLightingMode mode);
     /// Set depth write on/off.
     void SetDepthWrite(bool enable);
-    /// Set alpha masking hint. Completely opaque draw calls will be performed before alpha masked.
-    void SetAlphaMask(bool enable);
+    /// Set alpha-to-coverage on/off.
+    void SetAlphaToCoverage(bool enable);
     /// Set whether requires desktop level hardware.
     void SetIsDesktop(bool enable);
     /// Set vertex shader name.
@@ -67,12 +67,16 @@ public:
     void SetPixelShader(const String& name);
     /// Set geometry shader name.
     void SetGeometryShader(const String& name);
-    /// Set vertex shader defines.
+    /// Set vertex shader defines. Separate multiple defines with spaces.
     void SetVertexShaderDefines(const String& defines);
-    /// Set pixel shader defines.
+    /// Set pixel shader defines. Separate multiple defines with spaces.
     void SetPixelShaderDefines(const String& defines);
     /// Set geometry shader defines.
     void SetGeometryShaderDefines(const String& defines);
+    /// Set vertex shader define excludes. Use to mark defines that the shader code will not recognize, to prevent compiling redundant shader variations.
+    void SetVertexShaderDefineExcludes(const String& excludes);
+    /// Set pixel shader define excludes. Use to mark defines that the shader code will not recognize, to prevent compiling redundant shader variations.
+    void SetPixelShaderDefineExcludes(const String& excludes);
     /// Reset shader pointers.
     void ReleaseShaders();
     /// Mark shaders loaded this frame.
@@ -102,8 +106,8 @@ public:
     /// Return depth write mode.
     bool GetDepthWrite() const { return depthWrite_; }
 
-    /// Return alpha masking hint.
-    bool GetAlphaMask() const { return alphaMask_; }
+    /// Return alpha-to-coverage mode.
+    bool GetAlphaToCoverage() const { return alphaToCoverage_; }
 
     /// Return whether requires desktop level hardware.
     bool IsDesktop() const { return isDesktop_; }
@@ -125,6 +129,12 @@ public:
 
     /// Return geometry shader defines.
     const String& GetGeometryShaderDefines() const { return geometryShaderDefines_; }
+    
+    /// Return vertex shader define excludes.
+    const String& GetVertexShaderDefineExcludes() const { return vertexShaderDefineExcludes_; }
+
+    /// Return pixel shader define excludes.
+    const String& GetPixelShaderDefineExcludes() const { return pixelShaderDefineExcludes_; }
 
     /// Return vertex shaders.
     Vector<SharedPtr<ShaderVariation> >& GetVertexShaders() { return vertexShaders_; }
@@ -134,6 +144,14 @@ public:
 
     /// Return geometry shaders.
     Vector<SharedPtr<ShaderVariation> >& GetGeometryShaders() { return geometryShaders_; }
+    /// Return vertex shaders with extra defines from the renderpath.
+    Vector<SharedPtr<ShaderVariation> >& GetVertexShaders(const StringHash& extraDefinesHash);
+    /// Return pixel shaders with extra defines from the renderpath.
+    Vector<SharedPtr<ShaderVariation> >& GetPixelShaders(const StringHash& extraDefinesHash);
+    /// Return the effective vertex shader defines, accounting for excludes. Called internally by Renderer.
+    String GetEffectiveVertexShaderDefines() const;
+    /// Return the effective pixel shader defines, accounting for excludes. Called internally by Renderer.
+    String GetEffectivePixelShaderDefines() const;
 
 private:
     /// Pass index.
@@ -150,8 +168,8 @@ private:
     unsigned shadersLoadedFrameNumber_;
     /// Depth write mode.
     bool depthWrite_;
-    /// Alpha masking hint.
-    bool alphaMask_;
+    /// Alpha-to-coverage mode.
+    bool alphaToCoverage_;
     /// Require desktop level hardware flag.
     bool isDesktop_;
     /// Vertex shader name.
@@ -166,12 +184,20 @@ private:
     String pixelShaderDefines_;
     /// geometry shader defines.
     String geometryShaderDefines_;
+    /// Vertex shader define excludes.
+    String vertexShaderDefineExcludes_;
+    /// Pixel shader define excludes.
+    String pixelShaderDefineExcludes_;
     /// Vertex shaders.
     Vector<SharedPtr<ShaderVariation> > vertexShaders_;
     /// Pixel shaders.
     Vector<SharedPtr<ShaderVariation> > pixelShaders_;
     /// geometry shaders.
     Vector<SharedPtr<ShaderVariation> > geometryShaders_;
+    /// Vertex shaders with extra defines from the renderpath.
+    HashMap<StringHash, Vector<SharedPtr<ShaderVariation> > > extraVertexShaders_;
+    /// Pixel shaders with extra defines from the renderpath.
+    HashMap<StringHash, Vector<SharedPtr<ShaderVariation> > > extraPixelShaders_;
     /// Pass name.
     String name_;
 };
@@ -240,6 +266,9 @@ public:
     /// Return all passes.
     PODVector<Pass*> GetPasses() const;
 
+    /// Return a clone with added shader compilation defines. Called internally by Material.
+    SharedPtr<Technique> CloneWithDefines(const String& vsDefines, const String& psDefines, const String& gsDefines);
+
     /// Return a pass type index by name. Allocate new if not used yet.
     static unsigned GetPassIndex(const String& passName);
 
@@ -267,6 +296,8 @@ private:
     bool desktopSupport_;
     /// Passes.
     Vector<SharedPtr<Pass> > passes_;
+    /// Cached clones with added shader compilation defines.
+    HashMap<Pair<Pair<StringHash, StringHash>, StringHash>, SharedPtr<Technique> > cloneTechniques_;
 
     /// Pass index assignments.
     static HashMap<String, unsigned> passIndices;

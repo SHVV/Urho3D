@@ -3,11 +3,13 @@
 	<technique name="Techniques/GS/DiffGSPointsToSpheres.xml" quality="1" loddistance="0" />
 	<parameter name="UOffset" value="1 0 0 0" />
 	<parameter name="VOffset" value="0 1 0 0" />
-	<parameter name="MatDiffColor" value="0.7 0.8 1 1" />
+	<parameter name="MatDiffColor" value="0.85 0.9 1.0 1" />
 	<parameter name="MatEmissiveColor" value="0 0 0" />
 	<parameter name="MatEnvMapColor" value="1 1 1" />
 	<parameter name="MatSpecColor" value="0.5 0.3 0.1 16" />
-	<parameter name="Radius" value="0.03" />
+  <parameter name="Roughness" value="0.5" />
+  <parameter name="Metallic" value="0.7" />
+  <parameter name="Radius" value="0.04" />
 	<cull value="none" />
 	<shadowcull value="ccw" />
 	<fill value="solid" />

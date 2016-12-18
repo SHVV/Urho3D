@@ -1,0 +1,12 @@
+<cubemap>
+    <srgb enable="false" />
+    <face name="space_pos_x.dds" />
+    <face name="space_neg_x.dds" />
+    <face name="space_pos_y.dds" />
+    <face name="space_neg_y.dds" />
+    <face name="space_pos_z.dds" />
+    <face name="space_neg_z.dds" />
+    <address coord="uv" mode="clamp" />
+    <mipmap enable="true" />
+    <filter mode="trilinear" />
+</cubemap>

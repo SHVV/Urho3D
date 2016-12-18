@@ -269,7 +269,7 @@ void CrowdNavigation::SpawnJack(const Vector3& pos, Node* jackGroup)
     CrowdAgent* agent = jackNode->CreateComponent<CrowdAgent>();
     agent->SetHeight(2.0f);
     agent->SetMaxSpeed(3.0f);
-    agent->SetMaxAccel(3.0f);
+    agent->SetMaxAccel(5.0f);
 }
 
 void CrowdNavigation::CreateMushroom(const Vector3& pos)
@@ -433,20 +433,20 @@ void CrowdNavigation::MoveCamera(float timeStep)
     }
 
     // Read WASD keys and move the camera scene node to the corresponding direction if they are pressed
-    if (input->GetKeyDown('W'))
+    if (input->GetKeyDown(KEY_W))
         cameraNode_->Translate(Vector3::FORWARD * MOVE_SPEED * timeStep);
-    if (input->GetKeyDown('S'))
+    if (input->GetKeyDown(KEY_S))
         cameraNode_->Translate(Vector3::BACK * MOVE_SPEED * timeStep);
-    if (input->GetKeyDown('A'))
+    if (input->GetKeyDown(KEY_A))
         cameraNode_->Translate(Vector3::LEFT * MOVE_SPEED * timeStep);
-    if (input->GetKeyDown('D'))
+    if (input->GetKeyDown(KEY_D))
         cameraNode_->Translate(Vector3::RIGHT * MOVE_SPEED * timeStep);
 
     // Set destination or spawn a new jack with left mouse button
     if (input->GetMouseButtonPress(MOUSEB_LEFT))
         SetPathPoint(input->GetQualifierDown(QUAL_SHIFT));
     // Add new obstacle or remove existing obstacle/agent with middle mouse button
-    else if (input->GetMouseButtonPress(MOUSEB_MIDDLE) || input->GetKeyPress('O'))
+    else if (input->GetMouseButtonPress(MOUSEB_MIDDLE) || input->GetKeyPress(KEY_O))
         AddOrRemoveObject();
 
     // Check for loading/saving the scene from/to the file Data/Scenes/CrowdNavigation.xml relative to the executable directory
@@ -534,14 +534,14 @@ void CrowdNavigation::HandleCrowdAgentReposition(StringHash eventType, VariantMa
             // Face the direction of its velocity but moderate the turning speed based on the speed ratio and timeStep
             node->SetRotation(node->GetRotation().Slerp(Quaternion(Vector3::FORWARD, velocity), 10.0f * timeStep * speedRatio));
             // Throttle the animation speed based on agent speed ratio (ratio = 1 is full throttle)
-            animCtrl->SetSpeed(WALKING_ANI, speedRatio);
+            animCtrl->SetSpeed(WALKING_ANI, speedRatio * 1.5f);
         }
         else
             animCtrl->Play(WALKING_ANI, 0, true, 0.1f);
 
-        // If speed is too low then stopping the animation
+        // If speed is too low then stop the animation
         if (speed < agent->GetRadius())
-            animCtrl->Stop(WALKING_ANI, 0.8f);
+            animCtrl->Stop(WALKING_ANI, 0.5f);
     }
 }
 
