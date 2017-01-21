@@ -5,6 +5,7 @@
 #include "UnitModel.h"
 
 #include <Urho3D\Core\Context.h>
+#include <Urho3D\Scene\Node.h>
 
 using namespace Urho3D;
 
@@ -46,7 +47,7 @@ void UnitModel::set_state(State value)
 {
   if (m_state != value) {
     m_state = value;
-    // TODO: fire event on state changed
+    notify_attribute_changed();
   }
 }
 
@@ -54,4 +55,19 @@ void UnitModel::set_state(State value)
 UnitModel::State UnitModel::state()
 {
   return m_state;
+}
+
+/// Notify all subscribers, that attribute of model has been changed
+void UnitModel::notify_attribute_changed()
+{
+  // TODO: test this
+  using namespace ModelAttributeChanged;
+
+  VariantMap& eventData = GetEventDataMap();
+  eventData[P_NODE] = node_;
+  //eventData[P_EFFECT] = effect_;
+  // TODO: add attribute's categories
+
+  node_->SendEvent(E_MODEL_ATTRIBUTE_CHANGED, eventData);
+  MarkNetworkUpdate();
 }

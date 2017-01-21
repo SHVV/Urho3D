@@ -14,11 +14,15 @@ uniform float cRadius;
 //---------------------------------------------VS-----------------------------------------------------
 #ifdef COMPILEVS
 
+attribute float iCustom; // radius
+out float vRadius;
+
 void VS()
 {
   mat4 modelMatrix = iModelMatrix;
   vec4 WorldPos = iPos * modelMatrix;
   gl_Position = WorldPos * cView;
+  vRadius = iCustom;
 }
 #endif // COMPILEVS
 
@@ -38,6 +42,8 @@ layout(points) in;
 #define NUM_INPUT 1
 #endif
 
+in float vRadius[NUM_INPUT];
+
 #define OUTPUT_SIZE 4
 layout(triangle_strip, max_vertices = 4) out;
 
@@ -56,18 +62,20 @@ void GS()
   bool ortographic = cDepthMode.x == 1.0;
   vec3 toCamera = ortographic ? vec3(0.0, 0.0, -1.0) : - normalize(iPos.xyz);
 #ifdef BEAMS
+  float radius = min(vRadius[0], vRadius[1]) * cRadius;
   vec3 beam_dir = iPos2.xyz - iPos.xyz;
   vec3 up = normalize(cross(beam_dir, toCamera));
   // TODO: check for parallel case
   vec3 right = normalize(cross(up, beam_dir));
 #else
+  float radius = vRadius[0];
   vec3 up = vec3(0.0, 1.0, 0.0);
   vec3 right = ortographic ? vec3(1.0, 0.0, 0.0) : normalize(cross(toCamera, up));
   if (!ortographic) {
     up = normalize(cross(right, toCamera));
   }
 #endif
-  float size = cRadius * 1;
+  float size = radius * 1;
 
   vec3 quad[OUTPUT_SIZE];
 #ifdef BEAMS
