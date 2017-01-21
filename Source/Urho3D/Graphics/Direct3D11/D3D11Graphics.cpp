@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1296,6 +1296,9 @@ void Graphics::SetTexture(unsigned index, Texture* texture)
                     ResolveToTexture(static_cast<TextureCube*>(texture));
             }
         }
+
+        if (texture->GetLevelsDirty())
+            texture->RegenerateLevels();
     }
 
     if (texture && texture->GetParametersDirty())
@@ -1410,6 +1413,10 @@ void Graphics::SetRenderTarget(unsigned index, RenderSurface* renderTarget)
                 parentTexture->SetResolveDirty(true);
                 renderTarget->SetResolveDirty(true);
             }
+
+            // If mipmapped, mark the levels needing regeneration
+            if (parentTexture->GetLevels() > 1)
+                parentTexture->SetLevelsDirty();
         }
     }
 }

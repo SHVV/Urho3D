@@ -72,7 +72,11 @@ uniform vec4 cMatSpecColor;
 #ifdef PBR
     uniform float cRoughness;
     uniform float cMetallic;
+    uniform float cLightRad;
+    uniform float cLightLength;
 #endif
+uniform vec3 cZoneMin;
+uniform vec3 cZoneMax;
 uniform float cNearClipPS;
 uniform float cFarClipPS;
 uniform vec4 cShadowCubeAdjust;
@@ -176,6 +180,8 @@ uniform ZonePS
     vec4 cAmbientColor;
     vec4 cFogParams;
     vec3 cFogColor;
+    vec3 cZoneMin;
+    vec3 cZoneMax;
 };
 
 uniform LightPS
@@ -193,6 +199,10 @@ uniform LightPS
 #ifdef VSM_SHADOW
     vec2 cVSMShadowParams;
 #endif
+#ifdef PBR
+    float cLightRad;
+    float cLightLength;
+#endif
 };
 
 #ifndef CUSTOM_MATERIAL_CBUFFER
@@ -202,10 +212,10 @@ uniform MaterialPS
     vec3 cMatEmissiveColor;
     vec3 cMatEnvMapColor;
     vec4 cMatSpecColor;
-    #ifdef PBR
-        float cRoughness;
-        float cMetallic;
-    #endif
+#ifdef PBR
+    float cRoughness;
+    float cMetallic;
+#endif
 };
 #endif
 

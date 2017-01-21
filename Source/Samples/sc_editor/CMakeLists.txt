@@ -24,7 +24,7 @@
 set (TARGET_NAME sc_editor)
 
 # Define source files
-define_source_files (EXTRA_H_FILES ${COMMON_SAMPLE_H_FILES})
+define_source_files (EXTRA_H_FILES ${COMMON_SAMPLE_H_FILES} RECURSE GROUP)
 
 # Setup target with resource copying
 setup_main_executable ()

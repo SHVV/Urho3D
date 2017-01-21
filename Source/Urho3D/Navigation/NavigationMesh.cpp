@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -901,8 +901,8 @@ void NavigationMesh::CollectGeometries(Vector<NavigationGeometryInfo>& geometryL
     // Make sure nodes are not included twice
     if (processedNodes.Contains(node))
         return;
-    // Exclude obstacles from consideration
-    if (node->HasComponent<Obstacle>())
+    // Exclude obstacles and crowd agents from consideration
+    if (node->HasComponent<Obstacle>() || node->HasComponent<CrowdAgent>())
         return;
     processedNodes.Insert(node);
 
@@ -1168,9 +1168,9 @@ bool NavigationMesh::BuildTile(Vector<NavigationGeometryInfo>& geometryList, int
     cfg.cs = cellSize_;
     cfg.ch = cellHeight_;
     cfg.walkableSlopeAngle = agentMaxSlope_;
-    cfg.walkableHeight = (int)ceilf(agentHeight_ / cfg.ch);
-    cfg.walkableClimb = (int)floorf(agentMaxClimb_ / cfg.ch);
-    cfg.walkableRadius = (int)ceilf(agentRadius_ / cfg.cs);
+    cfg.walkableHeight = CeilToInt(agentHeight_ / cfg.ch);
+    cfg.walkableClimb = FloorToInt(agentMaxClimb_ / cfg.ch);
+    cfg.walkableRadius = CeilToInt(agentRadius_ / cfg.cs);
     cfg.maxEdgeLen = (int)(edgeMaxLength_ / cellSize_);
     cfg.maxSimplificationError = edgeMaxError_;
     cfg.minRegionArea = (int)sqrtf(regionMinSize_);

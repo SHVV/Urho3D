@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -148,6 +148,9 @@ template <class T> inline T Atan2(T y, T x) { return M_RADTODEG * atan2(y, x); }
 
 /// Return X in power Y.
 template <class T> T Pow(T x, T y) { return pow(x, y); }
+
+/// Return natural logarithm of X.
+template <class T> T Ln(T x) { return log(x); }
 
 /// Return square root of X.
 template <class T> T Sqrt(T x) { return sqrt(x); }

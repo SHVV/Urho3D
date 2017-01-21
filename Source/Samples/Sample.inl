@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,6 +26,7 @@
 #include <Urho3D/UI/Cursor.h>
 #include <Urho3D/Engine/DebugHud.h>
 #include <Urho3D/Engine/Engine.h>
+#include <Urho3D/Engine/EngineDefs.h>
 #include <Urho3D/IO/FileSystem.h>
 #include <Urho3D/Graphics/Graphics.h>
 #include <Urho3D/Input/Input.h>
@@ -56,17 +57,17 @@ Sample::Sample(Context* context) :
 void Sample::Setup()
 {
     // Modify engine startup parameters
-    engineParameters_["WindowTitle"] = GetTypeName();
-    engineParameters_["LogName"]     = GetSubsystem<FileSystem>()->GetAppPreferencesDir("urho3d", "logs") + GetTypeName() + ".log";
-    engineParameters_["FullScreen"]  = false;
-    engineParameters_["Headless"]    = false;
-    engineParameters_["Sound"]       = false;
+    engineParameters_[EP_WINDOW_TITLE] = GetTypeName();
+    engineParameters_[EP_LOG_NAME]     = GetSubsystem<FileSystem>()->GetAppPreferencesDir("urho3d", "logs") + GetTypeName() + ".log";
+    engineParameters_[EP_FULL_SCREEN]  = false;
+    engineParameters_[EP_HEADLESS]     = false;
+    engineParameters_[EP_SOUND]        = false;
 
     // Construct a search path to find the resource prefix with two entries:
     // The first entry is an empty path which will be substituted with program/bin directory -- this entry is for binary when it is still in build tree
     // The second and third entries are possible relative paths from the installed program/bin directory to the asset directory -- these entries are for binary when it is in the Urho3D SDK installation location
-    if (!engineParameters_.Contains("ResourcePrefixPaths"))
-        engineParameters_["ResourcePrefixPaths"] = ";../share/Resources;../share/Urho3D/Resources";
+    if (!engineParameters_.Contains(EP_RESOURCE_PREFIX_PATHS))
+        engineParameters_[EP_RESOURCE_PREFIX_PATHS] = ";../share/Resources;../share/Urho3D/Resources";
 }
 
 void Sample::Start()
@@ -116,7 +117,7 @@ void Sample::InitTouchInput()
         if (patchFile->FromString(patchString))
             layout->Patch(patchFile);
     }
-    screenJoystickIndex_ = input->AddScreenJoystick(layout, cache->GetResource<XMLFile>("UI/DefaultStyle.xml"));
+    screenJoystickIndex_ = (unsigned)input->AddScreenJoystick(layout, cache->GetResource<XMLFile>("UI/DefaultStyle.xml"));
     input->SetScreenJoystickVisible(screenJoystickSettingsIndex_, true);
 }
 
@@ -157,7 +158,7 @@ void Sample::CreateLogo()
 {
     // Get logo texture
     ResourceCache* cache = GetSubsystem<ResourceCache>();
-    Texture2D* logoTexture = cache->GetResource<Texture2D>("Textures/LogoLarge.png");
+    Texture2D* logoTexture = cache->GetResource<Texture2D>("Textures/FishBoneLogo.png");
     if (!logoTexture)
         return;
 
@@ -178,13 +179,13 @@ void Sample::CreateLogo()
     logoSprite_->SetSize(textureWidth, textureHeight);
 
     // Set logo sprite hot spot
-    logoSprite_->SetHotSpot(0, textureHeight);
+    logoSprite_->SetHotSpot(textureWidth, textureHeight);
 
     // Set logo sprite alignment
-    logoSprite_->SetAlignment(HA_LEFT, VA_BOTTOM);
+    logoSprite_->SetAlignment(HA_RIGHT, VA_BOTTOM);
 
     // Make logo not fully opaque to show the scene underneath
-    logoSprite_->SetOpacity(0.75f);
+    logoSprite_->SetOpacity(0.9f);
 
     // Set a low priority for the logo so that other UI elements can be drawn on top
     logoSprite_->SetPriority(-100);
@@ -216,7 +217,7 @@ void Sample::CreateConsoleAndDebugHud()
 }
 
 
-void Sample::HandleKeyUp(StringHash eventType, VariantMap& eventData)
+void Sample::HandleKeyUp(StringHash /*eventType*/, VariantMap& eventData)
 {
     using namespace KeyUp;
 
@@ -242,7 +243,7 @@ void Sample::HandleKeyUp(StringHash eventType, VariantMap& eventData)
     }
 }
 
-void Sample::HandleKeyDown(StringHash eventType, VariantMap& eventData)
+void Sample::HandleKeyDown(StringHash /*eventType*/, VariantMap& eventData)
 {
     using namespace KeyDown;
 
@@ -271,7 +272,7 @@ void Sample::HandleKeyDown(StringHash eventType, VariantMap& eventData)
             {
                 // Lazy initialization
                 ResourceCache* cache = GetSubsystem<ResourceCache>();
-                screenJoystickSettingsIndex_ = input->AddScreenJoystick(cache->GetResource<XMLFile>("UI/ScreenJoystickSettings_Samples.xml"), cache->GetResource<XMLFile>("UI/DefaultStyle.xml"));
+                screenJoystickSettingsIndex_ = (unsigned)input->AddScreenJoystick(cache->GetResource<XMLFile>("UI/ScreenJoystickSettings_Samples.xml"), cache->GetResource<XMLFile>("UI/DefaultStyle.xml"));
             }
             else
                 input->SetScreenJoystickVisible(screenJoystickSettingsIndex_, paused_);
@@ -350,7 +351,7 @@ void Sample::HandleKeyDown(StringHash eventType, VariantMap& eventData)
     }
 }
 
-void Sample::HandleSceneUpdate(StringHash eventType, VariantMap& eventData)
+void Sample::HandleSceneUpdate(StringHash /*eventType*/, VariantMap& eventData)
 {
     // Move the camera by touch, if the camera node is initialized by descendant sample class
     if (touchEnabled_ && cameraNode_)
@@ -386,7 +387,7 @@ void Sample::HandleSceneUpdate(StringHash eventType, VariantMap& eventData)
     }
 }
 
-void Sample::HandleTouchBegin(StringHash eventType, VariantMap& eventData)
+void Sample::HandleTouchBegin(StringHash /*eventType*/, VariantMap& eventData)
 {
     // On some platforms like Windows the presence of touch input can only be detected dynamically
     InitTouchInput();
@@ -394,7 +395,7 @@ void Sample::HandleTouchBegin(StringHash eventType, VariantMap& eventData)
 }
 
 // If the user clicks the canvas, attempt to switch to relative mouse mode on web platform
-void Sample::HandleMouseModeRequest(StringHash eventType, VariantMap& eventData)
+void Sample::HandleMouseModeRequest(StringHash /*eventType*/, VariantMap& eventData)
 {
     Console* console = GetSubsystem<Console>();
     if (console && console->IsVisible())
@@ -407,7 +408,7 @@ void Sample::HandleMouseModeRequest(StringHash eventType, VariantMap& eventData)
     input->SetMouseMode(useMouseMode_);
 }
 
-void Sample::HandleMouseModeChange(StringHash eventType, VariantMap& eventData)
+void Sample::HandleMouseModeChange(StringHash /*eventType*/, VariantMap& eventData)
 {
     Input* input = GetSubsystem<Input>();
     bool mouseLocked = eventData[MouseModeChanged::P_MOUSELOCKED].GetBool();

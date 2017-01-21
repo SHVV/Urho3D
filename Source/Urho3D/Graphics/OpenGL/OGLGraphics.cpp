@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -1607,6 +1607,8 @@ void Graphics::SetTexture(unsigned index, Texture* texture)
 
             if (texture->GetParametersDirty())
                 texture->UpdateParameters();
+            if (texture->GetLevelsDirty())
+                texture->RegenerateLevels();
         }
         else if (impl_->textureTypes_[index])
         {
@@ -1618,7 +1620,7 @@ void Graphics::SetTexture(unsigned index, Texture* texture)
     }
     else
     {
-        if (texture && texture->GetParametersDirty())
+        if (texture && (texture->GetParametersDirty() || texture->GetLevelsDirty()))
         {
             if (impl_->activeTexture_ != index)
             {
@@ -1627,7 +1629,10 @@ void Graphics::SetTexture(unsigned index, Texture* texture)
             }
 
             glBindTexture(texture->GetTarget(), texture->GetGPUObjectName());
-            texture->UpdateParameters();
+            if (texture->GetParametersDirty())
+                texture->UpdateParameters();
+            if (texture->GetLevelsDirty())
+                texture->RegenerateLevels();
         }
     }
 }
@@ -1725,6 +1730,10 @@ void Graphics::SetRenderTarget(unsigned index, RenderSurface* renderTarget)
                 parentTexture->SetResolveDirty(true);
                 renderTarget->SetResolveDirty(true);
             }
+
+            // If mipmapped, mark the levels needing regeneration
+            if (parentTexture->GetLevels() > 1)
+                parentTexture->SetLevelsDirty();
         }
 
         impl_->fboDirty_ = true;
@@ -1874,7 +1883,7 @@ void Graphics::SetDepthBias(float constantBias, float slopeScaledBias)
 #ifndef GL_ES_VERSION_2_0
         if (slopeScaledBias != 0.0f)
         {
-            // OpenGL constant bias is unreliable and dependant on depth buffer bitdepth, apply in the projection matrix instead
+            // OpenGL constant bias is unreliable and dependent on depth buffer bitdepth, apply in the projection matrix instead
             glEnable(GL_POLYGON_OFFSET_FILL);
             glPolygonOffset(slopeScaledBias, 0.0f);
         }

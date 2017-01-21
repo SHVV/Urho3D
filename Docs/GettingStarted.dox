@@ -13,22 +13,25 @@ Although all required third-party libraries are included as source code, there a
 - For Windows, the June 2010 DirectX SDK needs to be installed. This is not necessary if building on Visual Studio 2012 or newer, which install the Windows SDK with the necessary DirectX files.
 
 - For Linux, install one or more of the development packages from each software component category below. Building as 32-bit on a 64-bit system requires installing also the 32-bit versions of the development libraries.
-  + %Database server (optional). Disabled by default even when the development package is installed, use URHO3D_DATABASE_ODBC build option to enable. The two packages below are mutually exclusive. The ODBC driver manager is the recommended package.
+  + %Database server (optional). Disabled by default even when the development package is installed, use URHO3D_DATABASE_ODBC=1 to enable. The two packages below are mutually exclusive. The ODBC driver manager is the recommended package.
     - libiodbc2-dev (Debian-based) or libiodbc-devel (RedHat-based) for iODBC driver manager.
     - unixodbc-dev (Debian-based) or unixODBC-devel (RedHat-based) for ODBC driver manager.
   + Display server (essential). One or more of these can be installed at the same time. When multiple display servers are available, X11 takes precedence (overridable using SDL_VIDEODRIVER environment variable during application runtime).
-    - libdirectfb-dev (Debian-based only) for Direct Frame Buffer (DirectFB). Disabled by default even when installed, use SDL_OPT_VIDEO_DIRECTFB build option to enable.
-    - libegl1-mesa-dev and mir-client-platform-mesa-dev (Ubuntu only) for Mir.
-    - libegl1-mesa-dev and libwayland-dev (Debian-based) or libwayland-client-devel, libwayland-cursor-devel, and mesa-libwayland-egl-devel (RedHat-based) for Wayland.
+    - libdirectfb-dev (Debian-based only) for Direct Frame Buffer (DirectFB). Disabled by default even when installed, use VIDEO_DIRECTFB=1 to enable.
+    - libegl1-mesa-dev and mir-client-platform-mesa-dev (Ubuntu only) for Mir. Only Mir version 0.24.0 or above is supported. Disabled by default even when installed, use VIDEO_MIR=1 to enable.
+    - libegl1-mesa-dev, libwayland-dev, and wayland-protocols (Debian-based) or libwayland-client-devel, libwayland-cursor-devel, mesa-libwayland-egl-devel, and wayland-protocols-devel (RedHat-based) for Wayland.
     - libx11-dev, libxcursor-dev, libxext-dev, libxi-dev, libxinerama-dev, libxrandr-dev, libxrender-dev, libxss-dev, and libxxf86vm-dev (Debian-based) or libX11-devel, libXcursor-devel, libXext-devel, libXi-devel, libXinerama-devel, libXrandr-devel, libXrender-devel, libXScrnSaver-devel, and libXxf86vm-devel (RedHat-based) for X11 and its extensions. Alternatively, you can use xorg-devel meta package on Debian-based system, but it would install other unneeded packages as well.
   + %Sound server (essential). One or more of these can be installed at the same time. When multiple sound servers are available, PulseAudio takes precedence (overridable using SDL_AUDIODRIVER environment variable during application runtime).
     - libasound2-dev (Debian-based) or  alsa-lib-devel (RedHat-based) for Advanced Linux %Sound Architecture (ALSA).
     - arts-devel (RedHat-based only) for Analog Real %Time Synthesizer (aRts).
     - libaudio-dev (Debian-based only) for %Network %Audio System (NAS).
     - libesd0-dev (Debian-based) or esound-devel (RedHat-based) for Enlightened %Sound Daemon (ESounD).
-    - libfusionsound-dev (Debian-based only, not available on Ubuntu) for FusionSound. Disabled by default even when installed, use SDL_OPT_FUSIONSOUND build option to enable.
+    - libfusionsound-dev (Debian-based only, not available on Ubuntu) for FusionSound. Disabled by default even when installed, use FUSIONSOUND=1 to enable.
     - libpulse-dev (Debian-based) or pulseaudio-libs-devel (RedHat-based) for PulseAudio.
     - libroar-dev (Debian-based only) for RoarAudio (SNDIO).
+  + %Input method editor (optional). One or both of these can be installed at the same time to enable the IME support in the game engine. When both frameworks are installed on user's host system, the application uses XMODIFIFIERS environment variable to determine which one is active.
+    - libibus-1.0-dev (Debian-based) or ibus-devel (RedHat-based) for Intelligent %Input Bus (ibus).
+    - fcitx-libs-dev (Debian-based) or fcitx-devel (RedHat-based) for Flexible %Input Method Framework (fcitx).
   + Miscellaneous (optional).
     - libdbus-1-dev (Debian-based) or dbus-devel (Redhat-based) for system-wide messaging (e.g. inhibiting screen-saver).
     - libreadline6-dev (Debian-based) or readline-devel (Redhat-based) for easy editing of command lines in interactive standalone host tools, e.g. isql and lua interpreter.
@@ -402,7 +405,6 @@ The engine can be configured using the following command line options.
 -t           Enable triple buffering
 -w           Start in windowed mode
 -s           Enable resizing when in windowed mode
--hd          Enable high DPI, only supported by Apple platforms (OSX, iOS, and tvOS)
 -q           Enable quiet mode which does not log to standard output stream
 -b <length>  Sound buffer length in milliseconds
 -r <freq>    Sound mixing frequency in Hz
@@ -662,7 +664,7 @@ The default <generator> when not specified is 'generic', which let CMake to dete
 
 The default <platform> when not specified is 'native'. The possible values are: 'android', 'web', 'ios', 'mingw', 'rpi'. Naturally this influences the compiler toolchain being used in the generated build tree.
 
-When using the 'rake cmake' task, the <option>=\<value> pairs are optional build options supported by our build scripts as usual. However, the format here does not expect a leading '-D' for each pair. When using the 'rake make' task, the <option>=\<value> pairs are optional build options supported by the respective build tools. For example on iOS platform using 'xcodebuild' build tool, one could pass the '-sdk' option as follows: 'rake make ios sdk=iphonesimulator'. Note the absense of leading '-' character in the example. To build a specific built-in target in the project, use the 'target' option, e.g. 'rake make target=install'. In a multi-config project, such as Xcode project or VS solution, use the 'config' option to choose which build configuration to use, e.g. 'rake make config=Release'. For Xcode project building using 'rake make' task, you may optional install the 'xcpretty' filter to address the verbosity of the 'xcodebuild' tool from its standard output stream. On the other hand, pass the 'unfilter' option to get the output from 'xcodebuild' tool unfiltered regardless the 'xcpretty' is installed or not. You can pass the 'clean_first' option to perform a clean build. By default this task invokes the respective build tool to use all the logical CPU cores available, but you can use the 'numjobs' option to override this default.
+When using the 'rake cmake' task, the <option>=\<value> pairs are optional build options supported by our build scripts as usual. However, the format here does not expect a leading '-D' for each pair. When using the 'rake make' task, the <option>=\<value> pairs are optional build options supported by the respective build tools. For example on iOS platform using 'xcodebuild' build tool, one could pass the '-sdk' option as follows: 'rake make ios sdk=iphonesimulator'. Note the absence of leading '-' character in the example. To build a specific built-in target in the project, use the 'target' option, e.g. 'rake make target=install'. In a multi-config project, such as Xcode project or VS solution, use the 'config' option to choose which build configuration to use, e.g. 'rake make config=Release'. For Xcode project building using 'rake make' task, you may optional install the 'xcpretty' filter to address the verbosity of the 'xcodebuild' tool from its standard output stream. On the other hand, pass the 'unfilter' option to get the output from 'xcodebuild' tool unfiltered regardless the 'xcpretty' is installed or not. You can pass the 'clean_first' option to perform a clean build. By default this task invokes the respective build tool to use all the logical CPU cores available, but you can use the 'numjobs' option to override this default.
 
 Use the 'build_tree' option to set the path to the desired build tree location. When not specified then the build tree location would be defaulted to '../<platform>-Build', relative to the project root. To avoid repeating the customized build tree locations for each platform, you can set and export them as environment variables. The '<platform_>build_tree' option takes precedence over normal 'build_tree' option. For example with these commands below, the native and RPI build tree will be generated in the ~/custom-native-Build and ~/custom-rpi-Build, respectively, and then build from there.
 
@@ -842,6 +844,13 @@ The editor setting "Pan using middle mouse button" switches the controls to the 
 \verbatim
 Middle mouse       - Hold down pans the camera
 Shift+Middle mouse - Hold down orbits the camera around selected objects
+\endverbatim
+
+The PaintSelect-tool usage:
+
+\verbatim
+Key C              - Enable/Disable PaintSelection-tool (circle) for selecting origins in viewport, Hold Ctrl during painting with circle to enable deselection operation
+Key Space          - Show/Hide name for nearly placed origins in viewport while ShowOrigins are enabled in toolbar
 \endverbatim
 
 \section EditorInstructions_Controls2 Controls (Blender style hotkeys)

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2016 the Urho3D project.
+// Copyright (c) 2008-2017 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -927,7 +927,7 @@ bool CScriptArray::operator==(const CScriptArray &other) const
         if( cmpContext == 0 )
         {
             // TODO: Ideally this context would be retrieved from a pool, so we don't have to
-            //       create a new one everytime. We could keep a context with the array object
+            //       create a new one every time. We could keep a context with the array object
             //       but that would consume a lot of resources as each context is quite heavy.
             cmpContext = objType->GetEngine()->CreateContext();
         }
@@ -1136,7 +1136,7 @@ int CScriptArray::Find(asUINT startAt, void *value) const
         if( cmpContext == 0 )
         {
             // TODO: Ideally this context would be retrieved from a pool, so we don't have to
-            //       create a new one everytime. We could keep a context with the array object
+            //       create a new one every time. We could keep a context with the array object
             //       but that would consume a lot of resources as each context is quite heavy.
             cmpContext = objType->GetEngine()->CreateContext();
         }
@@ -1309,7 +1309,7 @@ void CScriptArray::Sort(asUINT startAt, asUINT count, bool asc)
         if( cmpContext == 0 )
         {
             // TODO: Ideally this context would be retrieved from a pool, so we don't have to
-            //       create a new one everytime. We could keep a context with the array object
+            //       create a new one every time. We could keep a context with the array object
             //       but that would consume a lot of resources as each context is quite heavy.
             cmpContext = objType->GetEngine()->CreateContext();
         }
