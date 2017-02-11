@@ -64,10 +64,9 @@ void UnitModel::notify_attribute_changed()
   using namespace ModelAttributeChanged;
 
   VariantMap& eventData = GetEventDataMap();
-  eventData[P_NODE] = node_;
-  //eventData[P_EFFECT] = effect_;
+  eventData[P_COMP] = this;
   // TODO: add attribute's categories
 
-  node_->SendEvent(E_MODEL_ATTRIBUTE_CHANGED, eventData);
+  SendEvent(E_MODEL_ATTRIBUTE_CHANGED, eventData);
   MarkNetworkUpdate();
 }

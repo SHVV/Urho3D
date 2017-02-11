@@ -45,15 +45,22 @@ void StructureView::RegisterObject(Context* context)
 }
 
 // Adds vew for Node model
-void StructureView::add_node(NodeModel* joint)
+void StructureView::add_node(NodeModel* node_model)
 {
-  Node* node = joint->GetNode();
   // TODO: insert in free space
-  m_nodes.Push(WeakPtr<NodeModel>(joint));
-  m_nodes_map[node] = m_nodes.Size() - 1;
+  m_nodes.Push(WeakPtr<NodeModel>(node_model));
+  m_nodes_map[node_model] = m_nodes.Size() - 1;
 
+  m_nodes_index_dirty = true;
+
+  // Subscribe for attributes changes
+  SubscribeToEvent(
+    node_model,
+    E_MODEL_ATTRIBUTE_CHANGED, 
+    URHO3D_HANDLER(StructureView, on_node_attribute_changed)
+  );
   // Subscribe at the end, because it will notify dirty immediatly
-  node->AddListener(this);
+  node_model->GetNode()->AddListener(this);
 }
 
 /// Prepare everything before rendering
@@ -104,12 +111,11 @@ void StructureView::on_update_views(StringHash eventType, VariantMap& eventData)
   m_vertex_buffer->SetData(vertex_data.get());
 
   //m_index_buffer = new IndexBuffer(context_);
-  SharedPtr<Model> balls_model(new Model(context_));
   SharedPtr<Geometry> balls_geom(new Geometry(context_));
-
   balls_geom->SetVertexBuffer(0, m_vertex_buffer);
   balls_geom->SetDrawRange(POINT_LIST, 0, 0, 0, m_nodes.Size());
   
+  SharedPtr<Model> balls_model(new Model(context_));
   balls_model->SetNumGeometries(1);
   balls_model->SetGeometry(0, 0, balls_geom);
   balls_model->SetBoundingBox(bb);
@@ -127,9 +133,28 @@ void StructureView::on_update_views(StringHash eventType, VariantMap& eventData)
 /// Handle scene node transform dirtied.
 void StructureView::OnMarkedDirty(Node* node)
 {
-  NodeModel* joint = node->GetComponent<NodeModel>();
-  if (joint) {
-    int index = m_nodes_map[node];
-    m_dirty_nodes.Push(index);
+  NodeModel* node_model = node->GetComponent<NodeModel>();
+  if (node_model) {
+    mark_dirty(node_model);
   }
+}
+
+/// Handle node model attribute changed event
+void StructureView::on_node_attribute_changed(
+  StringHash eventType,
+  VariantMap& eventData
+)
+{
+  auto node_model = 
+    static_cast<NodeModel*>(eventData[ModelAttributeChanged::P_COMP].GetPtr());
+
+  // TODO: check different attribute categories.
+  m_nodes_index_dirty = true;
+}
+
+/// Mark node model dirty
+void StructureView::mark_dirty(NodeModel* node)
+{
+  int index = m_nodes_map[node];
+  m_dirty_nodes.Insert(index);
 }

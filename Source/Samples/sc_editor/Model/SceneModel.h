@@ -58,7 +58,7 @@ public:
 
   // Delete functions
 
-  /// Delete unit (delete all depndents, if necessary)
+  /// Delete unit (delete all depedents, if necessary)
 
   // Serialization, Undo/Redo
 
@@ -67,6 +67,8 @@ public:
   /// Load scene
 
   /// Commit transaction
+
+  /// Rollback transaction
 
   /// Undo
 

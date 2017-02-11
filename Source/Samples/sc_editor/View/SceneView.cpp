@@ -58,7 +58,7 @@ SceneView::SceneView(Context* context)
   Light* light = lightNode->CreateComponent<Light>();
   light->SetLightType(LIGHT_DIRECTIONAL);
   light->SetColor(Color(1.0f, 0.95f, 0.8f));
-  light->SetBrightness(7.0f);
+  light->SetBrightness(10.0f);
   light->SetShadowBias(BiasParameters(0.0001f, 0.5f));
   light->SetShadowCascade(CascadeParameters(2.0f, 10.0f, 50.0f, 250.0f, 0.9f));
   //light->SetSpecularIntensity(1.5f);
@@ -132,4 +132,5 @@ void SceneView::dispatch_new_unit(UnitModel* unit)
   if (NodeModel::GetTypeStatic() == type) {
     m_structure_view->add_node(static_cast<NodeModel*>(unit));
   }
+  // TODO: add other component types
 }
