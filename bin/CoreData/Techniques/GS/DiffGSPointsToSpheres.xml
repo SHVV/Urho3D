@@ -1,13 +1,15 @@
 <!--technique vs="LitGSPointsToSpheres" ps="LitGSPointsToSpheres" gs="LitGSPointsToSpheres" vsdefines="NOUV" -->
 <technique vs="LitGSRayTraced" ps="LitGSRayTraced" gs="LitGSRayTraced" vsdefines="NOUV" >
 <!--technique vs="ShadowGSRayTraced" ps="ShadowGSRayTraced" gs="ShadowGSRayTraced" vsdefines="NOUV" -->
-  <pass name="base" />
+  <!--pass name="base" />
   <pass name="litbase" psdefines="AMBIENT" />
   <pass name="light" depthtest="equal" depthwrite="false" blend="add" />
   <!--pass name="prepass" psdefines="PREPASS" />
   <pass name="material" psdefines="MATERIAL" depthtest="equal" depthwrite="false" /-->
   <pass name="deferred" psdefines="DEFERRED" />
   <!--pass name="depth" vs="Depth" ps="Depth" /-->
+  <!--pass name="alpha" gsdefines="ALPHA" psdefines="ALPHA PBR" depthwrite="true" blend="alpha" />
+  <pass name="litalpha" gsdefines="ALPHA" psdefines="ALPHA PBR" depthwrite="false" blend="addalpha" /-->
   <pass name="shadow" vs="ShadowGSRayTraced" ps="ShadowGSRayTraced" gs="ShadowGSRayTraced" />
   <!--pass name="shadow" gsdefines="SHADOW_MAP" psdefines="SHADOW_MAP" /-->
 </technique>

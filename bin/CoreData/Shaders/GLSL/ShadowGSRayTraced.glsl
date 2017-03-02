@@ -62,8 +62,13 @@ void GS()
   bool ortographic = cDepthMode.x == 1.0;
   vec3 toCamera = ortographic ? vec3(0.0, 0.0, -1.0) : - normalize(iPos.xyz);
 #ifdef BEAMS
-  float radius = min(vRadius[0], vRadius[1]) * cRadius;
+  float radius = min(vRadius[0], vRadius[1]) * 0.7;
   vec3 beam_dir = iPos2.xyz - iPos.xyz;
+
+  // Limit thickness of beam
+  float beam_len = length(beam_dir);
+  radius = min(beam_len / 30, radius);
+
   vec3 up = normalize(cross(beam_dir, toCamera));
   // TODO: check for parallel case
   vec3 right = normalize(cross(up, beam_dir));

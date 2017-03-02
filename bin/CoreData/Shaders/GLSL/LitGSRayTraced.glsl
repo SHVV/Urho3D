@@ -55,6 +55,7 @@ void VS()
 #include "Transform.glsl"
 #line 30052
 
+uniform vec2 cGBufferInvSize;
 uniform mat4 cModel;
 uniform mat4 cViewProj;
 uniform mat4 cViewInv;
@@ -115,12 +116,12 @@ void GS()
   bool ortographic = cDepthMode.x == 1.0;
   vec3 toCamera = ortographic ? vec3(0.0, 0.0, -1.0) : - normalize(iPos.xyz);
 #ifdef BEAMS
-  float radius = min(vRadius[0], vRadius[1]) * cRadius;
+  float radius = min(vRadius[0], vRadius[1]) * 0.7;
   vec3 beam_dir = iPos2.xyz - iPos.xyz;
-  float beam_len = length(beam_dir);
 
-  // TODO: limit thickness of beam
-  // radius = beam_len / 30;
+  // Limit thickness of beam
+  float beam_len = length(beam_dir);
+  radius = min(beam_len / 30, radius);
 
   vec3 up = normalize(cross(beam_dir, toCamera));
   // TODO: check for parallel case
@@ -185,7 +186,25 @@ void GS()
   }
 #endif
 
-  float size = radius * 1;
+  float size = radius;
+
+  vec4 r_calc = vec4(radius, radius, iPos.z, 1.0);
+  r_calc = r_calc * cProj;
+  float rx = abs(r_calc.x / (r_calc.w * cGBufferInvSize.x));
+  //size = rx;
+//#ifdef ALPHA
+//  #ifdef BEAMS
+//    if (rx > 3) return;
+//  #else 
+//    if (rx > 4) return;
+//  #endif
+//#else
+//  #ifdef BEAMS
+//    if (rx < 3) return;
+//  #else 
+//    if (rx < 4) return;
+//  #endif
+//#endif
 
 #if !defined(SHADOW_MAP) && !defined(BEAMS)
   toCamera *= size;
@@ -405,6 +424,9 @@ Hit intersectQuadric(mat4 q, Ray r)
 
 void PS()
 {
+//#ifdef ALPHA
+//  discard;
+//#endif
   //return;
 #ifdef SHADOW_MAP
   //return;
@@ -445,10 +467,10 @@ void PS()
   vec3 normal = normalize(pos - gWorldPos);
   // End of sphere trace
 #endif
-  float dist = (gNormal.w - 30) / 15;
-  dist = min(dist, 1.0);
-  dist = max(dist, 0.0);
-  normal = mix(normal, gNormal.xyz, dist);
+  //float dist = (gNormal.w - 30) / 15;
+  //dist = min(dist, 1.0);
+  //dist = max(dist, 0.0);
+  //normal = mix(normal, gNormal.xyz, dist);
 
   vec4 proj_pos = vec4(pos, 1.0) * cProj;
   vec4 WorldPos = vec4((vec4(pos, 1.0) * cViewInv).xyz, GetDepth(proj_pos));
@@ -535,40 +557,81 @@ void PS()
         vec3 lightDir;
         vec3 finalColor;
 
-        float diff = GetDiffuse(normal, WorldPos.xyz, lightDir);
+        float atten = 1;
 
-        #ifdef SHADOW
-          vec4 projWorldPos = vec4(WorldPos.xyz, 1.0);
-          vec4 ShadowPos[NUMCASCADES];
-          for (int i = 0; i < NUMCASCADES; i++)
-            ShadowPos[i] = GetShadowPos(i, projWorldPos);
-          diff *= GetShadow(ShadowPos, WorldPos.w);
-        #endif
-    
-        #if defined(SPOTLIGHT)
-          vec4 SpotPos = vec4(WorldPos.xyz, 1.0) * cLightMatrices[0];
-          lightColor = SpotPos.w > 0.0 ? texture2DProj(sLightSpotMap, SpotPos).rgb * cLightColor.rgb : vec3(0.0, 0.0, 0.0);
-        // TODO: Add spotlight support
-        /*#elif defined(CUBEMASK)
-            lightColor = textureCube(sLightCubeMap, vCubeMaskVec).rgb * cLightColor.rgb;*/
-        #else
-            lightColor = cLightColor.rgb;
-        #endif
-    
-        #ifdef SPECULAR
-            float spec = GetSpecular(normal, cCameraPosPS - WorldPos.xyz, lightDir, cMatSpecColor.a);
-            finalColor = diff * lightColor * (diffColor.rgb + spec * specColor * cLightColor.a);
-        #else
-            finalColor = diff * lightColor * diffColor.rgb;
-        #endif
+#if defined(DIRLIGHT)
+        atten = GetAtten(normal, WorldPos.xyz, lightDir);
+#elif defined(SPOTLIGHT)
+        atten = GetAttenSpot(normal, WorldPos.xyz, lightDir);
+#else
+        atten = GetAttenPoint(normal, WorldPos.xyz, lightDir);
+#endif
 
-        #ifdef AMBIENT
-            finalColor += cAmbientColor.rgb * diffColor.rgb;
-            finalColor += cMatEmissiveColor;
-            gl_FragColor = vec4(GetFog(finalColor, fogFactor), diffColor.a);
-        #else
-            gl_FragColor = vec4(GetLitFog(finalColor, fogFactor), diffColor.a);
-        #endif
+        float shadow = 1.0;
+#ifdef SHADOW
+        shadow = GetShadow(vShadowPos, WorldPos.w);
+#endif
+
+#if defined(SPOTLIGHT)
+        lightColor = vSpotPos.w > 0.0 ? texture2DProj(sLightSpotMap, vSpotPos).rgb * cLightColor.rgb : vec3(0.0, 0.0, 0.0);
+#elif defined(CUBEMASK)
+        lightColor = textureCube(sLightCubeMap, vCubeMaskVec).rgb * cLightColor.rgb;
+#else
+        lightColor = cLightColor.rgb;
+#endif
+        vec3 toCamera = normalize(cCameraPosPS - WorldPos.xyz);
+        vec3 lightVec = normalize(lightDir);
+        float ndl = clamp((dot(normal, lightVec)), M_EPSILON, 1.0);
+
+        vec3 BRDF = GetBRDF(WorldPos.xyz, lightDir, lightVec, toCamera, normal, roughness, diffColor.rgb, specColor);
+
+        finalColor.rgb = BRDF * lightColor * (atten * shadow) / M_PI;
+
+#ifdef AMBIENT
+        finalColor += cAmbientColor.rgb * diffColor.rgb;
+        finalColor += cMatEmissiveColor;
+        gl_FragColor = vec4(GetFog(finalColor, fogFactor), diffColor.a);
+#else
+        gl_FragColor = vec4(GetLitFog(finalColor, fogFactor), diffColor.a);
+#endif
+        //vec3 lightColor;
+        //vec3 lightDir;
+        //vec3 finalColor;
+
+        //float diff = GetDiffuse(normal, WorldPos.xyz, lightDir);
+
+        //#ifdef SHADOW
+        //  vec4 projWorldPos = vec4(WorldPos.xyz, 1.0);
+        //  vec4 ShadowPos[NUMCASCADES];
+        //  for (int i = 0; i < NUMCASCADES; i++)
+        //    ShadowPos[i] = GetShadowPos(i, projWorldPos);
+        //  diff *= GetShadow(ShadowPos, WorldPos.w);
+        //#endif
+    
+        //#if defined(SPOTLIGHT)
+        //  vec4 SpotPos = vec4(WorldPos.xyz, 1.0) * cLightMatrices[0];
+        //  lightColor = SpotPos.w > 0.0 ? texture2DProj(sLightSpotMap, SpotPos).rgb * cLightColor.rgb : vec3(0.0, 0.0, 0.0);
+        //// TODO: Add spotlight support
+        ///*#elif defined(CUBEMASK)
+        //    lightColor = textureCube(sLightCubeMap, vCubeMaskVec).rgb * cLightColor.rgb;*/
+        //#else
+        //    lightColor = cLightColor.rgb;
+        //#endif
+    
+        //#ifdef SPECULAR
+        //    float spec = GetSpecular(normal, cCameraPosPS - WorldPos.xyz, lightDir, cMatSpecColor.a);
+        //    finalColor = diff * lightColor * (diffColor.rgb + spec * specColor * cLightColor.a);
+        //#else
+        //    finalColor = diff * lightColor * diffColor.rgb;
+        //#endif
+
+        //#ifdef AMBIENT
+        //    finalColor += cAmbientColor.rgb * diffColor.rgb;
+        //    finalColor += cMatEmissiveColor;
+        //    gl_FragColor = vec4(GetFog(finalColor, fogFactor), diffColor.a);
+        //#else
+        //    gl_FragColor = vec4(GetLitFog(finalColor, fogFactor), diffColor.a);
+        //#endif
     // TODO: Implement deffered shading and light prepass mode
   //  #elif defined(PREPASS)
   //      // Fill light pre-pass G-Buffer

@@ -8,6 +8,7 @@
 
 class SceneModel;
 class SceneView;
+class BaseContext;
 
 namespace Urho3D
 {
@@ -50,16 +51,22 @@ private:
   void CreateScene();
   /// Construct an instruction text to the UI.
   void CreateInstructions();
-  /// Set up a viewport for displaying the scene.
-  void SetupViewport();
   /// Subscribe to application-wide logic update events.
   void SubscribeToEvents();
-  /// Read input and move the camera.
-  void MoveCamera(float timeStep);
   /// Animate the vertex data of the objects.
   void AnimateObjects(float timeStep);
+  /// Handle the Mouse move.
+  void HandleMouseMove(StringHash eventType, VariantMap& eventData);
+  /// Handle the Mouse button down.
+  void HandleMouseDown(StringHash eventType, VariantMap& eventData);
+  /// Handle the Mouse button up.
+  void HandleMouseUp(StringHash eventType, VariantMap& eventData);
   /// Handle the logic update event.
   void HandleUpdate(StringHash eventType, VariantMap& eventData);
+  /// Handle the post rendering event.
+  void PostRenderUpdate(StringHash eventType, VariantMap& eventData);
+  /// Check, that mouse is not on the UI
+  bool is_mouse_free();
 
   /// Animation flag.
   bool animate_;
@@ -68,6 +75,8 @@ private:
 
   /// Scene model
   SharedPtr<SceneModel> m_model;
+  /// Current context
+  SharedPtr<BaseContext> m_context;
   /// Scene editor view
   SharedPtr<SceneView> m_view;
 };

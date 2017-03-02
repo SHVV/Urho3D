@@ -10,11 +10,13 @@ extern const char* EDITOR_CATEGORY;
 
 // Editor predeclarations
 class NodeModel;
+class UnitModel;
 
 // Urho predeclarations
 namespace Urho3D {
   class Scene;
   class Node;
+  class Material;
 }
 
 using namespace Urho3D;
@@ -25,24 +27,37 @@ class SceneModel : public Object {
 public:
 
   /// Construct.
-  SceneModel(Context* context);
+  SceneModel(Context* context, Node* model_root);
 
   /// Destructor
   virtual ~SceneModel();
 
   // Generic access
+  // TODO: refactor
+  /// Returns global SceneModel
+  static SceneModel* get();
 
   /// Returns pointer to the Urho scene behind
   Scene* scene();
 
-  /// Returns material list
+  /// Returns material by name
+  Material* get_vertex_material(StringHash);
+  Material* get_edge_material(StringHash);
+  Material* get_polygon_material(StringHash);
 
   /// Returns Shared properties list
 
   // Add object functions
+  /// Add Unit
+  UnitModel* create_unit(
+    StringHash class_name,
+    const Vector3& position = Vector3(0, 0, 0),
+    const Vector3& normal = Vector3(0, 0, 1),
+    Node* parent = nullptr
+  );
 
   /// Add node (ball) into the scene
-  NodeModel* create_node(const Vector3& position, Node* parent = nullptr);
+  //NodeModel* create_node(const Vector3& position, Node* parent = nullptr);
 
   /// Add beam into the scene
 
@@ -75,11 +90,27 @@ public:
   /// Redo
 
 private:
+  /// Get material from custom set
+  Material* get_material(
+    StringHash key, 
+    const HashMap<StringHash, SharedPtr<Material>>& materials,
+    Material* default_material
+  );
 
   /// Urho Scene
-  SharedPtr<Scene> m_scene;
+  WeakPtr<Scene> m_scene;
   /// Actual scene root for all units
-  SharedPtr<Node> m_scene_root;
+  WeakPtr<Node> m_scene_root;
+
+  /// Materials maps
+  HashMap<StringHash, SharedPtr<Material>> m_vertex_materials;
+  HashMap<StringHash, SharedPtr<Material>> m_edge_materials;
+  HashMap<StringHash, SharedPtr<Material>> m_polygon_materials;
+
+  /// Default materials
+  SharedPtr<Material> m_default_vertex_material;
+  SharedPtr<Material> m_default_edge_material;
+  SharedPtr<Material> m_default_polygon_material;
 };
 
 // TODO:

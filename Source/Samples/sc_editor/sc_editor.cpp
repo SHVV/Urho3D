@@ -9,6 +9,9 @@
 #include "Model/NodeModel.h"
 #include "Model/SceneModel.h"
 
+#include "Contexts/BaseContext.h"
+#include "Contexts/NodesContext.h"
+
 #include "View/SceneView.h"
 #include "View/StructureView.h"
 
@@ -51,10 +54,9 @@ SCEditor::SCEditor(Context* context)
 
   // Model
   UnitModel::RegisterObject(context);
-  NodeModel::RegisterObject(context);
 
   // View components
-  StructureView::RegisterObject(context);
+  //StructureView::RegisterObject(context);
 }
 
 void SCEditor::Setup()
@@ -62,6 +64,7 @@ void SCEditor::Setup()
   Sample::Setup();
   engineParameters_["WindowResizable"] = true;
   engineParameters_["RenderPath"] = "RenderPaths/PBRDeferredHWDepthSHW.xml";
+  //engineParameters_["RenderPath"] = "RenderPaths/PBRDeferredHWDepth.xml";
 }
 
 void SCEditor::Start()
@@ -75,9 +78,6 @@ void SCEditor::Start()
   // Create the UI content
   CreateInstructions();
 
-  // Setup the viewport for displaying the scene
-  SetupViewport();
-
   // Hook up to the frame update events
   SubscribeToEvents();
 
@@ -85,28 +85,76 @@ void SCEditor::Start()
   Sample::InitMouseMode(MM_FREE);
 }
 
+void piramid(
+  int n, float scale, const Vector3& pos,
+  const Vector<Vector3>& base, MeshGeometry* mesh
+)
+{
+  if (n) {
+    // Recursion
+    float new_scale = scale * 0.5;
+    int new_n = n - 1;
+    for (int i = 0; i < 4; ++i) {
+      Vector3 new_pos = pos + base[i] * new_scale;
+      piramid(new_n, new_scale, new_pos, base, mesh);
+    }
+  } else {
+    // Terminal
+    int indexies[4];
+    // Vertecies
+    for (int i = 0; i < 4; ++i) {
+      indexies[i] = mesh->add(base[i] * scale + pos, 0.15 * scale);
+    }
+    // Edges
+    for (int i = 0; i < 4; ++i) {
+      for (int j = i + 1; j < 4; ++j) {
+        mesh->add(indexies[i], indexies[j]);
+      }
+    }
+    // Polygons
+    mesh->add(indexies[0], indexies[1], indexies[2]);
+    mesh->add(indexies[0], indexies[3], indexies[1]);
+    mesh->add(indexies[1], indexies[3], indexies[2]);
+    mesh->add(indexies[0], indexies[2], indexies[3]);
+  }
+}
+
+void piramid(int level, float size, MeshGeometry* mesh)
+{
+  // Base
+  Vector<Vector3> base;
+  base.Push(Vector3(1, 1, -1));
+  base.Push(Vector3(-1, -1, -1));
+  base.Push(Vector3(-1, 1, 1));
+  base.Push(Vector3(1, -1, 1));
+
+  piramid(level, size, Vector3(0, 0, 0), base, mesh);
+}
+
 void SCEditor::CreateScene()
 {
   // Create Model-View
-  m_model = new SceneModel(context_);
   m_view = new SceneView(context_);
-  m_view->set_model(m_model);
+  //m_view->set_model(m_model);
   scene_ = m_view->scene();
+  m_model = new SceneModel(context_, scene_->CreateChild("Units root"));
 
-  // Create the camera
-  cameraNode_ = new Node(context_);
-  cameraNode_->SetPosition(Vector3(0.0f, 2.0f, -20.0f));
-  Camera* camera = cameraNode_->CreateComponent<Camera>();
-  camera->SetFarClip(300.0f);
+  // Create test context
+  m_context = new NodesContext(context_, m_model, m_view);
 
   // Create test guts
-  NodeModel* node = m_model->create_node(Vector3(0, 0, 0));
-  node->GetNode()->Translate(Vector3(1, 2, 3));
-  node->set_radius(0.1);
-  node = m_model->create_node(Vector3(1, 1, 3));
-  node->set_radius(0.2);
-  node = m_model->create_node(Vector3(1, 0, 3));
-  node->set_radius(0.3);
+  for (int i = 0; i < 6; ++i) {
+    float s, c;
+    SinCos(i * 360.0 / 6, s, c);
+    UnitModel* test_unit = m_model->create_unit(
+      UnitModel::GetTypeStatic(),
+      Vector3(20 * s, 20 * c, 0)
+    );
+    MeshGeometry* mesh = test_unit->rendering_mesh();
+    if (mesh) {
+      piramid(2, 5, mesh);
+    }
+  }
 }
 
 void SCEditor::CreateInstructions()
@@ -119,86 +167,55 @@ void SCEditor::CreateInstructions()
   graphics->SetWindowTitle("Spacecraft Constructor");
 }
 
-void SCEditor::SetupViewport()
-{
-  Renderer* renderer = GetSubsystem<Renderer>();
-  renderer->SetHDRRendering(true);
-  renderer->SetShadowMapSize(2048);
-  renderer->SetDrawShadows(true);
-
-  Engine* engine = GetSubsystem<Engine>();
-  engine->SetMaxFps(0);
-
-  // Set up a viewport to the Renderer subsystem so that the 3D scene can be seen
-  SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
-  renderer->SetViewport(0, viewport);
-
-  // Add post-processing effects appropriate with the example scene
-  ResourceCache* cache = GetSubsystem<ResourceCache>();
-  SharedPtr<RenderPath> effectRenderPath = viewport->GetRenderPath()->Clone();
-  //effectRenderPath->Append(cache->GetResource<XMLFile>("PostProcess/GammaCorrection.xml"));
-  effectRenderPath->Append(cache->GetResource<XMLFile>("PostProcess/AutoExposure.xml"));
-  effectRenderPath->Append(cache->GetResource<XMLFile>("PostProcess/FXAA3.xml"));
-  effectRenderPath->Append(cache->GetResource<XMLFile>("PostProcess/BloomHDR.xml"));
-
-  viewport->SetRenderPath(effectRenderPath);
-}
-
 void SCEditor::SubscribeToEvents()
 {
   // Subscribe HandleUpdate() function for processing update events
   SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(SCEditor, HandleUpdate));
+
+  SubscribeToEvent(E_MOUSEMOVE, URHO3D_HANDLER(SCEditor, HandleMouseMove));
+  SubscribeToEvent(E_MOUSEBUTTONUP, URHO3D_HANDLER(SCEditor, HandleMouseUp));
+  SubscribeToEvent(E_MOUSEBUTTONDOWN, URHO3D_HANDLER(SCEditor, HandleMouseDown));
+
+  // Post render handler
+  SubscribeToEvent(E_POSTRENDERUPDATE, URHO3D_HANDLER(SCEditor, PostRenderUpdate));
 }
 
-void SCEditor::MoveCamera(float timeStep)
-{
-  // Do not move if the UI has a focused element (the console)
-  if (GetSubsystem<UI>()->GetFocusElement())
-    return;
-
-  Input* input = GetSubsystem<Input>();
-
-  // Movement speed as world units per second
-  const float MOVE_SPEED = 20.0f;
-  // Mouse sensitivity as degrees per pixel
-  const float MOUSE_SENSITIVITY = 0.1f;
-  // Mouse sensitivity as units per pixel
-  const float MOUSE_SENSITIVITY_UNITS = 0.02f;
-  // Mouse wheel sensitivity as units per pixel
-  const float MOUSE_WHEEL_SPEED = 0.4f;
-
-  // Use this frame's mouse motion to adjust camera node yaw and pitch. Clamp the pitch between -90 and 90 degrees
-  IntVector2 mouseMove = input->GetMouseMove();
-  if (input->GetMouseButtonDown(MOUSEB_RIGHT)) {
-    yaw_ += MOUSE_SENSITIVITY * mouseMove.x_;
-    pitch_ += MOUSE_SENSITIVITY * mouseMove.y_;
-    pitch_ = Clamp(pitch_, -90.0f, 90.0f);
-    // Construct new orientation for the camera scene node from yaw and pitch. Roll is fixed to zero
-    cameraNode_->SetRotation(Quaternion(pitch_, yaw_, 0.0f));
-    cameraNode_->Translate((Vector3::LEFT * mouseMove.x_ + Vector3::UP * mouseMove.y_) * 0.01);
-  }
-
-  if (input->GetMouseButtonDown(MOUSEB_MIDDLE)) {
-    cameraNode_->Translate((Vector3::LEFT * mouseMove.x_ + Vector3::UP * mouseMove.y_) * MOUSE_SENSITIVITY_UNITS);
-  }
-  cameraNode_->Translate((Vector3::FORWARD * input->GetMouseMoveWheel()) * MOUSE_WHEEL_SPEED);
-
-  // Read WASD keys and move the camera scene node to the corresponding direction if they are pressed
-  if (input->GetKeyDown(KEY_W))
-    cameraNode_->Translate(Vector3::FORWARD * MOVE_SPEED * timeStep);
-  if (input->GetKeyDown(KEY_S))
-    cameraNode_->Translate(Vector3::BACK * MOVE_SPEED * timeStep);
-  if (input->GetKeyDown(KEY_A))
-    cameraNode_->Translate(Vector3::LEFT * MOVE_SPEED * timeStep);
-  if (input->GetKeyDown(KEY_D))
-    cameraNode_->Translate(Vector3::RIGHT * MOVE_SPEED * timeStep);
-}
 
 void SCEditor::AnimateObjects(float timeStep)
 {
   URHO3D_PROFILE(AnimateObjects);
 
   time_ += timeStep * 100.0f;
+}
+
+/// Handle the Mouse move.
+void SCEditor::HandleMouseMove(StringHash eventType, VariantMap& eventData)
+{
+  using namespace MouseMove;
+  if (m_context && is_mouse_free()) {
+    m_context->on_mouse_move(
+      eventData[P_X].GetInt(),
+      eventData[P_Y].GetInt()
+    );
+  }
+}
+
+/// Handle the Mouse button down.
+void SCEditor::HandleMouseDown(StringHash eventType, VariantMap& eventData)
+{
+  using namespace MouseButtonDown;
+  if (m_context && is_mouse_free() && eventData[P_BUTTON].GetInt() == MOUSEB_LEFT) {
+    m_context->on_mouse_down();
+  }
+}
+
+/// Handle the Mouse button up.
+void SCEditor::HandleMouseUp(StringHash eventType, VariantMap& eventData)
+{
+  using namespace MouseButtonUp;
+  if (m_context && is_mouse_free() && eventData[P_BUTTON].GetInt() == MOUSEB_LEFT) {
+    m_context->on_mouse_up();
+  }
 }
 
 void SCEditor::HandleUpdate(StringHash eventType, VariantMap& eventData)
@@ -214,11 +231,32 @@ void SCEditor::HandleUpdate(StringHash eventType, VariantMap& eventData)
     animate_ = !animate_;
   }
 
-  // Move the camera, scale movement with time step
-  MoveCamera(timeStep);
+  // Update scene view
+  m_view->update(timeStep);
+
+  // Update current context
+  if (m_context && is_mouse_free()) {
+    m_context->update(timeStep);
+  }
 
   // Animate objects' if enabled
   if (animate_) {
     AnimateObjects(timeStep);
   }
+}
+
+/// Handle the post rendering event.
+void SCEditor::PostRenderUpdate(StringHash eventType, VariantMap& eventData)
+{
+  // Render some debug geometry
+  m_view->post_render();
+}
+
+/// Check, that mouse is not on the UI
+bool SCEditor::is_mouse_free()
+{
+  UI* ui = GetSubsystem<UI>();
+  IntVector2 pos = ui->GetCursorPosition();
+  // Check the cursor is visible and there is no UI element in front of the cursor
+  return ui->GetCursor()->IsVisible() && !ui->GetElementAt(pos, true);
 }

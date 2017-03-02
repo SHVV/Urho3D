@@ -33,7 +33,7 @@ out vec4 vWorldPos;
 out vec3 vNormal;
 out vec3 vBaricentric;
 //out vec3 vColor;
-out float vFade;
+//out float vFade;
 
 uniform mat4 cViewProj;
 uniform mat4 cView;
@@ -77,8 +77,8 @@ void plate1()
       vec3(0., 0., 1.),
       vec3(1./3, 1./3, 1./3)
     );
-    float fade = clamp((20 - length(view_center)) / 5, 0, 1);
-    center += normal / len * fade;
+    //float fade = clamp((20 - length(view_center)) / 5, 0, 1);
+    center += normal / len;// *fade;
     points[3] = center;
     const int tris[3 * 4] = int[](0, 1, 3, 1, 2, 3, 2, 0, 3, 2, 1, 0);
 
@@ -93,7 +93,7 @@ void plate1()
         vWorldPos = vec4(world_pos, GetDepth(gl_Position));
         vNormal = normal;
         vBaricentric = baricentric[tris[t * 3 + i]];
-        vFade = fade;
+        //vFade = fade;
         EmitVertex();
       }
       EndPrimitive();
@@ -122,11 +122,11 @@ void plate2()
       gl_in[1].gl_Position.xyz,
       gl_in[2].gl_Position.xyz
     );
-    mat3 tri_normals = mat3(
+    /*mat3 tri_normals = mat3(
       gNormal[0],
       gNormal[1],
       gNormal[2]
-    );
+    );*/
 
     const float th = 0.13;
     const float em = 0.5 + th * 0.5;
@@ -162,7 +162,8 @@ void plate2()
     for (int i = 0; i < coords; ++i) {
       //baricentric[i].xyz = normalize(baricentric[i].xyz);
       points[i] = tri_points * baricentric[i].xyz;
-      points[i] += tri_normals * baricentric[i].xyz * len * baricentric[i].w;
+      points[i] += normal * len * baricentric[i].w;
+      //points[i] += tri_normals * baricentric[i].xyz * len * baricentric[i].w;
     }
     //float fade = clamp((20 - length(view_center)) / 5, 0, 1);
     //center += normal / len;
@@ -215,7 +216,7 @@ void plate2()
 
 void GS()
 {
-  plate2();
+  plate1();
 }
 
 #endif
@@ -225,7 +226,7 @@ in vec4 vWorldPos;
 in vec3 vNormal;
 in vec3 vBaricentric;
 //in vec3 vColor;
-in float vFade;
+//in float vFade;
 uniform float cRoughnessClose;
 #endif
 
