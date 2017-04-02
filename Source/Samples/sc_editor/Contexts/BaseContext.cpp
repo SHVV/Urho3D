@@ -78,10 +78,12 @@ Node* BaseContext::get_unit_under_mouse()
   
   PODVector<RayQueryResult> results;
   RayOctreeQuery query(results, ray, RAY_OBB, 2000, DRAWABLE_GEOMETRY);
-  m_view->scene()->GetComponent<Octree>()->RaycastSingle(query);
+  m_view->scene()->GetComponent<Octree>()->Raycast(query);
 
-  if (results.Size()) {
-    RayQueryResult& result = results[0];
+  float t = M_INFINITY;
+  Node* res = nullptr;
+  for (int i = 0; i < results.Size(); ++i){
+    RayQueryResult& result = results[i];
     Node* node = result.drawable_->GetNode();
     UnitModel* unit = node->GetComponent<UnitModel>();
     if (unit) {
@@ -91,8 +93,8 @@ Node* BaseContext::get_unit_under_mouse()
         Ray local_ray = ray.Transformed(inverse);
 
         SubObjectType sub_type;
-        if (mesh->raycast(local_ray, sub_type, sotPOLYGON, true) >= 0) {
-          return node;
+        if (mesh->raycast(local_ray, sub_type, sotPOLYGON, true, t) >= 0) {
+          res = node;
         }
 
         /*int ind = mesh->raycast(local_ray, sub_type, sotVERTEX | sotEDGE | sotPOLYGON, true);
@@ -115,7 +117,7 @@ Node* BaseContext::get_unit_under_mouse()
       }
     }
   }
-  return nullptr;
+  return res;
 }
 
 /// Get ray from current mouse position and camera
@@ -130,4 +132,11 @@ Ray BaseContext::calculate_ray()
     (float)pos.x_ / graphics->GetWidth(), 
     (float)pos.y_ / graphics->GetHeight()
   );
+}
+
+// Undo support
+/// Commits transaction, so all tracked changes will be recorded
+void BaseContext::commit_transaction()
+{
+  // Да-да, когда-нибудь это тоже будет :-)
 }

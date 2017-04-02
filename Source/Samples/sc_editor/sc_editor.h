@@ -9,6 +9,7 @@
 class SceneModel;
 class SceneView;
 class BaseContext;
+class CameraController;
 
 namespace Urho3D
 {
@@ -79,4 +80,6 @@ private:
   SharedPtr<BaseContext> m_context;
   /// Scene editor view
   SharedPtr<SceneView> m_view;
+  /// Current camera controller
+  SharedPtr<CameraController> m_camera_controller;
 };

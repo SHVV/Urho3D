@@ -67,7 +67,7 @@ void GS()
 
   // Limit thickness of beam
   float beam_len = length(beam_dir);
-  radius = min(beam_len / 30, radius);
+  radius = min(beam_len / 15, radius);
 
   vec3 up = normalize(cross(beam_dir, toCamera));
   // TODO: check for parallel case

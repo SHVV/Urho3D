@@ -137,6 +137,9 @@ public:
   /// Pack everything, if there are too much empty objects
   void compact();
 
+  /// Transform mesh with matrix
+  void transform(const Matrix3x4& tr);
+
   /// Raycast mesh. Returns index of sub object and its type
   int raycast(
     const Ray& ray,
@@ -144,6 +147,17 @@ public:
     int types,
     bool pick_hidden
   );
+  /// The same with returning t result
+  int raycast(
+    const Ray& ray,
+    SubObjectType& res_type,
+    int types,
+    bool pick_hidden,
+    float& t
+  );
+
+  // TODO: names for material slots
+  // TODO: ability to merge models and combine material IDs by slot names
 
   // Notifications
   // TODO: batch updates

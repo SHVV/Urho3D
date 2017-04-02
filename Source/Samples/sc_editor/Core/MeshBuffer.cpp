@@ -309,9 +309,9 @@ bool MeshBuffer::update()
         indexies.Push(primitive.vertexes[1]);
         indexies.Push(primitive.vertexes[2]);
         if (primitive.vertexes[3] >= 0) {
-          indexies.Push(primitive.vertexes[3]);
+          indexies.Push(primitive.vertexes[0]);
           indexies.Push(primitive.vertexes[2]);
-          indexies.Push(primitive.vertexes[1]);
+          indexies.Push(primitive.vertexes[3]);
         }
       }
     );

@@ -295,17 +295,44 @@ MeshGeometry::Polygon* MeshGeometry::get_polygon(int index)
   return &m_polygons[index];
 }
 
+/// Transform mesh with matrix
+void MeshGeometry::transform(const Matrix3x4& tr)
+{
+  for (int i = 0; i < m_vertices.Size(); ++i) {
+    Vertex& vertex = m_vertices[i];
+    if (!vertex.deleted) {
+      vertex.position = tr * vertex.position;
+      vertex.normal = tr * Vector4(vertex.normal, 0.0f);
+    }
+  }
+  send_update(GLOBAL_UPDATE);
+}
+
+
 /// Raycast mesh. Returns index of sub object and its type
 int MeshGeometry::raycast(
-  const Ray& ray, 
-  SubObjectType& res_type, 
-  int types, 
+  const Ray& ray,
+  SubObjectType& res_type,
+  int types,
   bool pick_hidden
+)
+{
+  float t = M_INFINITY;
+  
+  return raycast(ray, res_type, types, pick_hidden, t);
+}
+
+/// The same with returning t result
+int MeshGeometry::raycast(
+  const Ray& ray,
+  SubObjectType& res_type,
+  int types,
+  bool pick_hidden,
+  float& t
 )
 {
   URHO3D_PROFILE(RayCast);
 
-  float t = M_INFINITY;
   int index = -1;
 
   if (types & sotVERTEX) {
@@ -434,7 +461,7 @@ bool MeshGeometry::ray_cast_edges(
         float r = Min(v1.radius, v2.radius) * 0.7;
         // Limit thickness of beam
         float beam_len = beam_dir.Length();
-        r = Min(beam_len / 30, r);
+        r = Min(beam_len / 15, r);
 
         Vector3 up = beam_dir.CrossProduct(ray.direction_).Normalized();
 
@@ -487,6 +514,7 @@ bool MeshGeometry::ray_cast_polygons(
 {
   URHO3D_PROFILE(RayCastPolygons);
   // TODO: use search tree for faster ray cast
+  // TODO: backface picking does not work
   bool res = false;
   for (int i = 0; i < m_polygons.Size(); ++i) {
     const Polygon& polygon = m_polygons[i];

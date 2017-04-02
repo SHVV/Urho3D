@@ -6,6 +6,7 @@
 
 #include "../Core/MeshGeometry.h"
 #include "../Core/MeshBuffer.h"
+#include "../Core/MeshGenerator.h"
 #include "SceneModel.h"
 
 #include <Urho3D\Core\Context.h>
@@ -39,7 +40,27 @@ void UnitModel::RegisterObject(Context* context)
 UnitModel::UnitModel(Context* context)
   : Component(context)
 {
-  m_mesh_geometry = new MeshGeometry(context);
+  auto generator = GetSubsystem<MeshGenerator>();
+  Polyline2 profile;
+  PolylineSegment seg;
+  seg.m_lateral_material_id = 0;
+  seg.m_longitudal_material_id = 0;
+  seg.m_node_material_id = 0;
+  seg.m_plate_material_id = 0;
+  seg.m_node_radius = 0.3;
+  seg.m_smooth_vertex = true;
+  seg.m_smooth_segment = true;
+
+  seg.m_pos = Vector2(-10, 0);
+  profile.segments().Push(seg);
+  seg.m_pos = Vector2(-5, 10);
+  profile.segments().Push(seg);
+  seg.m_pos = Vector2(5, 10);
+  profile.segments().Push(seg);
+  seg.m_pos = Vector2(10, 0);
+  profile.segments().Push(seg);
+
+  m_mesh_geometry = generator->lathe(profile, 5, ttTRIANGLE);//new MeshGeometry(context);
   m_mesh_buffer = new MeshBuffer(context);
   m_mesh_buffer->set_mesh_geometry(m_mesh_geometry);
   m_mesh_buffer->add_notification_receiver(this);

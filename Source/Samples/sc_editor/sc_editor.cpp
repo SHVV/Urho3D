@@ -5,6 +5,8 @@
 #include "sc_editor.h"
 
 // Includes from editor
+#include "Core/MeshGenerator.h"
+
 #include "Model/UnitModel.h"
 #include "Model/NodeModel.h"
 #include "Model/SceneModel.h"
@@ -14,6 +16,7 @@
 
 #include "View/SceneView.h"
 #include "View/StructureView.h"
+#include "View/CameraController.h"
 
 // Includes from Urho
 #include <Urho3D/Core/CoreEvents.h>
@@ -51,6 +54,9 @@ SCEditor::SCEditor(Context* context)
   time_(0.0f)
 {
   // Register all editor factories and objects
+
+  // Mesh generator subsystem
+  context_->RegisterSubsystem(new MeshGenerator(context_));
 
   // Model
   UnitModel::RegisterObject(context);
@@ -139,6 +145,10 @@ void SCEditor::CreateScene()
   scene_ = m_view->scene();
   m_model = new SceneModel(context_, scene_->CreateChild("Units root"));
 
+  // Create default camera controller
+  // TODO: probably we need to move this into view and allow to switch on demand
+  m_camera_controller = new CameraController(context_, m_view);
+
   // Create test context
   m_context = new NodesContext(context_, m_model, m_view);
 
@@ -150,10 +160,10 @@ void SCEditor::CreateScene()
       UnitModel::GetTypeStatic(),
       Vector3(20 * s, 20 * c, 0)
     );
-    MeshGeometry* mesh = test_unit->rendering_mesh();
+    /*MeshGeometry* mesh = test_unit->rendering_mesh();
     if (mesh) {
       piramid(2, 5, mesh);
-    }
+    }*/
   }
 }
 
@@ -204,8 +214,13 @@ void SCEditor::HandleMouseMove(StringHash eventType, VariantMap& eventData)
 void SCEditor::HandleMouseDown(StringHash eventType, VariantMap& eventData)
 {
   using namespace MouseButtonDown;
-  if (m_context && is_mouse_free() && eventData[P_BUTTON].GetInt() == MOUSEB_LEFT) {
-    m_context->on_mouse_down();
+  if (is_mouse_free()) {
+    if (m_context && eventData[P_BUTTON].GetInt() == MOUSEB_LEFT) {
+      m_context->on_mouse_down();
+    } else if (m_camera_controller) {
+      // TODO: hide cursor and fade or hide UI on camera control
+      m_camera_controller->on_mouse_down(eventData);
+    }
   }
 }
 
@@ -237,6 +252,10 @@ void SCEditor::HandleUpdate(StringHash eventType, VariantMap& eventData)
   // Update current context
   if (m_context && is_mouse_free()) {
     m_context->update(timeStep);
+  }
+
+  if (m_camera_controller) {
+    m_camera_controller->update(timeStep);
   }
 
   // Animate objects' if enabled

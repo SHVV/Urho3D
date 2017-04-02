@@ -43,6 +43,26 @@ public:
   virtual void update(float dt);
 
 private:
-  // Gimabl node for manipulation
-  SharedPtr<StaticModel> m_gizmo;
+  /// Calculates closest point for current gizmo part
+  Vector3 calculate_gizmo_point();
+
+  // Gizmo node for manipulation
+  SharedPtr<Node> m_gizmo;
+  // Gizmo part
+  enum Axis {
+    aX, aY, aZ
+  };
+  struct GizmoPart {
+    SharedPtr<StaticModel> m_component;
+    Axis m_axis;
+    bool m_rotation;
+  };
+  // All gizmo parts
+  Vector<GizmoPart> m_gizmo_parts;
+  // Highligted gizmo part
+  GizmoPart* m_focus_part;
+  // Selected gizmo part
+  GizmoPart* m_active_part;
+  // Last position of active gizmo part
+  Vector3 m_gizmo_pos;
 };

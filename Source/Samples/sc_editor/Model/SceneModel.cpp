@@ -40,6 +40,7 @@ SceneModel::SceneModel(Context* context, Node* model_root)
   m_default_edge_material =
     cache->GetResource<Material>("Materials/GS/GSLinesToBeamsMat.xml");
   m_default_polygon_material = 
+    //cache->GetResource<Material>("Materials/PBR/MetallicRough5.xml");
     //cache->GetResource<Material>("Materials/Stone.xml");
     cache->GetResource<Material>("Materials/PBR/MetallicRough5SHW.xml");
 

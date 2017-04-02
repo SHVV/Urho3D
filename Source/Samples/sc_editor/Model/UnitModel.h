@@ -45,6 +45,8 @@ public:
   //virtual void ApplyAttributes() override;
   // TODO: add other component methods, that we need to override
 
+  // GetDependencyNodes
+
   /// Set material 
   //void set_material(MaterialModel* material);
   /// Get material

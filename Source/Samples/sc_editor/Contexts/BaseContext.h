@@ -58,6 +58,10 @@ protected:
   /// Get unit under mouse cursor
   Node* get_unit_under_mouse();
 
+  // Undo support. 
+  /// Commits transaction, so all tracked changes will be recorded in history
+  void commit_transaction();
+
   /// Scene model
   SharedPtr<SceneModel> m_model;
   /// Scene view

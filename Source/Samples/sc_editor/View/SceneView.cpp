@@ -192,7 +192,7 @@ const PODVector<Node*>& SceneView::selected()
 // Update each frame
 void SceneView::update(float dt)
 {
-  move_camera(dt);
+  //move_camera(dt);
 }
 
 void SceneView::move_camera(float dt)
@@ -247,7 +247,7 @@ void SceneView::post_render()
     debug_renderer->AddNode(m_selected[i], 2, false);
     auto drawable = m_selected[i]->GetDerivedComponent<Drawable>();
     if (drawable) {
-      debug_renderer->AddBoundingBox(drawable->GetWorldBoundingBox(), Color(1.0, 1.0, 1.0), false);
+      debug_renderer->AddBoundingBox(drawable->GetBoundingBox(), m_selected[i]->GetWorldTransform(), Color(1.0, 1.0, 1.0), false);
     }
   }
 }
