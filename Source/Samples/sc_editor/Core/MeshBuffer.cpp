@@ -18,7 +18,12 @@ using namespace Urho3D;
 
 // Construct.
 MeshBuffer::MeshBuffer(Context* context)
-  : Object(context)
+  : Object(context),
+    m_vertices_dirty(false),
+    m_dirty(false),
+    m_edges_dirty(false),
+    m_polygons_dirty(false)
+
 {
   SubscribeToEvent(E_POSTUPDATE, URHO3D_HANDLER(MeshBuffer, on_update_views));
 }
@@ -26,7 +31,7 @@ MeshBuffer::MeshBuffer(Context* context)
 /// Destructor
 MeshBuffer::~MeshBuffer()
 {
-  if (m_mesh_geometry) {
+  if (m_mesh_geometry.NotNull()) {
     m_mesh_geometry->remove_notification_receiver(this);
   }
 }
@@ -34,12 +39,18 @@ MeshBuffer::~MeshBuffer()
 /// Set mesh geometry, that we must show
 void MeshBuffer::set_mesh_geometry(MeshGeometry* mesh_geometry)
 {
-  if (m_mesh_geometry) {
+  if (m_mesh_geometry.NotNull()) {
     m_mesh_geometry->remove_notification_receiver(this);
   }
   m_mesh_geometry = mesh_geometry;
   m_mesh_geometry->add_notification_receiver(this);
   m_dirty = true;
+}
+
+/// Get mesh geometry, that we must show
+MeshGeometry* MeshBuffer::mesh_geometry()
+{
+  return m_mesh_geometry;
 }
 
 /// Get Urho3D Model
@@ -186,7 +197,7 @@ bool MeshBuffer::update()
     return false;
   }
 
-  if (!m_mesh_geometry) {
+  if (m_mesh_geometry.Null()) {
     return false;
   }
 

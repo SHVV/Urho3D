@@ -10,6 +10,7 @@
 // Editor predeclarations
 class SceneModel;
 class SceneView;
+class IEditor;
 
 // Urho predeclarations
 namespace Urho3D {
@@ -24,7 +25,7 @@ class BaseContext : public Object {
 public:
 
   /// Construct.
-  BaseContext(Context* context, SceneModel* model, SceneView* view);
+  BaseContext(Context* context, IEditor* editor);
 
   /// Destructor
   virtual ~BaseContext();
@@ -58,12 +59,18 @@ protected:
   /// Get unit under mouse cursor
   Node* get_unit_under_mouse();
 
+  /// Picking filter function
+  virtual bool is_pickable(Node* node);
+
+  /// Scene getter
+  SceneModel* model();
+  /// View getter
+  SceneView* view();
+
   // Undo support. 
   /// Commits transaction, so all tracked changes will be recorded in history
   void commit_transaction();
-
+  
   /// Scene model
-  SharedPtr<SceneModel> m_model;
-  /// Scene view
-  SharedPtr<SceneView> m_view;
+  IEditor* m_editor;
 };

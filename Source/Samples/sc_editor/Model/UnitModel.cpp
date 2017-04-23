@@ -7,7 +7,11 @@
 #include "../Core/MeshGeometry.h"
 #include "../Core/MeshBuffer.h"
 #include "../Core/MeshGenerator.h"
+
 #include "SceneModel.h"
+#include "DynamicModel.h"
+
+#include "../MeshGenerators/TestGenerator.h"
 
 #include <Urho3D\Core\Context.h>
 #include <Urho3D\Scene\Node.h>
@@ -16,7 +20,6 @@
 using namespace Urho3D;
 
 extern const char* EDITOR_CATEGORY;
-StringHash s_default_material = "default";
 
 //static const char* state_names[] =
 //{
@@ -40,157 +43,130 @@ void UnitModel::RegisterObject(Context* context)
 UnitModel::UnitModel(Context* context)
   : Component(context)
 {
-  auto generator = GetSubsystem<MeshGenerator>();
-  Polyline2 profile;
-  PolylineSegment seg;
-  seg.m_lateral_material_id = 0;
-  seg.m_longitudal_material_id = 0;
-  seg.m_node_material_id = 0;
-  seg.m_plate_material_id = 0;
-  seg.m_node_radius = 0.3;
-  seg.m_smooth_vertex = true;
-  seg.m_smooth_segment = true;
-
-  seg.m_pos = Vector2(-10, 0);
-  profile.segments().Push(seg);
-  seg.m_pos = Vector2(-5, 10);
-  profile.segments().Push(seg);
-  seg.m_pos = Vector2(5, 10);
-  profile.segments().Push(seg);
-  seg.m_pos = Vector2(10, 0);
-  profile.segments().Push(seg);
-
-  m_mesh_geometry = generator->lathe(profile, 5, ttTRIANGLE);//new MeshGeometry(context);
-  m_mesh_buffer = new MeshBuffer(context);
-  m_mesh_buffer->set_mesh_geometry(m_mesh_geometry);
-  m_mesh_buffer->add_notification_receiver(this);
 }
 
 /// Destructor
 UnitModel::~UnitModel()
 {
-  if (!m_mesh_buffer) {
-    m_mesh_buffer->remove_notification_receiver(this);
+}
+
+///// Get scene model
+//SceneModel* UnitModel::scene_model()
+//{
+//  // TODO: decide how to get scene this
+//  return SceneModel::get();
+//}
+
+// Parameters management
+/// Get all parameters of the component
+const Parameters& UnitModel::parameters() const
+{
+  return m_parameters;
+}
+
+/// Set all parameters in one go
+void UnitModel::set_parameters(const Parameters& parameters)
+{
+  m_parameters = parameters;
+  apply_parameters();
+}
+
+/// Set one parameter by index
+void UnitModel::set_parameter(int index, const Variant& parameter)
+{
+  // Don't do anything, if parameter was not changed
+  if (parameter != m_parameters.access_parameters_vector()[index]) {
+    m_parameters.access_parameters_vector()[index] = parameter;
+    apply_parameters(index);
   }
 }
 
-/// Get structure model
-MeshGeometry* UnitModel::structure_mesh()
+// Components tracking
+/// Gets or creates component by its type and automatically incremented index.
+Component* UnitModel::get_component(StringHash type, CreateMode mode)
 {
-  // TODO: move from here
-  return m_mesh_geometry;
+  Node* node = GetNode();
+  assert(node);
+  Component* component = nullptr;
+  for (int i = 0; i < m_tracked_components.Size(); ++i) {
+    component = m_tracked_components[i];
+    if (component->GetType() == type) {
+      // If component does not exist in update list
+      if (m_update_components.Find(component) == m_update_components.End()) {
+        // Return it
+        m_update_components.Push(component);
+        return component;
+      }
+    }
+  }
+  // Looks like we have not found component in tracked list -> create it
+  component = node->CreateComponent(type, mode);
+  m_update_components.Push(component);
+
+  return component;
 }
 
-/// Get rendering model
-MeshGeometry* UnitModel::rendering_mesh()
+/// Called on setting parameters
+void UnitModel::apply_parameters(int index)
 {
-  // TODO: move from here
-  return m_mesh_geometry;
+  // By default update guts
+  update_guts();
+  // And notify, that attributes were changed
+  notify_attribute_changed();
 }
 
-/// Get mesh rendering buffer
-const MeshBuffer* UnitModel::rendering_buffer() const
+/// Create or update all necessary components
+void UnitModel::update_guts()
 {
-  // TODO: factor out
-  return m_mesh_buffer;
+  start_updating();
+  update_guts_int();
+  finish_updating();
 }
 
-/// Get mesh rendering buffer
-MeshBuffer* UnitModel::access_rendering_buffer()
+/// Create or update all necessary components - override for derived classes
+void UnitModel::update_guts_int()
 {
-  // TODO: factor out
-  return m_mesh_buffer;
 }
 
-/// Get scene model
-SceneModel* UnitModel::scene_model()
+/// Starts updating all guts. Resets tracking
+void UnitModel::start_updating()
 {
-  // TODO: decide how to get scene this
-  return SceneModel::get();
+  m_update_components.Clear();
 }
 
-/// Creates all necessary components
-void UnitModel::create_guts()
+/// Finishes updating process. Removes all untouched tracked components
+void UnitModel::finish_updating()
 {
-  m_model = node_->CreateComponent<StaticModel>();
-  m_model->SetTemporary(true);
-  m_model->SetCastShadows(true);
+  Node* node = GetNode();
+  for (int i = 0; i < m_tracked_components.Size(); ++i) {
+    // If tracked component is not in new list -> remove it
+    if (m_update_components.Find(m_tracked_components[i]) == m_update_components.End()) {
+      node->RemoveComponent(m_tracked_components[i]);
+    }
+  }
+  m_tracked_components = m_update_components;
+  m_update_components.Clear();
 }
 
-/// Update all links due to movements
+/*/// Update all links due to movements
 void UnitModel::update_links()
 {
   // TODO: update all existing links
-}
+}*/
 
 /// Handle node being assigned.
 void UnitModel::OnNodeSet(Node* node)
 {
   if (node) {
-    create_guts();
+    update_guts();
   }
 }
 
-/// Handle node (not only our) transform being dirtied.
+/*/// Handle node (not only our) transform being dirtied.
 void UnitModel::OnMarkedDirty(Node* node)
 {
   update_links();
-}
-
-/// Get material name
-StringHash UnitModel::material_name(
-  const Vector<StringHash>& material_list, int id
-)
-{
-  return id >= material_list.Size() ? s_default_material : material_list[id];
-}
-
-/// Update model and reassign materials
-void UnitModel::update_model()
-{
-  if (m_mesh_buffer) {
-    // Update model
-    Model* model = m_mesh_buffer->model();
-    m_model->SetModel(model);
-    // Update all materials
-    SceneModel* scene = scene_model();
-    for (unsigned int i = 0; i < model->GetNumGeometries(); ++i) {
-      auto& geometry_description = m_mesh_buffer->geometry_description(i);
-      Material* material;
-      switch (geometry_description.geometry_type) {
-        case sotVERTEX: {
-          material = scene->get_vertex_material(
-            material_name(m_vertex_materials, geometry_description.material)
-          );
-          break;
-        }
-        case sotEDGE: {
-          material = scene->get_edge_material(
-            material_name(m_edge_materials, geometry_description.material)
-          );
-          break;
-        }
-        case sotPOLYGON: {
-          material = scene->get_polygon_material(
-            material_name(m_polygon_materials, geometry_description.material)
-          );
-          break;
-        }
-        default: {
-          // TODO: Assert
-          break;
-        }
-      }
-      m_model->SetMaterial(i, material);
-    }
-  }
-}
-
-/// Mesh geometry notifications
-void UnitModel::on_update()
-{
-  update_model();
-}
+}*/
 
 ///// Set unit state
 //void UnitModel::set_state(State value)
@@ -206,6 +182,7 @@ void UnitModel::on_update()
 //{
 //  return m_state;
 //}
+
 
 /// Notify all subscribers, that attribute of model has been changed
 void UnitModel::notify_attribute_changed()

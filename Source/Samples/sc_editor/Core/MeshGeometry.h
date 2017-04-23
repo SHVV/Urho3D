@@ -73,7 +73,9 @@ public:
     Polygon() :
       material(0),
       deleted(false)
-    {}
+    {
+      vertexes[3] = -1;
+    }
   };
 
   // Access functions
@@ -146,7 +148,7 @@ public:
     SubObjectType& res_type,
     int types,
     bool pick_hidden
-  );
+  ) const;
   /// The same with returning t result
   int raycast(
     const Ray& ray,
@@ -154,7 +156,7 @@ public:
     int types,
     bool pick_hidden,
     float& t
-  );
+  ) const;
 
   // TODO: names for material slots
   // TODO: ability to merge models and combine material IDs by slot names
@@ -191,13 +193,13 @@ protected:
   Polygon* get_polygon(int index);
 
   /// Raycast vertices
-  bool ray_cast_vertices(const Ray& ray, bool pick_hidden, float& t, int& index);
+  bool ray_cast_vertices(const Ray& ray, bool pick_hidden, float& t, int& index) const;
 
   /// Raycast edges
-  bool ray_cast_edges(const Ray& ray, bool pick_hidden, float& t, int& index);
+  bool ray_cast_edges(const Ray& ray, bool pick_hidden, float& t, int& index) const;
 
   /// Raycast polygons
-  bool ray_cast_polygons(const Ray& ray, bool pick_hidden, float& t, int& index);
+  bool ray_cast_polygons(const Ray& ray, bool pick_hidden, float& t, int& index) const;
 
   /// Send update to all subscribers
   void send_update(UpdateType type, int i = -1);

@@ -4,6 +4,9 @@
 
 #include "MeshGenerator.h"
 
+// Editor includes
+#include "MeshGenerationFunction.h"
+
 // Includes from Urho3D
 
 using namespace Urho3D;
@@ -17,6 +20,85 @@ MeshGenerator::MeshGenerator(Context* context)
 /// Destructor
 MeshGenerator::~MeshGenerator()
 {
+}
+
+/// Returns default parameters of function
+const Parameters& MeshGenerator::default_parameters(StringHash name)
+{
+  static Parameters empty;
+  auto it = m_functions.Find(name);
+  return it != m_functions.End() ? it->second_->default_parameters() : empty;
+}
+
+/// Generate mesh and return buffer for visualizing it.
+MeshBuffer* MeshGenerator::generate_buffer(
+  StringHash name, 
+  const Parameters& parameters
+)
+{
+  // TODO: make it in future async an generate in background thread
+  // TODO: add memory consumption tracking and clearing unused cache
+
+  // First - look into the cache
+  auto key = MakePair(name, parameters);
+  auto cache = m_generated_buffers.Find(key);
+  if (cache != m_generated_buffers.End()) {
+    return cache->second_;
+  }
+
+  // If not found - generate
+  MeshGeometry* mesh = generate_mesh(name, parameters);
+  // Failed to generate - return null
+  if (!mesh) {
+    return nullptr;
+  }
+
+  MeshBuffer* buffer = new MeshBuffer(context_);
+  buffer->set_mesh_geometry(mesh);
+
+  /// Write result to the cache
+  m_generated_buffers[key] = buffer;
+
+  return buffer;
+}
+
+/// Generate and return mesh only
+MeshGeometry* MeshGenerator::generate_mesh(
+  StringHash name, 
+  const Parameters& parameters
+)
+{
+  // TODO: add memory consumption tracking and clearing unused cache
+
+  // First - look into the cache
+  auto key = MakePair(name, parameters);
+  auto cache = m_generated_meshes.Find(key);
+  if (cache != m_generated_meshes.End()) {
+    return cache->second_;
+  }
+
+  // If not found - generate
+  auto it = m_functions.Find(name);
+  if (it == m_functions.End()) {
+    return nullptr;
+  }
+  MeshGeometry* mesh = it->second_->generate(parameters);
+  if (!mesh) {
+    return nullptr;
+  }
+
+  /// Write result to the cache
+  m_generated_meshes[key] = mesh;
+
+  return mesh;
+}
+
+/// Register mesh generation function
+void MeshGenerator::add_function(MeshGenerationFunction* function)
+{
+  assert(function);
+  function->generator(this);
+  m_functions[StringHash(function->name())] = function;
 }
 
 /// Lathe
@@ -35,6 +117,8 @@ MeshGeometry* MeshGenerator::lathe(
   // TODO: UV - coordinates
   // TODO: Vertex colors
   // TODO: refactor to make it KISS
+  // TODO: use section based generation for simplification
+  // TODO: factor out normals calculation
 
   // Assert(end_angle > start_angle);
   MeshGeometry* mesh = new MeshGeometry(context_);
@@ -149,7 +233,7 @@ MeshGeometry* MeshGenerator::lathe(
         // Lateral edges
         for (int j = 0; j < vertices; ++j) {
           MeshGeometry::Edge e;
-          e.material = seg.m_lateral_material_id;
+          e.material = seg.m_longitudal_material_id;
           e.secondary = false;
           // Major edge (always the same)
           if (last_segment.Size() < vertices) {
@@ -165,7 +249,7 @@ MeshGeometry* MeshGenerator::lathe(
         if (last_segment.Size() == vertices) {
           for (int j = 0; j < sectors; ++j) {
             MeshGeometry::Edge e;
-            e.material = seg.m_lateral_material_id;
+            e.material = seg.m_longitudal_material_id;
             e.secondary = triangulation != ttTRIANGLE;
             int next_index = (full_circle && (j == sectors - 1)) ? 0 : (j + 1);
             bool forward = true;
@@ -285,4 +369,51 @@ MeshGeometry* MeshGenerator::lathe(
   }
 
   return mesh;
+}
+
+
+void piramid(
+  int n, float scale, const Vector3& pos,
+  const Vector<Vector3>& base, MeshGeometry* mesh
+)
+{
+  if (n) {
+    // Recursion
+    float new_scale = scale * 0.5;
+    int new_n = n - 1;
+    for (int i = 0; i < 4; ++i) {
+      Vector3 new_pos = pos + base[i] * new_scale;
+      piramid(new_n, new_scale, new_pos, base, mesh);
+    }
+  } else {
+    // Terminal
+    int indexies[4];
+    // Vertecies
+    for (int i = 0; i < 4; ++i) {
+      indexies[i] = mesh->add(base[i] * scale + pos, 0.15 * scale);
+    }
+    // Edges
+    for (int i = 0; i < 4; ++i) {
+      for (int j = i + 1; j < 4; ++j) {
+        mesh->add(indexies[i], indexies[j]);
+      }
+    }
+    // Polygons
+    mesh->add(indexies[0], indexies[1], indexies[2]);
+    mesh->add(indexies[0], indexies[3], indexies[1]);
+    mesh->add(indexies[1], indexies[3], indexies[2]);
+    mesh->add(indexies[0], indexies[2], indexies[3]);
+  }
+}
+
+void piramid(int level, float size, MeshGeometry* mesh)
+{
+  // Base
+  Vector<Vector3> base;
+  base.Push(Vector3(1, 1, -1));
+  base.Push(Vector3(-1, -1, -1));
+  base.Push(Vector3(-1, 1, 1));
+  base.Push(Vector3(1, -1, 1));
+
+  piramid(level, size, Vector3(0, 0, 0), base, mesh);
 }

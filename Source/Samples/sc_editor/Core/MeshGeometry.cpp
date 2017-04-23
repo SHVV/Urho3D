@@ -315,7 +315,7 @@ int MeshGeometry::raycast(
   SubObjectType& res_type,
   int types,
   bool pick_hidden
-)
+) const
 {
   float t = M_INFINITY;
   
@@ -329,7 +329,7 @@ int MeshGeometry::raycast(
   int types,
   bool pick_hidden,
   float& t
-)
+) const
 {
   URHO3D_PROFILE(RayCast);
 
@@ -362,7 +362,7 @@ bool MeshGeometry::ray_cast_vertices(
   bool pick_hidden,
   float& t,
   int& index
-)
+) const
 {
   URHO3D_PROFILE(RayCastVertices);
   // TODO: use search tree for faster ray cast
@@ -439,7 +439,7 @@ bool MeshGeometry::ray_cast_edges(
   bool pick_hidden,
   float& t,
   int& index
-)
+) const
 {
   URHO3D_PROFILE(RayCastEdges);
   // TODO: use search tree for faster ray cast
@@ -510,7 +510,7 @@ bool MeshGeometry::ray_cast_polygons(
   bool pick_hidden,
   float& t,
   int& index
-)
+) const
 {
   URHO3D_PROFILE(RayCastPolygons);
   // TODO: use search tree for faster ray cast

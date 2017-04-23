@@ -27,6 +27,9 @@ public:
   /// Set mesh geometry, that we must show
   void set_mesh_geometry(MeshGeometry* mesh_geometry);
 
+  /// Get mesh geometry, that we must show
+  MeshGeometry* mesh_geometry();
+
   /// Get Urho3D Model
   Model* model();
 

@@ -5,11 +5,16 @@
 #pragma once
 
 #include "Sample.h"
+#include "IEditor.h"
 
 class SceneModel;
 class SceneView;
 class BaseContext;
+class ContextToolbar;
 class CameraController;
+class NodesContext;
+class CreationContext;
+class EditorUI;
 
 namespace Urho3D
 {
@@ -17,7 +22,7 @@ namespace Urho3D
   class Scene;
 }
 
-class SCEditor : public Sample
+class SCEditor : public Sample, public IEditor
 {
   URHO3D_OBJECT(SCEditor, Sample);
 
@@ -30,6 +35,21 @@ public:
 
   /// Setup after engine initialization and before running the main loop.
   virtual void Start();
+
+  /// Returns scene model
+  virtual SceneModel* model() override;
+
+  /// Returns scene view
+  virtual SceneView* view() override;
+
+  /// Returns EditorUI
+  virtual EditorUI* ui() override;
+
+  /// Returns context switcher
+  virtual ContextToolbar* context_toolbar() override;
+
+  /// Set current editor's context
+  virtual void set_context(BaseContext* context) override;
 
 protected:
   /// Return XML patch instructions for screen joystick layout for a specific sample app, if any.
@@ -82,4 +102,13 @@ private:
   SharedPtr<SceneView> m_view;
   /// Current camera controller
   SharedPtr<CameraController> m_camera_controller;
+  /// UI helper
+  SharedPtr<EditorUI> m_editor_ui;
+
+  // All contexts. 
+  // TODO: factor out 
+  /// Nodes manipulation context
+  SharedPtr<NodesContext> m_nodes_context;
+  /// Creation context
+  SharedPtr<CreationContext> m_creation_context;
 };

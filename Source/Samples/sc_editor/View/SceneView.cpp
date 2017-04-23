@@ -13,6 +13,7 @@
 // Includes from Urho3D
 #include "Urho3D\Engine\Engine.h"
 #include "Urho3D\Graphics\Camera.h"
+#include "Urho3D/Graphics/CustomGeometry.h"
 #include "Urho3D/Graphics/DebugRenderer.h"
 #include "Urho3D\Graphics\Light.h"
 #include "Urho3D\Graphics\Material.h"
@@ -57,30 +58,82 @@ SceneView::SceneView(Context* context)
   Node* zoneNode = m_urho_scene->CreateChild("Zone", LOCAL);
   zoneNode->SetTemporary(true);
   Zone* zone = zoneNode->CreateComponent<Zone>();
-  zone->SetBoundingBox(BoundingBox(-1000.0f, 1000.0f));
-  zone->SetFogColor(Color(0.2f, 0.2f, 0.2f));
-  zone->SetFogStart(200.0f);
-  zone->SetFogEnd(300.0f);
+  zone->SetBoundingBox(BoundingBox(-2000.0f, 2000.0f));
+  zone->SetFogColor(Color(0.0f, 0.0f, 0.0f));
+  zone->SetFogStart(2000.0f);
+  zone->SetFogEnd(3000.0f);
   zone->SetZoneTexture(cache->GetResource<TextureCube>("Textures/Spacebox.xml"));
 
   // Create a directional light
   Node* lightNode = m_urho_scene->CreateChild("DirectionalLight", LOCAL);
+  lightNode->SetTemporary(true);
   lightNode->SetDirection(Vector3(-0.2f, -0.6f, -0.8f)); // The direction vector does not need to be normalized
   Light* light = lightNode->CreateComponent<Light>();
   light->SetLightType(LIGHT_DIRECTIONAL);
   light->SetColor(Color(1.0f, 0.95f, 0.8f));
-  light->SetBrightness(10.0f);
-  light->SetShadowBias(BiasParameters(0.0001f, 0.5f));
-  light->SetShadowCascade(CascadeParameters(2.0f, 10.0f, 50.0f, 250.0f, 0.9f));
+  light->SetBrightness(7.0f);
+  light->SetShadowBias(BiasParameters(0.0001f, 0.1f));
+  light->SetShadowCascade(CascadeParameters(16.0f, 80.0f, 400.0f, 2000.0f, 0.9f));
   //light->SetSpecularIntensity(1.5f);
   light->SetCastShadows(true);
 
   // Create skybox. 
   Node* skyNode = m_urho_scene->CreateChild("Sky", LOCAL);
+  skyNode->SetTemporary(true);
   //skyNode->SetScale(500.0f); // The scale actually does not matter
   Skybox* skybox = skyNode->CreateComponent<Skybox>();
   skybox->SetModel(cache->GetResource<Model>("Models/Box.mdl"));
   skybox->SetMaterial(cache->GetResource<Material>("Materials/Spacebox.xml"));
+
+  // Create main axis
+  m_main_axis = m_urho_scene->CreateChild("MainAxis", LOCAL);
+  m_main_axis->SetTemporary(true);
+  auto axis = m_main_axis->CreateComponent<CustomGeometry>();
+  axis->SetNumGeometries(1);
+  // TODO: proper material
+  axis->SetMaterial(cache->GetResource<Material>("Materials/VColUnlit.xml"));
+  axis->SetViewMask(0x80000000); // Editor raycasts use viewmask 0x7fffffff
+  axis->SetOccludee(false);
+
+  axis->BeginGeometry(0, LINE_LIST);
+
+  Color axis_color(1.0, 1.0, 1.0);
+  axis->DefineVertex(Vector3(0.0, 0.0, 1000));
+  axis->DefineColor(axis_color);
+  axis->DefineVertex(Vector3(0.0, 0.0, -1000));
+  axis->DefineColor(axis_color);
+
+  axis->DefineVertex(Vector3(0.0, 3.0, 0));
+  axis->DefineColor(axis_color);
+  axis->DefineVertex(Vector3(0.0, 0.0, 10));
+  axis->DefineColor(axis_color);
+  axis->DefineVertex(Vector3(0.0, 0.0, 10));
+  axis->DefineColor(axis_color);
+  axis->DefineVertex(Vector3(0.0, -3.0, 0));
+  axis->DefineColor(axis_color);
+  axis->DefineVertex(Vector3(3.0, 0.0, 0));
+  axis->DefineColor(axis_color);
+  axis->DefineVertex(Vector3(0.0, 0.0, 10));
+  axis->DefineColor(axis_color);
+  axis->DefineVertex(Vector3(0.0, 0.0, 10));
+  axis->DefineColor(axis_color);
+  axis->DefineVertex(Vector3(-3.0, 0.0, 0));
+  axis->DefineColor(axis_color);
+
+  for (int i = -1000; i <= 1000; i += 10) {
+    float size = (i % 100 == 0) ? 3 : 1;
+    axis->DefineVertex(Vector3(-size, 0.0, i));
+    axis->DefineColor(axis_color);
+    axis->DefineVertex(Vector3(size, 0.0, i));
+    axis->DefineColor(axis_color);
+
+    axis->DefineVertex(Vector3(0.0, -size, i));
+    axis->DefineColor(axis_color);
+    axis->DefineVertex(Vector3(0.0, size, i));
+    axis->DefineColor(axis_color);
+  }
+
+  axis->Commit();
 
   setup_viewport();
 }
@@ -104,9 +157,10 @@ void SceneView::setup_viewport()
 
   // Create the camera
   m_camera_node = new Node(context_);
-  m_camera_node->SetPosition(Vector3(0.0f, 2.0f, -20.0f));
+  m_camera_node->SetPosition(Vector3(-100.0f, 100.0f, 100.0f));
+  m_camera_node->LookAt(Vector3());
   Camera* camera = m_camera_node->CreateComponent<Camera>();
-  camera->SetFarClip(300.0f);
+  camera->SetFarClip(2000.0f);
 
   Renderer* renderer = GetSubsystem<Renderer>();
   renderer->SetHDRRendering(true);
@@ -127,6 +181,7 @@ void SceneView::setup_viewport()
   //effectRenderPath->Append(cache->GetResource<XMLFile>("PostProcess/AutoExposure.xml"));
   effectRenderPath->Append(cache->GetResource<XMLFile>("PostProcess/FXAA3.xml"));
   effectRenderPath->Append(cache->GetResource<XMLFile>("PostProcess/BloomHDR.xml"));
+  effectRenderPath->Append(cache->GetResource<XMLFile>("PostProcess/GammaCorrection.xml"));
 
   viewport->SetRenderPath(effectRenderPath);
 }

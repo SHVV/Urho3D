@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../Core/MeshBuffer.h"
+#include "../Core/Parameters.h"
 
 #include <Urho3D/Scene/Component.h>
 
@@ -21,11 +22,9 @@ URHO3D_EVENT(E_MODEL_ATTRIBUTE_CHANGED, ModelAttributeChanged)
   //URHO3D_PARAM(P_EFFECT, Effect);                // ParticleEffect pointer
 }
 
-class MeshGeometry;
-class MaterialModel;
 class SceneModel;
 
-class UnitModel : public Component, public MeshBuffer::NotificationReceiver {
+class UnitModel : public Component {
   // Enable type information.
   URHO3D_OBJECT(UnitModel, Component);
 public:
@@ -45,96 +44,65 @@ public:
   //virtual void ApplyAttributes() override;
   // TODO: add other component methods, that we need to override
 
-  // GetDependencyNodes
+  // GetDependencyNodes?
 
-  /// Set material 
-  //void set_material(MaterialModel* material);
-  /// Get material
-  //const MaterialModel* material() const;
+  // Parameters management
+  /// Get all parameters of the component
+  const Parameters& parameters() const;
+  /// Set all parameters in one go
+  void set_parameters(const Parameters& parameters);
+  /// Set one parameter by index
+  void set_parameter(int index, const Variant& parameter);
+  // TODO: parameters description and additional info like max-min, flags and so on
+  // TODO: default parameters
 
-  // TODO: add more smart restrictions on moving node
-  /// Set movable flag. If true, it is possible to move node
-  //void set_movable(bool value);
-  /// Get movable flag
-  //bool movable() const;
+  // Components tracking
+  /// Gets or creates component by its type and automatically incremented index.
+  Component* get_component(StringHash type, CreateMode mode = REPLICATED);
+  /// Gets or creates component by its type and automatically incremented index.
+  template <class T> T* get_component(CreateMode mode = REPLICATED);
+  // TODO: Nodes tracking
 
-  /// Get structure model
-  MeshGeometry* structure_mesh();
-
-  /// Get rendering model
-  MeshGeometry* rendering_mesh();
-
-  /// Get mesh rendering buffer
-  const MeshBuffer* rendering_buffer() const;
-
-  // TODO: Physics model
-
-  // TODO: links
-
-  // TODO: update node position
-
-  // TODO: materials management
-
-  // TODO: attribute management
-
-  // TODO: Work with sub-objects
-
-  // TODO: Ray casts
+  // TODO: Work with sub-objects ? to other
 
   // TODO: ....
 
-  //enum State {
-  //  usNONE = 0,
-  //  usHIGHLIGHTED,  // Unit highlighted by mouse hovering
-  //  usSELECTED,     // Unit selected
-  //  usHIDDEN        // Unit hidden
-  //};
-
-  ///// Set unit state
-  //void set_state(State value);
-  ///// Get unit state
-  //State state();
-
 protected:
   // New interface functions
-  /// Creates all necessary components
-  virtual void create_guts();
+  /// Called on setting parameters
+  virtual void apply_parameters(int index = -1);
+  /// Create or update all necessary components
+  void update_guts();
+  /// Create or update all necessary components - override for derived classes
+  virtual void update_guts_int();
+
   /// Update all links due to movements
-  virtual void update_links();
+  //virtual void update_links();
 
   // Existing overrides
   /// Handle node being assigned.
   virtual void OnNodeSet(Node* node) override;
   /// Handle node (not only our) transform being dirtied.
-  virtual void OnMarkedDirty(Node* node) override;
-
-  /// Mesh geometry notifications
-  virtual void on_update() override;
+  //virtual void OnMarkedDirty(Node* node) override;
 
   // Utilities
   /// Notify all subscribers, that attribute of model has been changed
   void notify_attribute_changed();
-  /// Get mesh rendering buffer
-  MeshBuffer* access_rendering_buffer();
-  /// Update model and reassign materials
-  void update_model();
-  /// Get scene model
-  SceneModel* scene_model();
-  /// Get material name
-  StringHash material_name(const Vector<StringHash>& material_list, int id);
+  /// Starts updating all guts. Resets tracking
+  void start_updating();
+  /// Finishes updating process. Removes all untouched tracked components
+  void finish_updating();
+  ///// Get scene model
+  //SceneModel* scene_model();
 private:
-  // TODO: factor out
-  /// Mesh guts
-  SharedPtr<MeshGeometry> m_mesh_geometry;
-  SharedPtr<MeshBuffer> m_mesh_buffer;
 
-  /// Materials lists
-  Vector<StringHash> m_vertex_materials;
-  Vector<StringHash> m_edge_materials;
-  Vector<StringHash> m_polygon_materials;
-
-  /// Cached viewing model
-  WeakPtr<StaticModel> m_model;
+  // TODO: save this guts
+  /// Parameters of unit
+  Parameters m_parameters;
+  /// All tracked components
+  PODVector<Component*> m_tracked_components;
+  /// Second list of components during update
+  PODVector<Component*> m_update_components;
 
   /// Back pointer to scene
   //WeakPtr<SceneModel> m_scene;
@@ -146,3 +114,9 @@ private:
   /// State
   //State m_state;
 };
+
+
+template <class T> T* UnitModel::get_component(CreateMode mode)
+{
+  return static_cast<T*>(get_component(T::GetTypeStatic(), mode));
+}

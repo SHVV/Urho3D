@@ -119,10 +119,10 @@ void CameraController::update(float dt)
       Ray ray = calculate_ray();
       Vector3 new_pos = ray.direction_ * -distance + m_target;
       camera->Translate(new_pos - camera->GetWorldPosition(), TS_WORLD);
+      camera->LookAt(m_target);
 
       //Vector3 trans = Quaternion(pitch, yaw, 0.0f) * Vector3(0, 0, -distance) + m_target - camera->GetWorldPosition();
       //camera->Translate(trans);
-      //camera->LookAt(m_target);
       //cameraNode_->Translate((Vector3::LEFT * mouseMove.x_ + Vector3::UP * mouseMove.y_) * 0.01);
     }
 
@@ -152,11 +152,15 @@ Node* CameraController::get_unit_under_mouse()
 
   PODVector<RayQueryResult> results;
   RayOctreeQuery query(results, ray, RAY_OBB, 2000, DRAWABLE_GEOMETRY);
-  m_view->scene()->GetComponent<Octree>()->Raycast(query);
+  m_view->scene()->GetComponent<Octree>()->RaycastSingle(query);
 
   float t = M_INFINITY;
   Node* res = nullptr;
-  for (int i = 0; i < results.Size(); ++i){
+  if (results.Size()) {
+    RayQueryResult& result = results[0];
+    res = result.drawable_->GetNode();
+  }
+  /*for (int i = 0; i < results.Size(); ++i){
     RayQueryResult& result = results[i];
     Node* node = result.drawable_->GetNode();
     UnitModel* unit = node->GetComponent<UnitModel>();
@@ -172,7 +176,7 @@ Node* CameraController::get_unit_under_mouse()
         }
       }
     }
-  }
+  }*/
   return res;
 }
 

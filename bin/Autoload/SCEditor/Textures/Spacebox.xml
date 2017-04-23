@@ -1,5 +1,5 @@
 <cubemap>
-    <srgb enable="false" />
+    <srgb enable="true" />
     <face name="space_pos_x.dds" />
     <face name="space_neg_x.dds" />
     <face name="space_pos_y.dds" />

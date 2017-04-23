@@ -7,6 +7,7 @@
 #include "Constants.glsl"
 #include "Fog.glsl"
 #include "Lighting.glsl"
+#include "TriPlanarMapping.glsl"
 
 #ifdef PBR
 #include "PBR.glsl"
@@ -494,6 +495,13 @@ void PS()
     return;
 #endif
     normal = normal * GetNormalMatrix(cViewInv);
+    // TODO: use local normal and position
+    TriPlanarResult mapped = tri_planar_map(WorldPos.xyz, normal);
+    vec4 diffColor = mapped.diff;
+    float roughness = mapped.prop.r;
+    float metalness = mapped.prop.g;
+    normal = mapped.norm;
+
     //gl_FragColor = vec4(WorldPos.xyz, 1.0);
     //gl_FragColor = vec4(normal.xyz, 1.0);
 
@@ -507,7 +515,7 @@ void PS()
       #endif
       vec4 diffColor = cMatDiffColor * diffInput;
     #else*/
-      vec4 diffColor = cMatDiffColor;
+      //vec4 diffColor = cMatDiffColor;
     //#endif
 
     #ifdef VERTEXCOLOR
@@ -523,8 +531,8 @@ void PS()
     //#endif
 
     #ifdef PBR
-      float roughness = cRoughness; //1.0 - cMatSpecColor.a / 255.0; //roughMetalSrc.r + cRoughness;
-      float metalness = cMetallic; //roughMetalSrc.g + cMetallic;
+      //float roughness = cRoughness; //1.0 - cMatSpecColor.a / 255.0; //roughMetalSrc.r + cRoughness;
+      //float metalness = cMetallic; //roughMetalSrc.g + cMetallic;
 
       roughness *= roughness;
 
@@ -644,7 +652,7 @@ void PS()
         float specIntensity = specColor.g;
         float specPower = cMatSpecColor.a / 255.0;
   
-        vec3 finalColor = gVertexLight * diffColor.rgb;
+        vec3 finalColor = vec3(0.0);// gVertexLight * diffColor.rgb;
 
         // TODO: add AO
         //#ifdef AO

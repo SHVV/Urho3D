@@ -1,0 +1,8 @@
+<technique vs="SimplePanels" gs="SimplePanels" ps="SimplePanels" vsdefines="NOUV PBR IBL" psdefines="PBR IBL NORMALMAP DIFFMAP METALLIC">
+    <pass name="base" />
+    <pass name="light" depthtest="equal" depthwrite="false" blend="add" />
+    <pass name="material" psdefines="MATERIAL" depthtest="equal" depthwrite="false" />
+    <pass name="deferred" psdefines="DEFERRED" />
+    <pass name="depth" vs="Depth" gs="" ps="Depth" psexcludes="PACKEDNORMAL" />
+    <pass name="shadow" vs="Shadow" gs="" ps="Shadow" psexcludes="PACKEDNORMAL" />
+</technique>

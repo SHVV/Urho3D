@@ -8,15 +8,20 @@
 #include "Core/MeshGenerator.h"
 
 #include "Model/UnitModel.h"
+#include "Model/ProceduralUnit.h"
 #include "Model/NodeModel.h"
 #include "Model/SceneModel.h"
+#include "Model/DynamicModel.h"
 
 #include "Contexts/BaseContext.h"
 #include "Contexts/NodesContext.h"
+#include "Contexts/CreationContext.h"
 
 #include "View/SceneView.h"
-#include "View/StructureView.h"
+#include "View/EditorUI.h"
 #include "View/CameraController.h"
+
+#include "MeshGenerators/TestGenerator.h"
 
 // Includes from Urho
 #include <Urho3D/Core/CoreEvents.h>
@@ -56,10 +61,18 @@ SCEditor::SCEditor(Context* context)
   // Register all editor factories and objects
 
   // Mesh generator subsystem
-  context_->RegisterSubsystem(new MeshGenerator(context_));
+  auto generator = new MeshGenerator(context_);
+  context_->RegisterSubsystem(generator);
+  // Register generator functions
+  generator->add_function(new TestGenerator());
+  // TODO:
 
   // Model
   UnitModel::RegisterObject(context);
+  ProceduralUnit::RegisterObject(context);
+
+  // Components
+  DynamicModel::RegisterObject(context);
 
   // View components
   //StructureView::RegisterObject(context);
@@ -91,50 +104,40 @@ void SCEditor::Start()
   Sample::InitMouseMode(MM_FREE);
 }
 
-void piramid(
-  int n, float scale, const Vector3& pos,
-  const Vector<Vector3>& base, MeshGeometry* mesh
-)
+/// Returns scene model
+SceneModel* SCEditor::model()
 {
-  if (n) {
-    // Recursion
-    float new_scale = scale * 0.5;
-    int new_n = n - 1;
-    for (int i = 0; i < 4; ++i) {
-      Vector3 new_pos = pos + base[i] * new_scale;
-      piramid(new_n, new_scale, new_pos, base, mesh);
-    }
-  } else {
-    // Terminal
-    int indexies[4];
-    // Vertecies
-    for (int i = 0; i < 4; ++i) {
-      indexies[i] = mesh->add(base[i] * scale + pos, 0.15 * scale);
-    }
-    // Edges
-    for (int i = 0; i < 4; ++i) {
-      for (int j = i + 1; j < 4; ++j) {
-        mesh->add(indexies[i], indexies[j]);
-      }
-    }
-    // Polygons
-    mesh->add(indexies[0], indexies[1], indexies[2]);
-    mesh->add(indexies[0], indexies[3], indexies[1]);
-    mesh->add(indexies[1], indexies[3], indexies[2]);
-    mesh->add(indexies[0], indexies[2], indexies[3]);
-  }
+  return m_model;
 }
 
-void piramid(int level, float size, MeshGeometry* mesh)
+/// Returns scene view
+SceneView* SCEditor::view()
 {
-  // Base
-  Vector<Vector3> base;
-  base.Push(Vector3(1, 1, -1));
-  base.Push(Vector3(-1, -1, -1));
-  base.Push(Vector3(-1, 1, 1));
-  base.Push(Vector3(1, -1, 1));
+  return m_view;
+}
 
-  piramid(level, size, Vector3(0, 0, 0), base, mesh);
+/// Returns EditorUI
+EditorUI* SCEditor::ui()
+{
+  return m_editor_ui;
+}
+
+/// Returns context switcher
+ContextToolbar* SCEditor::context_toolbar()
+{
+  return m_editor_ui->context_toolbar();
+}
+
+/// Set current editor's context
+void SCEditor::set_context(BaseContext* context)
+{
+  if (m_context) {
+    m_context->deactivate();
+  }
+  m_context = context;
+  if (m_context) {
+    m_context->activate();
+  }
 }
 
 void SCEditor::CreateScene()
@@ -145,26 +148,30 @@ void SCEditor::CreateScene()
   scene_ = m_view->scene();
   m_model = new SceneModel(context_, scene_->CreateChild("Units root"));
 
+  // Create editor UI
+  m_editor_ui = new EditorUI(context_, this);
+
   // Create default camera controller
   // TODO: probably we need to move this into view and allow to switch on demand
   m_camera_controller = new CameraController(context_, m_view);
 
   // Create test context
-  m_context = new NodesContext(context_, m_model, m_view);
-
+  m_nodes_context = new NodesContext(context_, this);
+  m_creation_context = new CreationContext(context_, this);
+  //set_context(m_nodes_context);
+  set_context(m_creation_context);
+  m_creation_context->set_class_name(ProceduralUnit::GetTypeStatic());
+  m_creation_context->set_function_name(TestGenerator::s_name());
   // Create test guts
-  for (int i = 0; i < 6; ++i) {
-    float s, c;
-    SinCos(i * 360.0 / 6, s, c);
-    UnitModel* test_unit = m_model->create_unit(
-      UnitModel::GetTypeStatic(),
-      Vector3(20 * s, 20 * c, 0)
-    );
-    /*MeshGeometry* mesh = test_unit->rendering_mesh();
-    if (mesh) {
-      piramid(2, 5, mesh);
-    }*/
-  }
+  //for (int i = 0; i < 6; ++i) {
+  //  float s, c;
+  //  SinCos(i * 360.0 / 6, s, c);
+  //  ProceduralUnit* test_unit = static_cast<ProceduralUnit*>(m_model->create_unit(
+  //    ProceduralUnit::GetTypeStatic(),
+  //    Vector3(40 * s, 40 * c, 0)
+  //  ));
+  //  test_unit->set_function_name(TestGenerator::s_name());
+  //}
 }
 
 void SCEditor::CreateInstructions()
@@ -203,10 +210,13 @@ void SCEditor::HandleMouseMove(StringHash eventType, VariantMap& eventData)
 {
   using namespace MouseMove;
   if (m_context && is_mouse_free()) {
-    m_context->on_mouse_move(
-      eventData[P_X].GetInt(),
-      eventData[P_Y].GetInt()
-    );
+    Input* input = GetSubsystem<Input>();
+    if (!(input->GetMouseButtonDown(MOUSEB_MIDDLE) || input->GetMouseButtonDown(MOUSEB_RIGHT))) {
+      m_context->on_mouse_move(
+        eventData[P_X].GetInt(),
+        eventData[P_Y].GetInt()
+      );
+    }
   }
 }
 
@@ -258,6 +268,10 @@ void SCEditor::HandleUpdate(StringHash eventType, VariantMap& eventData)
     m_camera_controller->update(timeStep);
   }
 
+  if (m_editor_ui) {
+    m_editor_ui->update(timeStep);
+  }
+
   // Animate objects' if enabled
   if (animate_) {
     AnimateObjects(timeStep);
@@ -277,5 +291,5 @@ bool SCEditor::is_mouse_free()
   UI* ui = GetSubsystem<UI>();
   IntVector2 pos = ui->GetCursorPosition();
   // Check the cursor is visible and there is no UI element in front of the cursor
-  return ui->GetCursor()->IsVisible() && !ui->GetElementAt(pos, true);
+  return ui->GetCursor()->IsVisible() && !ui->GetElementAt(pos, false);
 }

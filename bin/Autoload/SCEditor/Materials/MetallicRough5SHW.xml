@@ -1,19 +1,19 @@
 <?xml version="1.0"?>
 <material>
-	<technique name="Techniques/GS/DiffGSPointsToSpheres.xml" quality="1" loddistance="0" />
-	<parameter name="UOffset" value="1 0 0 0" />
+  <technique name="Techniques/PBRNoTextureSHW.xml" quality="0" loddistance="20" />
+  <technique name="Techniques/PBRGSPlates1SHW.xml" quality="0" loddistance="0" />
+  <parameter name="UOffset" value="1 0 0 0" />
 	<parameter name="VOffset" value="0 1 0 0" />
 	<parameter name="MatDiffColor" value="0.85 0.9 1.0 1" />
 	<parameter name="MatEmissiveColor" value="0 0 0" />
 	<parameter name="MatEnvMapColor" value="1 1 1" />
 	<parameter name="MatSpecColor" value="0.5 0.3 0.1 16" />
-  <parameter name="Roughness" value="0.5" />
+	<parameter name="Roughness" value="0.7" />
+  <parameter name="RoughnessClose" value="0.5" />
   <parameter name="Metallic" value="0.7" />
-  <parameter name="Radius" value="0.04" />
-	<cull value="none" />
+	<cull value="ccw" />
 	<shadowcull value="ccw" />
 	<fill value="solid" />
-	<primitivesinput value="points list" />
 	<depthbias constant="0" slopescaled="0" />
-	<renderorder value="129" />
+	<renderorder value="128" />
 </material>

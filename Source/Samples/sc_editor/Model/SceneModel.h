@@ -72,6 +72,8 @@ public:
   /// Box select
 
   // Delete functions
+  /// Delete unit
+  void delete_unit(Node* unit);
 
   /// Delete unit (delete all depedents, if necessary)
 

@@ -87,5 +87,11 @@ private:
   /// Camera pitch angle.
   float m_pitch;
 
+  /// Main axis
+  SharedPtr<Node> m_main_axis;
+
+  /// Selected nodes.
+  // TODO: potentially dangerous, because could be deleted. 
+  // It is better to replace them with WeakPtrs
   PODVector<Node*> m_selected;
 };

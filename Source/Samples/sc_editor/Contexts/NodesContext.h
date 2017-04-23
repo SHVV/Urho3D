@@ -19,7 +19,7 @@ class NodesContext : public BaseContext {
 public:
 
   /// Construct.
-  NodesContext(Context* context, SceneModel* model, SceneView* view);
+  NodesContext(Context* context, IEditor* editor);
 
   /// Destructor
   virtual ~NodesContext();

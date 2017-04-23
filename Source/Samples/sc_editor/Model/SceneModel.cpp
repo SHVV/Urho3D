@@ -36,13 +36,18 @@ SceneModel::SceneModel(Context* context, Node* model_root)
 
   /// Default materials
   m_default_vertex_material = 
-    cache->GetResource<Material>("Materials/GS/GSPointsToSpheresMat.xml");
+    cache->GetResource<Material>("Materials/GSPointsToSpheresMat.xml");
   m_default_edge_material =
-    cache->GetResource<Material>("Materials/GS/GSLinesToBeamsMat.xml");
+    cache->GetResource<Material>("Materials/GSLinesToBeamsMat.xml");
   m_default_polygon_material = 
     //cache->GetResource<Material>("Materials/PBR/MetallicRough5.xml");
     //cache->GetResource<Material>("Materials/Stone.xml");
-    cache->GetResource<Material>("Materials/PBR/MetallicRough5SHW.xml");
+    //cache->GetResource<Material>("Materials/MetallicRough5SHW.xml");
+    //cache->GetResource<Material>("Materials/Concrete.xml");
+    //cache->GetResource<Material>("Materials/Plaster0.xml");
+    //cache->GetResource<Material>("Materials/Plaster1.xml");
+    //cache->GetResource<Material>("Materials/Paint.xml");
+    cache->GetResource<Material>("Materials/SimplePanels.xml");
 
   /// Materials maps
   //m_vertex_materials;
@@ -127,6 +132,13 @@ UnitModel* SceneModel::create_unit(
   return nullptr;
 }
 
+/// Delete unit
+void SceneModel::delete_unit(Node* unit)
+{
+  unit->Remove();
+  // TODO: probably need to deal with dependent nodes, 
+  // TODO: probably move child nodes to parent or root
+}
 
 // Add node (ball) into the scene
 //NodeModel* SceneModel::create_node(const Vector3& position, Node* parent)

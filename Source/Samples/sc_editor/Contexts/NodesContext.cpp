@@ -25,14 +25,14 @@
 using namespace Urho3D;
 
 /// Construct.
-NodesContext::NodesContext(Context* context, SceneModel* model, SceneView* view)
-: BaseContext(context, model, view),
+NodesContext::NodesContext(Context* context, IEditor* editor)
+: BaseContext(context, editor),
   m_focus_part(nullptr),
   m_active_part(nullptr)
 {
   ResourceCache* cache = GetSubsystem<ResourceCache>();
 
-  m_gizmo = m_view->scene()->CreateChild("NodesGimbal", LOCAL);
+  m_gizmo = view()->scene()->CreateChild("NodesGimbal", LOCAL);
   m_gizmo->SetEnabled(false);
 
   auto generator = GetSubsystem<MeshGenerator>();
@@ -178,13 +178,20 @@ NodesContext::~NodesContext()
 /// Activates context and allows it to set up all its guts
 void NodesContext::activate()
 {
-
+  auto selected = view()->selected();
+  if (selected.Size()) {
+    //m_gizmo->SetPosition(selected.Back()->GetPosition());
+    m_gizmo->SetEnabled(true);
+  } else {
+    m_gizmo->SetEnabled(false);
+  }
 }
 
 /// Deactivate context and remove all temporary objects
 void NodesContext::deactivate()
 {
   m_gizmo->SetEnabled(false);
+  view()->clear_selection();
 }
 
 /// Mouse button down handler
@@ -210,20 +217,20 @@ void NodesContext::on_mouse_up()
     Node* node = get_unit_under_mouse();
     if (input->GetKeyDown(KEY_CTRL)) {
       if (node) {
-        auto selected = m_view->selected();
+        auto selected = view()->selected();
         if (selected.Find(node) != selected.End()) {
-          m_view->deselect(node);
+          view()->deselect(node);
         } else {
-          m_view->select(node);
+          view()->select(node);
         }
       }
     } else {
-      m_view->clear_selection();
+      view()->clear_selection();
       if (node) {
-        m_view->select(node);
+        view()->select(node);
       }
     }
-    auto selected = m_view->selected();
+    auto selected = view()->selected();
     if (selected.Size()) {
       //m_gizmo->SetPosition(selected.Back()->GetPosition());
       m_gizmo->SetEnabled(true);
@@ -251,7 +258,7 @@ void NodesContext::on_mouse_move(float x, float y)
     }
     Vector3 axis3 = (m_gizmo->GetWorldTransform() * axis).Normalized();
 
-    auto selected = m_view->selected();
+    auto selected = view()->selected();
     for (int i = 0; i < selected.Size(); ++i) {
       Node* node = selected[i];
       Vector3 node_pos = node->GetWorldPosition();
@@ -301,7 +308,7 @@ void NodesContext::update(float dt)
   UI* ui = GetSubsystem<UI>();
   if (m_gizmo->IsEnabled()) {
     // Update gizmo position
-    auto selected = m_view->selected();
+    auto selected = view()->selected();
     if (selected.Size()) {
       Node* node = selected.Back();
       Vector3 node_pos = node->GetWorldPosition();
@@ -318,7 +325,7 @@ void NodesContext::update(float dt)
     }
 
     // Update gizmo scale
-    Camera* camera = m_view->camera()->GetComponent<Camera>();
+    Camera* camera = view()->camera()->GetComponent<Camera>();
     float scale = 0.1 / camera->GetZoom();
 
     if (camera->IsOrthographic()) {
@@ -376,6 +383,42 @@ void NodesContext::update(float dt)
   } else {
     ui->GetCursor()->SetShape(CS_RESIZE_ALL);
   }
+
+  auto& selected = view()->selected();
+  if (selected.Size()) {
+    Input* input = GetSubsystem<Input>();
+    if (input->GetKeyPress(KEY_DELETE)) {
+      for (int i = 0; i < selected.Size(); ++i) {
+        // TODO: deal with multi node units and child-parent relations
+        model()->delete_unit(selected[i]);
+      }
+      view()->clear_selection();
+      m_gizmo->SetEnabled(false);
+      m_focus_part = nullptr;
+    }
+  }
+  // Testing procedural units update
+  //auto& selected = view()->selected();
+  //if (selected.Size()) {
+  //  Input* input = GetSubsystem<Input>();
+  //  int delta = 0;
+  //  if (input->GetKeyPress(KEY_KP_PLUS)) {
+  //    delta = 1;
+  //  }
+  //  if (input->GetKeyPress(KEY_KP_MINUS)) {
+  //    delta = -1;
+  //  }
+  //  if (delta) {
+  //    for (int i = 0; i < selected.Size(); ++i) {
+  //      Node* node = selected[i];
+  //      UnitModel* unit = node->GetDerivedComponent<UnitModel>();
+  //      if (unit) {
+  //        unsigned int val = unit->parameters().parameters_vector()[0].GetUInt();
+  //        unit->set_parameter(0, val + delta);
+  //      }
+  //    }
+  //  }
+  //}
 }
 
 /// Calculates closest point for current gizmo part
