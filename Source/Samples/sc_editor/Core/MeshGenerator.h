@@ -9,6 +9,7 @@
 #include "MeshBuffer.h"
 #include "Polyline2.h"
 #include "Parameters.h"
+#include "ParametersDescription.h"
 
 // Urho3D includes
 #include <Urho3D/Core/Object.h>
@@ -37,7 +38,10 @@ public:
   virtual ~MeshGenerator();
 
   /// Returns default parameters of function
-  const Parameters& default_parameters(StringHash name);
+  const Parameters& default_parameters(StringHash name) const;
+
+  /// Get all parameters description of function
+  const ParametersDescription& parameters_description(StringHash name) const;
 
   /// Generate mesh and return buffer for visualizing it.
   // TODO: make it in future async an generate in background thread

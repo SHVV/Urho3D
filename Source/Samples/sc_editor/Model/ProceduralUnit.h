@@ -22,6 +22,9 @@ public:
   /// Register object attributes.
   static void RegisterObject(Context* context);
 
+  /// Get all parameters description of the component
+  virtual const ParametersDescription& parameters_description() const override;
+
   /// Set function name
   void set_function_name(StringHash name);
   /// Set function name

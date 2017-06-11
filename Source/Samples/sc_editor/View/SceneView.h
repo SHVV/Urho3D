@@ -40,8 +40,10 @@ public:
 
   /// Selects node in view
   void select(Node* node);
+  void select(const Vector<Node*>& nodes);
   /// Deselects node in view
   void deselect(Node* node);
+  void deselect(const Vector<Node*>& nodes);
   /// Deselects all node in view
   void clear_selection();
   /// Returns selected nodes

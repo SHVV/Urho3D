@@ -42,6 +42,7 @@ void CameraController::on_mouse_down(VariantMap& event_data)
   Camera* camera = m_view->camera()->GetComponent<Camera>();
   PODVector<Drawable*> results;
   FrustumOctreeQuery query(results, camera->GetFrustum());
+  query.viewMask_ = 0x7fffffff;
   m_view->scene()->GetComponent<Octree>()->GetDrawables(query);
   BoundingBox visible_scene_box;
   for (int i = 0; i < results.Size(); ++i) {

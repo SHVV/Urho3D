@@ -340,6 +340,11 @@ bool MeshBuffer::update()
   m_model->SetNumGeometries(geometries.Size());
   for (unsigned int i = 0; i < geometries.Size(); ++i) {
     m_model->SetGeometry(i, 0, geometries[i]);
+    // TODO: LODs
+    //m_model->SetNumGeometryLodLevels(i, 3);
+    //geometries[i]->SetLodDistance(30);
+    //m_model->SetGeometry(i, 1, geometries[i]);
+    //m_model->SetGeometry(i, 2, nullptr);
   }
 
   // update geometries descriptions

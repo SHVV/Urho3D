@@ -11,6 +11,8 @@
 
 using namespace Urho3D;
 
+typedef unsigned int ParameterID;
+
 class Parameters
 {
 public:
@@ -38,11 +40,11 @@ public:
   /// Test if greater than another parameters.
   bool operator >(const Parameters& rhs) const;
 
-  /// Get parameters map for reading only
-  const VariantVector& parameters_vector() const;
+  /// Parameter for writing access
+  Variant& operator [](const ParameterID& id);
 
-  /// Get access to parameters map for writing
-  VariantVector& access_parameters_vector();
+  /// Read parameter. Returns null variant, if not found
+  const Variant& operator [](const ParameterID& id) const;
 
   /// Get hash of variant map
   StringHash hash() const;
@@ -54,6 +56,12 @@ protected:
   /// Calculates hash of parameters map
   StringHash calculate_hash() const;
 
+  /// Get parameters map for reading only
+  const VariantVector& parameters_vector() const;
+
+  /// Get access to parameters map for writing
+  VariantVector& access_parameters_vector();
+
 private:
   /// Parameters vector (vector of variants)
   VariantVector m_parameters_vector;
@@ -61,4 +69,7 @@ private:
   mutable StringHash m_hash;
   /// Flag, that hash is valid
   mutable bool m_hash_valid;
+
+  /// null variant
+  static Variant s_null;
 };

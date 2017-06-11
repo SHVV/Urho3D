@@ -21,10 +21,17 @@
 
 using namespace Urho3D;
 
+/// Unit class name parameter ID
+ParameterID s_unit_class = 0;
+// TODO: move to separate context for procedural units
+/// Function name for procedural units
+ParameterID s_function_name = 1;
+
 /// Construct.
-CreationContext::CreationContext(Context* context, IEditor* editor)
-  : BaseContext(context, editor),
-    m_state(0)
+CreationContext::CreationContext(Context* context)
+  : BaseContext(context),
+    m_state(0),
+    m_moved(false)
 {
 }
 
@@ -33,73 +40,123 @@ CreationContext::~CreationContext()
 {
 }
 
-/// Sets unit class name
-void CreationContext::set_class_name(StringHash name)
+/// Initialize context
+void CreationContext::initialize()
 {
-  if (name != m_unit_class) {
-    deactivate();
-    m_unit_class = name;
-    activate();
-  }
 }
 
 /// Gets unit class name
-StringHash CreationContext::class_name()
+StringHash CreationContext::unit_class() const
 {
-  return m_unit_class;
-}
-
-/// Sets generation function name
-void CreationContext::set_function_name(StringHash name)
-{
-  if (m_function_name != name) {
-    deactivate();
-    m_function_name = name;
-    activate();
-  }
+  return m_parameters[s_unit_class].GetStringHash();
 }
 
 /// Gets generation function name
-StringHash CreationContext::function_name()
+StringHash CreationContext::function_name() const
 {
-  return m_function_name;
+  return m_parameters[s_function_name].GetStringHash();
 }
 
 /// Create rollower
 void CreationContext::create_rollower()
 {
-  if (m_function_name && m_unit_class) {
+  //m_orientation = Quaternion();
+  assert(!m_rollowers.Size());
+  StringHash unit_class_value = unit_class();
+  StringHash function_name_value = function_name();
+  if (unit_class_value && function_name_value) {
     m_state = 0;
-    UnitModel* unit = model()->create_unit(m_unit_class, Vector3(0, 0, 0));
-    ProceduralUnit* proc_unit = dynamic_cast<ProceduralUnit*>(unit);
-    if (proc_unit) {
-      proc_unit->set_function_name(m_function_name);
-      // TODO: set parameters from last creation
-    }
+    for (int i = 0; i < m_symmetry; ++i) {
+      UnitModel* unit = model()->create_unit(unit_class_value, Vector3(0, 0, 0));
+      ProceduralUnit* proc_unit = dynamic_cast<ProceduralUnit*>(unit);
+      if (proc_unit) {
+        proc_unit->set_function_name(function_name_value);
+        
+        // Set parameters from last creation
+        Pair<StringHash, StringHash> key(unit_class_value, function_name_value);
+        auto& par_it = m_latest_parameters.Find(key);
+        if (par_it != m_latest_parameters.End()){
+          proc_unit->set_parameters(par_it->second_);
+        }
+      }
 
-    m_rollower = unit;
+      m_rollowers.Push(SharedPtr<UnitModel>(unit));
+      view()->select(unit->GetNode());
+    }
     update_rollower_position();
-    view()->select(m_rollower->GetNode());
   }
 }
 
 /// Updates rollower position
 void CreationContext::update_rollower_position()
 {
-  if (m_rollower) {
-    // TODO: symmetry
-    Node* rollower_node = m_rollower->GetNode();
+  if (m_rollowers.Size()) {
+    // Symmetry
+    Node* first_rollower_node = m_rollowers[0]->GetNode();
     Node* unit_under_mouse = get_unit_under_mouse();
     if (!unit_under_mouse) {
+      // TODO: localisation
+      String snap_text = "main axis";
       Ray camera_ray = calculate_ray();
       Ray main_axis_ray(Vector3(0, 0, 0), Vector3(0, 0, 1));
       Vector3 pos = main_axis_ray.ClosestPoint(camera_ray);
-      // TODO: snapping
-      rollower_node->SetPosition(pos);
-      rollower_node->SetRotation(Quaternion());
-      // TODO: insert into vertical / horizontal plane, stick to main axis, only if it close to it
-      // TODO: WASD-rotation
+      // Insert into vertical / horizontal plane, stick to main axis, only if it close to it
+      float t = M_INFINITY;
+      Plane hor_plane(Vector4(0, 1, 0, 0));
+      String plane_text = "horizontal plane";
+      float cur_t = camera_ray.HitDistance(hor_plane);
+      if (cur_t > 0) {
+        t = Min(cur_t, t);
+      }
+      Plane vert_plane(Vector4(1, 0, 0, 0));
+      cur_t = camera_ray.HitDistance(vert_plane);
+      if (cur_t > 0) {
+        if (cur_t < t) {
+          t = cur_t;
+          plane_text = "vertical plane";
+        }
+      }
+      float min_size = node_size(first_rollower_node);
+      if (t < M_INFINITY) {
+        Vector3 plane_pos = camera_ray.origin_ + camera_ray.direction_ * t;
+        if ((plane_pos - pos).Length() > min_size) {
+          snap_text = plane_text;
+          pos = plane_pos;
+        }
+      }
+
+      // Snapping
+      if (min_size > 0) {
+        float step = quantizing_step(min_size * 2);
+        pos.x_ = round(pos.x_ / step) * step;
+        pos.y_ = round(pos.y_ / step) * step;
+        pos.z_ = round(pos.z_ / step) * step;
+      }
+      String tooltip_text = "Snap to: " + snap_text + "\n";
+      tooltip_text += String(pos.x_) + "m; " + String(pos.y_) + "m; " + String(pos.z_) + "m";
+      set_tooltip(tooltip_text);
+
+      auto positions = get_symmetry_positions(pos);
+      assert(m_rollowers.Size() == positions.Size());
+      Vector3 z(0, 0, 1);
+      for (int i = 0; i < m_rollowers.Size(); ++i) {
+        Node* rollower_node = m_rollowers[i]->GetNode();
+        pos = positions[i];
+        rollower_node->SetPosition(pos);
+        Vector3 y = pos;
+        y.z_ = 0;
+        y.Normalize();
+        Quaternion symmetry_rotation;
+        if (y.LengthSquared() > 0.9) {
+          Vector3 x = y.CrossProduct(z);
+          symmetry_rotation.FromAxes(x, y, z);
+        }
+
+        // WASDQE-rotation
+        rollower_node->SetRotation(symmetry_rotation * m_orientation);
+      }
     } else {
+      hide_tooltip();
       // TODO: attachment
       // TODO: highlight attach point
     }
@@ -109,6 +166,7 @@ void CreationContext::update_rollower_position()
 /// Activates context and allows it to set up all its guts
 void CreationContext::activate()
 {
+  BaseContext::activate();
   // Create rollower
   create_rollower();
 }
@@ -116,11 +174,13 @@ void CreationContext::activate()
 /// Deactivate context and remove all temporary objects
 void CreationContext::deactivate()
 {
-  // Delete rollower
-  if (m_rollower) {
-    view()->clear_selection();
-    model()->delete_unit(m_rollower->GetNode());
+  view()->clear_selection();
+  // Delete rollowers
+  for (int i = 0; i < m_rollowers.Size(); ++i) {
+    model()->delete_unit(m_rollowers[i]->GetNode());
   }
+  m_rollowers.Clear();
+  BaseContext::deactivate();
 }
 
 /// Mouse button down handler
@@ -129,50 +189,196 @@ void CreationContext::on_mouse_down()
   Ray camera_ray = calculate_ray();
   // 0 state - switch to attributes editing
   if (0 == m_state) {
-    if (m_rollower) {
-      m_last_position = camera_ray.Project(m_rollower->GetNode()->GetPosition());
-      m_rollower = nullptr;
+    if (m_rollowers.Size()) {
+      m_last_position = camera_ray.Project(m_rollowers[0]->GetNode()->GetPosition());
     }
   } else {
     m_last_position = camera_ray.Project(m_last_position);
   }
 
+  UI* ui = GetSubsystem<UI>();
+  m_last_cursor_pos = ui->GetCursorPosition();
+  
   // Increment state on each click
   ++m_state;
+
+  m_moved = false;
+
+  // TODO: factor out
+  // Save initial value of parameter
+  ParameterID id;
+  if (m_rollowers.Size() && get_interactive_parameter(m_state, id)) {
+    m_initial_value = m_rollowers[0]->parameters()[id];
+  }
 }
 
 /// Mouse button up handler
 void CreationContext::on_mouse_up()
 {
-  view()->clear_selection();
-  create_rollower();
-  // TODO: insert node with last parameters, on single click
-  // TODO: go trought all parameters, on drag.
-  // TODO: right click - cancel
+  Ray camera_ray = calculate_ray();
+  Vector3 cur_position = camera_ray.Project(m_last_position);
+  ParameterID id;
+  // Insert node with current parameters, on single click
+  if (!get_interactive_parameter(m_state, id) ||
+      (m_state == 1 && !m_moved)) {
+
+    // Save parameters for late reusing
+    if (m_rollowers.Size()) {
+      Pair<StringHash, StringHash> key(unit_class(), function_name());
+      m_latest_parameters[key] = m_rollowers[0]->parameters();
+    }
+
+    m_rollowers.Clear();
+    view()->clear_selection();
+    commit_transaction();
+    create_rollower();
+  } else {
+    if (m_state == 1) {
+      ++m_state;
+
+      // TODO: factor out
+      UI* ui = GetSubsystem<UI>();
+      m_last_cursor_pos = ui->GetCursorPosition();
+
+      m_last_position = camera_ray.Project(m_last_position);
+      // Save initial value of parameter
+      ParameterID id;
+      if (m_rollowers.Size() && get_interactive_parameter(m_state, id)) {
+        m_initial_value = m_rollowers[0]->parameters()[id];
+      }
+    }
+  }
+  // TODO: right click (double click) - cancel going throught parameters
 }
 
 /// Mouse button move handler
 void CreationContext::on_mouse_move(float x, float y)
 {
+  m_moved = true;
   // 0 state - update rollower position
   if (0 == m_state) {
     update_rollower_position();
+  } else {
+    // 1 and following states - update interactive parameters
+    Ray camera_ray = calculate_ray();
+    Vector3 cur_position = camera_ray.Project(m_last_position);
+    ParameterID id;
+    if (get_interactive_parameter(m_state, id)) {
+      auto& description = m_rollowers[0]->parameters_description()[id];
+      // TODO: localization
+      String tooltip_text = description.m_name + ": ";
+      int flags = description.m_flags;
+
+      // Moduling direction: upper-right +, lower-down -
+      UI* ui = GetSubsystem<UI>();
+      IntVector2 cursor_pos = ui->GetCursorPosition();
+      cursor_pos -= m_last_cursor_pos;
+      float diagonal = cursor_pos.x_ - cursor_pos.y_;
+
+      // Raw value based on distance from last position in scene
+      float raw_value = 0;
+      // TODO: add angular value
+      if (flags & pfLINEAR_VALUE) {
+        if (cursor_pos.Length() >= FLT_EPSILON) {
+          diagonal /= cursor_pos.Length();
+        }
+        raw_value = (cur_position - m_last_position).Length() * diagonal;
+      } else {
+        Graphics* graphics = GetSubsystem<Graphics>();
+        diagonal /= (graphics->GetWidth() + graphics->GetHeight()) / 4;
+        raw_value = Max(-1.0, Min(1.0, diagonal));
+        raw_value *= Max(abs(description.m_min.GetFloat()),
+          abs(description.m_max.GetFloat()));
+      }
+
+      // TODO: factor out
+      Variant real_value;
+      if (m_initial_value.GetType() == VAR_DOUBLE || m_initial_value.GetType() == VAR_FLOAT) {
+        raw_value = raw_value + m_initial_value.GetFloat();
+        // Snapping to some round values
+        raw_value = quantize(raw_value);
+
+        // Checking limits
+        raw_value = Max(raw_value, description.m_min.GetFloat());
+        raw_value = Min(raw_value, description.m_max.GetFloat());
+
+        real_value = raw_value;
+        tooltip_text += String(real_value);
+        if (flags & pfLINEAR_VALUE) {
+          tooltip_text += "m";
+        }
+      } else {
+        // TODO: other parameter types: Integer, Vector2
+        real_value = m_initial_value;
+      }
+      set_tooltip(tooltip_text);
+      for (int i = 0; i < m_rollowers.Size(); ++i) {
+        m_rollowers[i]->set_parameter(id, real_value);
+      }
+    }
   }
-  // TODO: 1 and following states - update interactive parameters
 }
 
 /// Update context each frame
 void CreationContext::update(float dt)
 {
+  Quaternion rotation;
+  auto input = GetSubsystem<Input>();
+  if (input->GetKeyPress(KEY_W))
+    rotation = Quaternion(90, Vector3::RIGHT);
+  if (input->GetKeyPress(KEY_S))
+    rotation = Quaternion(-90, Vector3::RIGHT);
+  if (input->GetKeyPress(KEY_A))
+    rotation = Quaternion(90, Vector3::UP);
+  if (input->GetKeyPress(KEY_D))
+    rotation = Quaternion(-90, Vector3::UP);
+  if (input->GetKeyPress(KEY_Q))
+    rotation = Quaternion(90, Vector3::FORWARD);
+  if (input->GetKeyPress(KEY_E))
+    rotation = Quaternion(-90, Vector3::FORWARD);
 
+  if (rotation != Quaternion::IDENTITY) {
+    m_orientation = m_orientation * rotation;
+    update_rollower_position();
+  } 
+  if (input->GetKeyPress(KEY_R)) {
+    m_orientation = Quaternion();
+    update_rollower_position();
+  }
+}
+
+/// Get i-th interactive parameter of current procedural object
+bool CreationContext::get_interactive_parameter(int ind, ParameterID& id)
+{
+  // TODO: factor out accessor to units
+  auto& nodes = view()->selected();
+  if (nodes.Size()) {
+    UnitModel* unit = nodes[0]->GetDerivedComponent<UnitModel>();
+    const ParametersDescription& descriptions = unit->parameters_description();
+    const Vector<ParameterID> ids = descriptions.parameter_ids();
+    int cur_index = 0;
+    for (int i = 0; i < ids.Size(); ++i) {
+      ParameterID cur_id = ids[i];
+      if (descriptions[cur_id].m_flags & pfINTERACTIVE) {
+        ++cur_index;
+        if (cur_index == ind) {
+          id = cur_id;
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 /// Picking filter function
 bool CreationContext::is_pickable(Node* node)
 {
-  if (m_rollower) {
+  for (int i = 0; i < m_rollowers.Size(); ++i) {
     // TODO: support multi-node units
-    return m_rollower->GetNode() != node;
+    if (m_rollowers[i]->GetNode() == node) {
+      return false;
+    }
   }
   return true;
 }

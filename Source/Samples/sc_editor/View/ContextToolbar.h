@@ -4,18 +4,20 @@
 
 #pragma once
 
+#include "../Core/Parameters.h"
+
 #include <Urho3D/Core/Object.h>
 #include <Urho3D/Container/HashMap.h>
 
 // Editor predeclarations
 class BaseContext;
-class Parameters;
-class IEditor;
+class EditorUI;
 
 // Urho predeclarations
 namespace Urho3D {
   class Context;
   class UIElement;
+  class CheckBox;
 }
 
 using namespace Urho3D;
@@ -26,7 +28,7 @@ class ContextToolbar : public Object {
 public:
 
   /// Construct.
-  ContextToolbar(Context* context, IEditor* editor);
+  ContextToolbar(Context* context, EditorUI* editor);
 
   /// Destructor
   virtual ~ContextToolbar();
@@ -56,10 +58,13 @@ public:
 
   /// Switch to default context (selection)
   void activate_default_context();
-private:
 
-  /// Editor
-  IEditor* m_editor;
+private:
+  /// On button pressed handler. Switches context
+  void on_button(StringHash event_type, VariantMap& event_data);
+
+  /// Editor UI
+  EditorUI* m_editor_ui;
 
   /// UI toolbar element
   UIElement* m_toolbar;
@@ -70,6 +75,23 @@ private:
   /// Contexts classes map
   HashMap<StringHash, SharedPtr<BaseContext>> m_contexts;
 
-  /// Contexts vector
+  /// Internal structure to store actual context settngs for each button
+  struct ContextButton {
+    SharedPtr<BaseContext> context; // Editor context
+    Parameters parameters;          // Context parameters, like model,..
+    StringHash category;            // Category of context, determines tab
+    String icon;                    // Toolbar icon
+    String title;                   // Button title
+    String description;             // Button description for tooltip
+    WeakPtr<CheckBox> button;       // Button pointer
+  };
 
+  /// Contexts vector
+  Vector<ContextButton> m_context_buttons;
+
+  /// Default context
+  unsigned int m_default_context;
+
+  /// Current context
+  int m_current_context;
 };

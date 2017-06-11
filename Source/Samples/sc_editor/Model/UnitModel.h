@@ -6,6 +6,7 @@
 
 #include "../Core/MeshBuffer.h"
 #include "../Core/Parameters.h"
+#include "../Core/ParametersDescription.h"
 
 #include <Urho3D/Scene/Component.h>
 
@@ -52,8 +53,9 @@ public:
   /// Set all parameters in one go
   void set_parameters(const Parameters& parameters);
   /// Set one parameter by index
-  void set_parameter(int index, const Variant& parameter);
-  // TODO: parameters description and additional info like max-min, flags and so on
+  void set_parameter(ParameterID index, const Variant& parameter);
+  /// Get all parameters description of the component
+  virtual const ParametersDescription& parameters_description() const;
   // TODO: default parameters
 
   // Components tracking

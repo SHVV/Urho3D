@@ -19,6 +19,8 @@ enum SubObjectType {
 };
 
 // TODO: extract painting
+// TODO: LODs as flags
+// TODO: abstract components instead of hardcoded structures
 class MeshGeometry : public Object
 {
   URHO3D_OBJECT(MeshGeometry, Object);

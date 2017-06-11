@@ -72,13 +72,20 @@ void UnitModel::set_parameters(const Parameters& parameters)
 }
 
 /// Set one parameter by index
-void UnitModel::set_parameter(int index, const Variant& parameter)
+void UnitModel::set_parameter(ParameterID index, const Variant& parameter)
 {
   // Don't do anything, if parameter was not changed
-  if (parameter != m_parameters.access_parameters_vector()[index]) {
-    m_parameters.access_parameters_vector()[index] = parameter;
+  if (parameter != m_parameters[index]) {
+    m_parameters[index] = parameter;
     apply_parameters(index);
   }
+}
+
+/// Get all parameters description of the component
+const ParametersDescription& UnitModel::parameters_description() const
+{
+  static ParametersDescription description;
+  return description;
 }
 
 // Components tracking

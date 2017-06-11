@@ -25,7 +25,23 @@ public:
   /// Generate mesh geometry, basing on parameters
   virtual MeshGeometry* generate(const Parameters& parameters);
 
-  static String s_name();
+  /// Tank radius parameter ID
+  static ParameterID s_radius;
+
+  /// Tank length parameter ID
+  static ParameterID s_length;
+
+  /// Tank cap parameter ID
+  static ParameterID s_head;
+
+  /// Tank conical parameter ID
+  static ParameterID s_conical;
+
+  /// Tank segments parameter ID
+  static ParameterID s_segments;
+
+  /// Generator name
+  static String s_name;
 
 protected:
 

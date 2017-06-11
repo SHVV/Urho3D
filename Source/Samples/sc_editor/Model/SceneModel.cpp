@@ -43,11 +43,11 @@ SceneModel::SceneModel(Context* context, Node* model_root)
     //cache->GetResource<Material>("Materials/PBR/MetallicRough5.xml");
     //cache->GetResource<Material>("Materials/Stone.xml");
     //cache->GetResource<Material>("Materials/MetallicRough5SHW.xml");
-    //cache->GetResource<Material>("Materials/Concrete.xml");
+    cache->GetResource<Material>("Materials/Concrete.xml");
     //cache->GetResource<Material>("Materials/Plaster0.xml");
     //cache->GetResource<Material>("Materials/Plaster1.xml");
     //cache->GetResource<Material>("Materials/Paint.xml");
-    cache->GetResource<Material>("Materials/SimplePanels.xml");
+    //cache->GetResource<Material>("Materials/SimplePanels.xml");
 
   /// Materials maps
   //m_vertex_materials;

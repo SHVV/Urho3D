@@ -63,6 +63,7 @@ SceneView::SceneView(Context* context)
   zone->SetFogStart(2000.0f);
   zone->SetFogEnd(3000.0f);
   zone->SetZoneTexture(cache->GetResource<TextureCube>("Textures/Spacebox.xml"));
+  zone->SetViewMask(0x80000000);
 
   // Create a directional light
   Node* lightNode = m_urho_scene->CreateChild("DirectionalLight", LOCAL);
@@ -76,6 +77,7 @@ SceneView::SceneView(Context* context)
   light->SetShadowCascade(CascadeParameters(16.0f, 80.0f, 400.0f, 2000.0f, 0.9f));
   //light->SetSpecularIntensity(1.5f);
   light->SetCastShadows(true);
+  light->SetViewMask(0x80000000);
 
   // Create skybox. 
   Node* skyNode = m_urho_scene->CreateChild("Sky", LOCAL);
@@ -84,6 +86,7 @@ SceneView::SceneView(Context* context)
   Skybox* skybox = skyNode->CreateComponent<Skybox>();
   skybox->SetModel(cache->GetResource<Model>("Models/Box.mdl"));
   skybox->SetMaterial(cache->GetResource<Material>("Materials/Spacebox.xml"));
+  skybox->SetViewMask(0x80000000);
 
   // Create main axis
   m_main_axis = m_urho_scene->CreateChild("MainAxis", LOCAL);
@@ -206,10 +209,24 @@ void SceneView::select(Node* node)
   }
 }
 
+void SceneView::select(const Vector<Node*>& nodes)
+{
+  for (int i = 0; i < nodes.Size(); ++i) {
+    select(nodes[i]);
+  }
+}
+
 /// Deselects node in view
 void SceneView::deselect(Node* node)
 {
   m_selected.Remove(node);
+}
+
+void SceneView::deselect(const Vector<Node*>& nodes)
+{
+  for (int i = 0; i < nodes.Size(); ++i) {
+    deselect(nodes[i]);
+  }
 }
 
 /// Deselects all node in view

@@ -51,6 +51,9 @@ public:
   /// Set current editor's context
   virtual void set_context(BaseContext* context) override;
 
+  /// Set symmetry
+  virtual void set_symmetry(int value) override;
+
 protected:
   /// Return XML patch instructions for screen joystick layout for a specific sample app, if any.
   virtual String GetScreenJoystickPatchString() const {
@@ -108,7 +111,10 @@ private:
   // All contexts. 
   // TODO: factor out 
   /// Nodes manipulation context
-  SharedPtr<NodesContext> m_nodes_context;
+  //SharedPtr<NodesContext> m_nodes_context;
   /// Creation context
-  SharedPtr<CreationContext> m_creation_context;
+  //SharedPtr<CreationContext> m_creation_context;
+
+  /// Symmetry
+  int m_symmetry;
 };

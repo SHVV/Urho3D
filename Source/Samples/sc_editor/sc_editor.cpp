@@ -56,8 +56,10 @@ URHO3D_DEFINE_APPLICATION_MAIN(SCEditor)
 SCEditor::SCEditor(Context* context)
 : Sample(context),
   animate_(true),
-  time_(0.0f)
+  time_(0.0f),
+  m_symmetry(1)
 {
+  m_exit_on_esc = false;
   // Register all editor factories and objects
 
   // Mesh generator subsystem
@@ -136,7 +138,22 @@ void SCEditor::set_context(BaseContext* context)
   }
   m_context = context;
   if (m_context) {
+    m_context->set_symmetry(m_symmetry);
     m_context->activate();
+  }
+}
+
+/// Set symmetry
+void SCEditor::set_symmetry(int value)
+{
+  if (value < 1) {
+    value = 1;
+  }
+  if (m_symmetry != value) {
+    m_symmetry = value;
+    if (m_context) {
+      m_context->set_symmetry(value);
+    }
   }
 }
 
@@ -156,12 +173,14 @@ void SCEditor::CreateScene()
   m_camera_controller = new CameraController(context_, m_view);
 
   // Create test context
-  m_nodes_context = new NodesContext(context_, this);
+  /*m_nodes_context = new NodesContext(context_, this);
   m_creation_context = new CreationContext(context_, this);
   //set_context(m_nodes_context);
   set_context(m_creation_context);
-  m_creation_context->set_class_name(ProceduralUnit::GetTypeStatic());
-  m_creation_context->set_function_name(TestGenerator::s_name());
+  Parameters context_parameters;
+  context_parameters[s_unit_class] = ProceduralUnit::GetTypeStatic();
+  context_parameters[s_function_name] = StringHash(TestGenerator::s_name());
+  m_creation_context->set_parameters(context_parameters);*/
   // Create test guts
   //for (int i = 0; i < 6; ++i) {
   //  float s, c;

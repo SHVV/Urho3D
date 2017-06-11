@@ -36,6 +36,13 @@ ProceduralUnit::~ProceduralUnit()
 {
 }
 
+/// Get all parameters description of the component
+const ParametersDescription& ProceduralUnit::parameters_description() const
+{
+  auto generator = GetSubsystem<MeshGenerator>();
+  return generator->parameters_description(m_function);
+}
+
 /// Set function name
 void ProceduralUnit::set_function_name(StringHash name)
 {

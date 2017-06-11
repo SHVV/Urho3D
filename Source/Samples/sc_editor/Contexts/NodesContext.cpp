@@ -25,10 +25,20 @@
 using namespace Urho3D;
 
 /// Construct.
-NodesContext::NodesContext(Context* context, IEditor* editor)
-: BaseContext(context, editor),
+NodesContext::NodesContext(Context* context)
+: BaseContext(context),
   m_focus_part(nullptr),
   m_active_part(nullptr)
+{
+}
+
+/// Destructor
+NodesContext::~NodesContext()
+{
+}
+
+/// Initialize context
+void NodesContext::initialize()
 {
   ResourceCache* cache = GetSubsystem<ResourceCache>();
 
@@ -78,10 +88,10 @@ NodesContext::NodesContext(Context* context, IEditor* editor)
   seg.m_pos = Vector2(0, radius);
   profile_ring.segments().Push(seg);
 
-  // Liear axis
+  // Linear axis
   SharedPtr<MeshGeometry> mesh_ring(generator->lathe(profile_ring, 64, ttQUAD));
   {
-    SharedPtr<MeshBuffer> mesh_buffer(new MeshBuffer(context));
+    SharedPtr<MeshBuffer> mesh_buffer(new MeshBuffer(context_));
     mesh_buffer->set_mesh_geometry(mesh);
     GizmoPart axis;
     axis.m_component = m_gizmo->CreateComponent<StaticModel>();
@@ -92,7 +102,7 @@ NodesContext::NodesContext(Context* context, IEditor* editor)
     axis.m_rotation = false;
     m_gizmo_parts.Push(axis);
 
-    SharedPtr<MeshBuffer> mesh_buffer_ring(new MeshBuffer(context));
+    SharedPtr<MeshBuffer> mesh_buffer_ring(new MeshBuffer(context_));
     mesh_buffer_ring->set_mesh_geometry(mesh_ring);
     axis.m_component = m_gizmo->CreateComponent<StaticModel>();
     axis.m_component->SetOccludee(false);
@@ -110,7 +120,7 @@ NodesContext::NodesContext(Context* context, IEditor* editor)
     );
 
     mesh->transform(tr);
-    SharedPtr<MeshBuffer> mesh_buffer(new MeshBuffer(context));
+    SharedPtr<MeshBuffer> mesh_buffer(new MeshBuffer(context_));
     mesh_buffer->set_mesh_geometry(mesh);
     GizmoPart axis;
     axis.m_component = m_gizmo->CreateComponent<StaticModel>();
@@ -122,7 +132,7 @@ NodesContext::NodesContext(Context* context, IEditor* editor)
     m_gizmo_parts.Push(axis);
 
     mesh_ring->transform(tr);
-    SharedPtr<MeshBuffer> mesh_buffer_ring(new MeshBuffer(context));
+    SharedPtr<MeshBuffer> mesh_buffer_ring(new MeshBuffer(context_));
     mesh_buffer_ring->set_mesh_geometry(mesh_ring);
     axis.m_component = m_gizmo->CreateComponent<StaticModel>();
     axis.m_component->SetOccludee(false);
@@ -137,9 +147,9 @@ NodesContext::NodesContext(Context* context, IEditor* editor)
       Vector3(),
       Quaternion(90, 90, 0),
       1.0
-    );
+      );
     mesh->transform(tr);
-    SharedPtr<MeshBuffer> mesh_buffer(new MeshBuffer(context));
+    SharedPtr<MeshBuffer> mesh_buffer(new MeshBuffer(context_));
     mesh_buffer->set_mesh_geometry(mesh);
     GizmoPart axis;
     axis.m_component = m_gizmo->CreateComponent<StaticModel>();
@@ -151,7 +161,7 @@ NodesContext::NodesContext(Context* context, IEditor* editor)
     m_gizmo_parts.Push(axis);
 
     mesh_ring->transform(tr);
-    SharedPtr<MeshBuffer> mesh_buffer_ring(new MeshBuffer(context));
+    SharedPtr<MeshBuffer> mesh_buffer_ring(new MeshBuffer(context_));
     mesh_buffer_ring->set_mesh_geometry(mesh_ring);
     axis.m_component = m_gizmo->CreateComponent<StaticModel>();
     axis.m_component->SetOccludee(false);
@@ -167,17 +177,12 @@ NodesContext::NodesContext(Context* context, IEditor* editor)
   gizmo->SetMaterial(1, cache->GetResource<Material>("Materials/Editor/GreenUnlit.xml"));
   gizmo->SetMaterial(2, cache->GetResource<Material>("Materials/Editor/BlueUnlit.xml"));*/
   //gizmo.viewMask = 0x80000000; // Editor raycasts use viewmask 0x7fffffff
-
-}
-
-/// Destructor
-NodesContext::~NodesContext()
-{
 }
 
 /// Activates context and allows it to set up all its guts
 void NodesContext::activate()
 {
+  BaseContext::activate();
   auto selected = view()->selected();
   if (selected.Size()) {
     //m_gizmo->SetPosition(selected.Back()->GetPosition());
@@ -191,7 +196,9 @@ void NodesContext::activate()
 void NodesContext::deactivate()
 {
   m_gizmo->SetEnabled(false);
-  view()->clear_selection();
+  m_focus_part = nullptr;
+  //view()->clear_selection();
+  BaseContext::deactivate();
 }
 
 /// Mouse button down handler
@@ -200,6 +207,16 @@ void NodesContext::on_mouse_down()
   if (m_focus_part) {
     m_active_part = m_focus_part;
     m_gizmo_pos = calculate_gizmo_point();
+
+    // Copy all positions and rotations of selected nodes
+    m_original_nodes_pos.Clear();
+    m_original_nodes_rot.Clear();
+    auto selected = view()->selected();
+    for (int i = 0; i < selected.Size(); ++i) {
+      Node* node = selected[i];
+      m_original_nodes_pos.Push(node->GetWorldPosition());
+      m_original_nodes_rot.Push(node->GetWorldRotation());
+    }
   }
 }
 
@@ -210,24 +227,26 @@ void NodesContext::on_mouse_up()
   if (m_active_part) {
     //
     m_active_part = nullptr;
+    hide_tooltip();
 
     // Undo support
     commit_transaction();
   } else {
     Node* node = get_unit_under_mouse();
+    Vector<Node*> symmetry_nodes = get_symmety_nodes(node);
     if (input->GetKeyDown(KEY_CTRL)) {
       if (node) {
         auto selected = view()->selected();
         if (selected.Find(node) != selected.End()) {
-          view()->deselect(node);
+          view()->deselect(symmetry_nodes);
         } else {
-          view()->select(node);
+          view()->select(symmetry_nodes);
         }
       }
     } else {
       view()->clear_selection();
       if (node) {
-        view()->select(node);
+        view()->select(symmetry_nodes);
       }
     }
     auto selected = view()->selected();
@@ -244,7 +263,6 @@ void NodesContext::on_mouse_up()
 void NodesContext::on_mouse_move(float x, float y)
 {
   if (m_active_part) {
-    // TODO: Snapping
     // TODO: Correct parentness support
     // TODO: Don't move non-movable nodes
     // TODO: Mirror symmetry support
@@ -257,15 +275,17 @@ void NodesContext::on_mouse_move(float x, float y)
       case aZ: axis = Vector4(0.0, 0.0, 1.0, 0.0); break;
     }
     Vector3 axis3 = (m_gizmo->GetWorldTransform() * axis).Normalized();
+    char deg[3] = { 0xC2, 0xB0, 0x0 };
 
     auto selected = view()->selected();
+    float min_size = node_size(selected.Back());
+    float move_step = quantizing_step(min_size * 2);
     for (int i = 0; i < selected.Size(); ++i) {
       Node* node = selected[i];
       Vector3 node_pos = node->GetWorldPosition();
       // Calculate orientation
       Vector3 parent_pos = node->GetParent()->GetWorldPosition();
       Vector3 parent_z = node->GetParent()->GetWorldTransform() * Vector4(0, 0, 1, 0);
-      // TODO: handle zero position
       Vector3 parent_y = (node_pos - parent_pos).Normalized();
       Vector3 parent_x = parent_y.CrossProduct(parent_z).Normalized();
       parent_y = parent_z.CrossProduct(parent_x).Normalized();
@@ -277,28 +297,55 @@ void NodesContext::on_mouse_move(float x, float y)
         case aZ: axis = parent_z; break;
       }
 
-      if (m_active_part->m_rotation) {
-        Vector3 a1 = (m_gizmo_pos - m_gizmo->GetWorldPosition()).Normalized();
-        Vector3 a2 = (cur_pos - m_gizmo->GetWorldPosition()).Normalized();
-        float sina = a1.CrossProduct(a2).DotProduct(axis3);
-        float a = asin(sina) * 180 / M_PI;
-        node->Rotate(Quaternion(a, axis), TS_WORLD);
-      } else {
-        // TODO: better calculation of X translate (add rotation)
-        float distance = axis3.DotProduct(cur_pos - m_gizmo_pos);
-        if (m_active_part->m_axis != aX) {
-          node->Translate(distance * axis, TS_WORLD);
+      if (axis.LengthSquared() > 0.9) {
+        if (m_active_part->m_rotation) {
+          Vector3 a1 = (m_gizmo_pos - m_gizmo->GetWorldPosition()).Normalized();
+          Vector3 a2 = (cur_pos - m_gizmo->GetWorldPosition()).Normalized();
+          float sina = a1.CrossProduct(a2).DotProduct(axis3);
+          float cosa = a1.DotProduct(a2);
+          float a = atan2(sina, cosa) * 180 / M_PI;
+          // TODO: factor out rotational snapping
+          a = round(a / 3) * 3;
+          if (0 == i) {
+            set_tooltip(String(a) + deg);
+          }
+          node->SetWorldRotation(Quaternion(a, axis) * m_original_nodes_rot[i]);
+          //node->Rotate(Quaternion(a, axis), TS_WORLD);
         } else {
-          Vector3 local_pos = node_pos - parent_pos;
-          float a = -distance / local_pos.Length();
-          Quaternion tr(a *180 / M_PI, parent_z);
-          Vector3 new_pos = tr * local_pos + parent_pos;
-          node->Translate(new_pos - node_pos, TS_WORLD);
-          node->Rotate(tr, TS_WORLD);
+          float distance = axis3.DotProduct(cur_pos - m_gizmo_pos);
+          distance = round(distance / move_step) * move_step;
+          if (m_active_part->m_axis != aX) {
+            if (0 == i) {
+              set_tooltip(String(distance) + "m");
+            }
+            node->SetWorldPosition(m_original_nodes_pos[i] + distance * axis);
+            //node->Translate(distance * axis, TS_WORLD);
+          } else {
+            Vector3 a1 = (m_gizmo_pos - parent_pos).Normalized();
+            Vector3 a2 = (cur_pos - parent_pos).Normalized();
+            float sina = a1.CrossProduct(a2).DotProduct(parent_z);
+            float cosa = a1.DotProduct(a2);
+            float a = atan2(sina, cosa) * 180 / M_PI;
+            Vector3 local_pos = m_original_nodes_pos[i] - parent_pos;
+            //float a = -distance / local_pos.Length();
+            //a = a * 180 / M_PI;
+            // TODO: factor out rotational snapping
+            a = round(a / 3) * 3;
+            if (0 == i) {
+              set_tooltip(String(a) + deg);
+            }
+            Quaternion tr(a, parent_z);
+            Vector3 new_pos = tr * local_pos + parent_pos;
+            node->SetWorldPosition(new_pos);
+            node->SetWorldRotation(tr * m_original_nodes_rot[i]);
+
+            //node->Translate(new_pos - node_pos, TS_WORLD);
+            //node->Rotate(tr, TS_WORLD);
+          }
         }
       }
     }
-    m_gizmo_pos = cur_pos;
+    //m_gizmo_pos = cur_pos;
   }
 }
 
@@ -395,6 +442,9 @@ void NodesContext::update(float dt)
       view()->clear_selection();
       m_gizmo->SetEnabled(false);
       m_focus_part = nullptr;
+
+      // Undo support
+      commit_transaction();
     }
   }
   // Testing procedural units update

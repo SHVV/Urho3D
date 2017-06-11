@@ -32,6 +32,24 @@ const Parameters& MeshGenerationFunction::default_parameters() const
   return m_default_parameters;
 }
 
+// Parameters description
+const ParametersDescription& MeshGenerationFunction::parameters_description() const
+{
+  return m_parameters_description;
+}
+
+/// Returns default parameters
+Parameters& MeshGenerationFunction::access_default_parameters()
+{
+  return m_default_parameters;
+}
+
+// Parameters description
+ParametersDescription& MeshGenerationFunction::access_parameters_description()
+{
+  return m_parameters_description;
+}
+
 /// Constructor with parameters.
 MeshGenerationFunction::MeshGenerationFunction(String name)
 : m_name(name)
@@ -44,6 +62,30 @@ void MeshGenerationFunction::set_default_parameters(
 )
 {
   m_default_parameters = default_parameters;
+}
+
+
+/// Add parameter
+void MeshGenerationFunction::add_parameter(
+  const ParameterID& id,
+  const Variant& default_value,
+  const int& flags,
+  const String& name,
+  const String& tooltip,
+  const Variant& min,
+  const Variant& max
+)
+{
+  m_default_parameters[id] = default_value;
+
+  ParameterDescription description;
+  description.m_flags = flags;
+  description.m_name = name;
+  description.m_tooltip = tooltip;
+  description.m_min = min;
+  description.m_max = max;
+  m_parameters_description[id] = description;
+  m_parameters_description.parameter_ids().Push(id);
 }
 
 /// Get generator

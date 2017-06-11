@@ -50,7 +50,8 @@ Sample::Sample(Context* context) :
     screenJoystickIndex_(M_MAX_UNSIGNED),
     screenJoystickSettingsIndex_(M_MAX_UNSIGNED),
     paused_(false),
-    useMouseMode_(MM_ABSOLUTE)
+    useMouseMode_(MM_ABSOLUTE),
+    m_exit_on_esc(true)
 {
 }
 
@@ -237,8 +238,9 @@ void Sample::HandleKeyUp(StringHash /*eventType*/, VariantMap& eventData)
                 if (useMouseMode_ != MM_ABSOLUTE)
                     GetSubsystem<Input>()->SetMouseMode(MM_FREE);
             }
-            else
-                engine_->Exit();
+            else if (m_exit_on_esc) {
+              engine_->Exit();
+            }
         }
     }
 }

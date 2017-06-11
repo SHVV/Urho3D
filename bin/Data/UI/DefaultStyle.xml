@@ -387,4 +387,8 @@
         <attribute name="Image Rect" value="50 5 51 6" />
         <attribute name="Border" value="0 0 0 0" />
     </element>
+    <element type="Transparent" style="BorderImage">
+        <attribute name="Image Rect" value="4 24 5 25" />
+        <attribute name="Border" value="0 0 0 0" />
+    </element>
 </elements>

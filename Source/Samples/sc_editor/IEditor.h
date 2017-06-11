@@ -35,4 +35,7 @@ public:
 
   /// Set current editor's context
   virtual void set_context(BaseContext* context) = 0;
+
+  /// Set symmetry
+  virtual void set_symmetry(int value) = 0;
 };

@@ -89,6 +89,8 @@ protected:
     bool touchEnabled_;
     /// Mouse mode option to use in the sample.
     MouseMode useMouseMode_;
+    /// Exit on esc
+    bool m_exit_on_esc;
 
 private:
     /// Create logo.

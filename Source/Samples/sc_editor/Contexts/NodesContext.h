@@ -19,10 +19,13 @@ class NodesContext : public BaseContext {
 public:
 
   /// Construct.
-  NodesContext(Context* context, IEditor* editor);
+  NodesContext(Context* context);
 
   /// Destructor
   virtual ~NodesContext();
+
+  /// Initialize context
+  virtual void initialize();
 
   /// Activates context and allows it to set up all its guts
   virtual void activate();
@@ -65,4 +68,8 @@ private:
   GizmoPart* m_active_part;
   // Last position of active gizmo part
   Vector3 m_gizmo_pos;
+  // Original nodes positions
+  Vector<Vector3> m_original_nodes_pos;
+  // Original nodes orientations (rotations)
+  Vector<Quaternion> m_original_nodes_rot;
 };

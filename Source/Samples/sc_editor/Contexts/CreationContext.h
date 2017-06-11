@@ -11,27 +11,25 @@ class UnitModel;
 
 using namespace Urho3D;
 
+/// Unit class name parameter ID
+extern ParameterID s_unit_class;
+// TODO: move to separate context for procedural units
+/// Function name for procedural units
+extern ParameterID s_function_name;
+
 class CreationContext : public BaseContext {
   // Enable type information.
   URHO3D_OBJECT(CreationContext, BaseContext);
 public:
 
   /// Construct.
-  CreationContext(Context* context, IEditor* editor);
+  CreationContext(Context* context);
 
   /// Destructor
   virtual ~CreationContext();
 
-  /// Sets unit class name
-  void set_class_name(StringHash name);
-  /// Gets unit class name
-  StringHash class_name();
-
-  // TODO: extract to procedural units creation context
-  /// Sets generation function name
-  void set_function_name(StringHash name);
-  /// Gets generation function name
-  StringHash function_name();
+  /// Initialize context
+  virtual void initialize();
 
   /// Activates context and allows it to set up all its guts
   virtual void activate();
@@ -61,15 +59,21 @@ protected:
   /// Updates rollower position
   void update_rollower_position();
 
-  /// Current unit class name
-  StringHash m_unit_class;
+  /// Get i-th interactive parameter of current procedural object
+  // i - 1 based index
+  bool get_interactive_parameter(int i, ParameterID& id);
 
-  /// Current function name
-  StringHash m_function_name;
+  /// Gets unit class name
+  StringHash unit_class() const;
+
+  // TODO: extract to procedural units creation context
+  /// Gets generation function name
+  StringHash function_name() const;
 
   /// Rollower unit
   // TODO: add several nodes by symmetry
-  SharedPtr<UnitModel> m_rollower;
+  //SharedPtr<UnitModel> m_rollower;
+  Vector<SharedPtr<UnitModel>> m_rollowers;
 
   /// Creation state
   int m_state;
@@ -77,5 +81,19 @@ protected:
   /// Latest point on mouse down
   Vector3 m_last_position;
 
-  // TODO: latest parameters backup for creating similar units in one click
+  /// Latest cursor position
+  IntVector2 m_last_cursor_pos;
+
+  /// Flag, that mouse was moved since the last button press
+  bool m_moved;
+
+  /// Initial parameter value
+  Variant m_initial_value;
+
+  /// Base unit orientation
+  Quaternion m_orientation;
+
+  // Latest parameters backup for creating similar units in one click
+  // Map based on unit type / function name key
+  HashMap<Pair<StringHash, StringHash>, Parameters> m_latest_parameters;
 };

@@ -7,6 +7,7 @@
 
 // Editor includes
 #include "Parameters.h"
+#include "ParametersDescription.h"
 
 // Urho3D includes
 #include <Urho3D/Container/RefCounted.h>
@@ -32,7 +33,8 @@ public:
   /// Returns default parameters
   const Parameters& default_parameters() const;
 
-  // TODO: Parameters description
+  // Parameters description
+  const ParametersDescription& parameters_description() const;
 
   /// Generate mesh geometry, basing on parameters
   virtual MeshGeometry* generate(const Parameters& parameters) = 0;
@@ -46,12 +48,32 @@ protected:
   /// Set default parameters
   void set_default_parameters(const Parameters& default_parameters);
 
+  /// Add parameter
+  void add_parameter(
+    const ParameterID& id,
+    const Variant& default_value,
+    const int& flags,
+    const String& name,
+    const String& tooltip,
+    const Variant& min = Variant(),
+    const Variant& max = Variant()
+  );
+
+  /// Returns default parameters
+  Parameters& access_default_parameters();
+
+  // Parameters description
+  ParametersDescription& access_parameters_description();
+
   /// Get generator
   MeshGenerator* generator();
 
 private:
   /// Default parameters of generation function
   Parameters m_default_parameters;
+  /// Parameters description
+  ParametersDescription m_parameters_description;
+
   /// Name of generation function
   String m_name;
   /// Back pointer to mesh generator. Can be used for calling other functions

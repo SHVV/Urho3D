@@ -5,6 +5,9 @@
 // Editor includes
 #include "Parameters.h"
 
+/// null variant
+Variant Parameters::s_null;
+
 /// Default constructor.
 Parameters::Parameters()
 : m_hash_valid(false)
@@ -54,6 +57,26 @@ bool Parameters::operator <(const Parameters& rhs) const
 bool Parameters::operator >(const Parameters& rhs) const
 {
   return hash() > rhs.hash();
+}
+
+/// Parameter for writing access
+Variant& Parameters::operator [](const ParameterID& id)
+{
+  m_hash_valid = false;
+  if (id >= m_parameters_vector.Size()) {
+    m_parameters_vector.Resize(id + 1);
+  }
+  return m_parameters_vector[id];
+}
+
+/// Read parameter. Returns null variant, if not found
+const Variant& Parameters::operator [](const ParameterID& id) const
+{
+  if (id < m_parameters_vector.Size()) {
+    return m_parameters_vector[id];
+  } else {
+    return s_null;
+  }
 }
 
 /// Get parameters map for reading only

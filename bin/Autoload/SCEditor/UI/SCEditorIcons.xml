@@ -1,14 +1,34 @@
 <elements>
-    <element type="Manipulate">
-        <attribute name="Texture" value="Texture2D;Textures/UI/SCEditorIcons.png" />
-        <attribute name="Image Rect" value="0 0 30 30" />
-    </element>
-    <element type="SphereTank">
-        <attribute name="Texture" value="Texture2D;Textures/UI/SCEditorIcons.png" />
-        <attribute name="Image Rect" value="32 0 62 30" />
-    </element>
-    <element type="Beam">
-        <attribute name="Texture" value="Texture2D;Textures/UI/SCEditorIcons.png" />
-        <attribute name="Image Rect" value="64 0 94 30" />
-    </element>
+  <element type="Manipulate">
+    <attribute name="Texture" value="Texture2D;Textures/UI/SCEditorIcons.png" />
+    <attribute name="Image Rect" value="0 0 30 30" />
+  </element>
+  <element type="SphereTank">
+    <attribute name="Texture" value="Texture2D;Textures/UI/SCEditorIcons.png" />
+    <attribute name="Image Rect" value="32 0 62 30" />
+  </element>
+  <element type="Beam">
+    <attribute name="Texture" value="Texture2D;Textures/UI/SCEditorIcons.png" />
+    <attribute name="Image Rect" value="64 0 94 30" />
+  </element>
+  <element type="Symmetry2">
+    <attribute name="Texture" value="Texture2D;Textures/UI/SCEditorIcons.png" />
+    <attribute name="Image Rect" value="0 32 30 62" />
+  </element>
+  <element type="Symmetry3">
+    <attribute name="Texture" value="Texture2D;Textures/UI/SCEditorIcons.png" />
+    <attribute name="Image Rect" value="32 32 62 62" />
+  </element>
+  <element type="Symmetry4">
+    <attribute name="Texture" value="Texture2D;Textures/UI/SCEditorIcons.png" />
+    <attribute name="Image Rect" value="64 32 94 62" />
+  </element>
+  <element type="Symmetry6">
+    <attribute name="Texture" value="Texture2D;Textures/UI/SCEditorIcons.png" />
+    <attribute name="Image Rect" value="96 32 126 62" />
+  </element>
+  <element type="Symmetry8">
+    <attribute name="Texture" value="Texture2D;Textures/UI/SCEditorIcons.png" />
+    <attribute name="Image Rect" value="128 32 158 62" />
+  </element>
 </elements>

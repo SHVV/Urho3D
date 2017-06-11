@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "../Core/Parameters.h"
+
 #include <Urho3D/Core/Object.h>
 #include "Urho3D/Math/Ray.h"
 
@@ -25,10 +27,22 @@ class BaseContext : public Object {
 public:
 
   /// Construct.
-  BaseContext(Context* context, IEditor* editor);
+  BaseContext(Context* context);
 
   /// Destructor
   virtual ~BaseContext();
+
+  /// Set back pointer to editor
+  void set_editor(IEditor* editor);
+
+  /// Set context parameters
+  void set_parameters(const Parameters& parameters);
+
+  /// Set symmetry
+  void set_symmetry(int value);
+
+  /// Initialize context
+  virtual void initialize();
 
   /// Activates context and allows it to set up all its guts
   virtual void activate();
@@ -48,10 +62,6 @@ public:
   /// Update context each frame
   virtual void update(float dt);
 
-  // TODO:
-  // Symmetry
-  // Snapping
-
 protected:
   /// Get ray from current mouse position and camera
   Ray calculate_ray();
@@ -59,8 +69,29 @@ protected:
   /// Get unit under mouse cursor
   Node* get_unit_under_mouse();
 
+  /// Returns all positions, based on symmetry mode
+  Vector<Vector3> get_symmetry_positions(const Vector3& base);
+
+  /// Returns all nodes, symmetrical to node
+  Vector<Node*> get_symmety_nodes(Node* node);
+
+  /// Quantize by tenths
+  static float quantize(float value);
+
+  /// Calculate quantizing step
+  static float quantizing_step(float value);
+
+  /// Get min axis size of node's drawable
+  static float node_size(Node* node);
+
   /// Picking filter function
   virtual bool is_pickable(Node* node);
+
+  /// Set tooltip text and show it
+  void set_tooltip(const String& text);
+
+  /// Hide tooltip
+  void hide_tooltip();
 
   /// Scene getter
   SceneModel* model();
@@ -73,4 +104,13 @@ protected:
   
   /// Scene model
   IEditor* m_editor;
+
+  /// Context parameters
+  Parameters m_parameters;
+
+  /// Symmetry
+  int m_symmetry;
+
+  /// Is active
+  bool m_active;
 };

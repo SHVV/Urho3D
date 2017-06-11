@@ -70,9 +70,11 @@ void plate()
     vec3 world_pos = gl_in[i].gl_Position.xyz;
     gl_Position = vec4(world_pos, 1.0) * cViewProj;
     vWorldPos = vec4(world_pos, GetDepth(gl_Position));
-    vNormal = normal;
+    //vNormal = normal;
+    vNormal = gNormal[i];
     vTangent = tangent;
-    vBiNormal = binorm;
+    //vBiNormal = binorm;
+    vBiNormal = normalize(cross(normal, tangent));
     vBaricentric = baricentric[i];
     vTextureCoord = uvs[i];
     EmitVertex();
