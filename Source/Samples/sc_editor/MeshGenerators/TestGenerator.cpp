@@ -58,11 +58,13 @@ MeshGeometry* TestGenerator::generate(const Parameters& parameters)
   
   Polyline2 profile;
   PolylineSegment seg;
+
   seg.m_lateral_material_id = -1;
   seg.m_longitudal_material_id = -1;
   seg.m_node_material_id = -1;
+
   seg.m_plate_material_id = 0;
-  seg.m_node_radius = 0.2 * radius / segments;
+  seg.m_node_radius = 0.4 * radius / segments;
   seg.m_smooth_vertex = false;
   seg.m_smooth_segment = false;
 
@@ -70,13 +72,23 @@ MeshGeometry* TestGenerator::generate(const Parameters& parameters)
   profile.segments().Push(seg);
   seg.m_pos = Vector2(-x1, y2);
   profile.segments().Push(seg);
+
+  //seg.m_lateral_material_id = 0;
+  //seg.m_node_material_id = 0;
+
   seg.m_pos = Vector2(-length / 2, radius);
   profile.segments().Push(seg);
+
+  //seg.m_longitudal_material_id = 0;
 
   for (int i = 0; i < inner_segments; ++i) {
     seg.m_pos = Vector2(-length / 2 + (i + 1) * segment_length, radius);
     profile.segments().Push(seg);
   }
+
+  seg.m_lateral_material_id = -1;
+  seg.m_longitudal_material_id = -1;
+  seg.m_node_material_id = -1;
 
   seg.m_pos = Vector2(x1, y2);
   profile.segments().Push(seg);
@@ -92,9 +104,14 @@ MeshGeometry* TestGenerator::generate(const Parameters& parameters)
   seg.m_pos = Vector2(10, 0);
   profile.segments().Push(seg);*/
 
-  return generator()->lathe(
+  MeshGeometry* geometry = generator()->lathe(
     profile, 
     parameters[s_segments].GetUInt(),
     ttTRIANGLE
   );
+  float scale = Max(x1 * 2, radius * 2);
+  for (int i = 0; i < geometry->vertices().Size(); ++i) {
+    geometry->set_scale(i, scale);
+  }
+  return geometry;
 }

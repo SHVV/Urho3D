@@ -22,13 +22,15 @@ uniform float cTaper;
 //---------------------------------------------VS-----------------------------------------------------
 #ifdef COMPILEVS
 
-attribute float iCustom; // radius
+attribute float iCustom1; // radius
+attribute float iCustom2; // Scale
 
 #ifdef VERTEXCOLOR
 out vec4 vColor;
 #endif
 varying vec3 vVertexLight;
 out float vRadius;
+out float vScale;
 
 void VS()
 {
@@ -36,7 +38,8 @@ void VS()
   vec4 WorldPos = iPos * modelMatrix;
   gl_Position = WorldPos * cView;
   vVertexLight = GetAmbient(GetZonePos(WorldPos.xyz));
-  vRadius = iCustom;
+  vRadius = iCustom1;
+  vScale = iCustom2;
   //mat4 modelMatrix = iModelMatrix;
   //gl_Position = vec4(GetWorldPos(modelMatrix), 1.0);
   
@@ -91,6 +94,9 @@ out vec3 gVertexLight;
 
 in float vRadius[NUM_INPUT];
 flat out float gRadius;
+
+in float vScale[NUM_INPUT];
+flat out float gScale;
 
 mat3 GetNormalMatrix(mat4 modelMatrix)
 {
@@ -251,6 +257,7 @@ void GS()
     vec4 WorldPos = vec4(iPos.xyz, 1.0) * cViewInv;
     gVertexLight = vVertexLight[0];
     gRadius = radius;
+    gScale = vScale[0];
     EmitVertex();
   }
   EndPrimitive();
@@ -265,6 +272,7 @@ void GS()
 flat in vec3 gWorldPos;
 flat in vec4 gNormal;
 flat in float gRadius;
+flat in float gScale;
 #ifdef BEAMS
 flat in mat4 gCylinder;
 //flat in mat4 gCone1;
@@ -496,7 +504,13 @@ void PS()
 #endif
     normal = normal * GetNormalMatrix(cViewInv);
     // TODO: use local normal and position
-    TriPlanarResult mapped = tri_planar_map(WorldPos.xyz, normal);
+    TriPlanarResult mapped = tri_planar_map(WorldPos.xyz / (gRadius * 25), normal);
+
+    mapped.diff *= cMatDiffColor;
+    mapped.prop.r *= cRoughness * 2;
+    mapped.prop.g *= cMetallic * 2;
+    mapped.norm = normalize(normal + mapped.norm);
+
     vec4 diffColor = mapped.diff;
     float roughness = mapped.prop.r;
     float metalness = mapped.prop.g;

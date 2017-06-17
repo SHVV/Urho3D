@@ -24,7 +24,7 @@ TriPlanarResult tri_planar_map(vec3 pos, vec3 norm) {
   // Compute the UV coords for each of the 3 planar projections.  
   // TODO: factor out 
   // tex_scale (default ~ 1.0) determines how big the textures appear.  
-  float tex_scale = 0.1;
+  float tex_scale = 1;
   vec2 coord1 = pos.yz * tex_scale;
   vec2 coord2 = pos.zx * tex_scale;
   vec2 coord3 = pos.xy * tex_scale;
@@ -58,16 +58,20 @@ TriPlanarResult tri_planar_map(vec3 pos, vec3 norm) {
                 bump2.xyz * blend_weights.yyy +
                 bump3.xyz * blend_weights.zzz;
 
-  result.prop = bumpFetch1.zw * blend_weights.xx +
-                bumpFetch2.zw * blend_weights.yy +
-                bumpFetch3.zw * blend_weights.zz;
+  vec4 prop1 = texture2D(sSpecMap, coord1);
+  vec4 prop2 = texture2D(sSpecMap, coord2);
+  vec4 prop3 = texture2D(sSpecMap, coord3);
 
-  result.diff *= cMatDiffColor;
+  result.prop = prop1.xy * blend_weights.xx +
+                prop2.xy * blend_weights.yy +
+                prop3.xy * blend_weights.zz;
 
-  result.prop.r += cRoughness;
-  result.prop.g *= cMetallic;
+  //result.diff *= cMatDiffColor;
 
-  result.norm = normalize(norm + result.norm);
+  //result.prop.r *= cRoughness * 2;
+  //result.prop.g *= cMetallic * 2;
+
+  //result.norm = normalize(norm + result.norm);
 
   return result;
 }

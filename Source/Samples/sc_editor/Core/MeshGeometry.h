@@ -42,11 +42,13 @@ public:
     //Vector3 UVW;
     float radius;
     int material;
+    float scale;
     bool deleted;
 
     Vertex() :
       radius(0),
       material(0),
+      scale(5),
       deleted(false)
     {};
   };
@@ -111,6 +113,9 @@ public:
 
   /// Set radius
   bool set_radius(int index, float radius);
+
+  /// Set scale
+  bool set_scale(int index, float scale);
 
   /// Set material
   bool set_vertex_material(int index, int material);

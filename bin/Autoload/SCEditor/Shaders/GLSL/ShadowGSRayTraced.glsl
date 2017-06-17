@@ -14,7 +14,8 @@ uniform float cRadius;
 //---------------------------------------------VS-----------------------------------------------------
 #ifdef COMPILEVS
 
-attribute float iCustom; // radius
+attribute float iCustom1; // radius
+attribute float iCustom2; // scale
 out float vRadius;
 
 void VS()
@@ -22,7 +23,7 @@ void VS()
   mat4 modelMatrix = iModelMatrix;
   vec4 WorldPos = iPos * modelMatrix;
   gl_Position = WorldPos * cView;
-  vRadius = iCustom;
+  vRadius = iCustom1;
 }
 #endif // COMPILEVS
 

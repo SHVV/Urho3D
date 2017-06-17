@@ -127,6 +127,17 @@ bool MeshGeometry::set_radius(int index, float radius)
   return !!vertex;
 }
 
+/// Set scale
+bool MeshGeometry::set_scale(int index, float scale)
+{
+  Vertex* vertex = get_vertex(index);
+  if (vertex) {
+    vertex->scale = scale;
+    send_update(VERTEX_CHANGED, index);
+  }
+  return !!vertex;
+}
+
 /// Set material
 bool MeshGeometry::set_vertex_material(int index, int material)
 {

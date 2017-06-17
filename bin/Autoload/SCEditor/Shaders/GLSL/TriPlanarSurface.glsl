@@ -16,7 +16,9 @@ varying vec3 vLocalNormal;
 varying vec4 vLocalPos;
 
 #ifdef COMPILEVS
+attribute float iCustom2; // Scale
 flat out mat3 vNormalMatrix;
+flat out float vScale;
 #endif
 
 void VS()
@@ -30,11 +32,13 @@ void VS()
   vLocalPos = iPos;
   vLocalNormal = iNormal;
   vNormalMatrix = GetNormalMatrix(modelMatrix);
+  vScale = iCustom2;
 }
 
 
 #ifdef COMPILEPS
 
+flat in float vScale;
 flat in mat3 vNormalMatrix;
 
 #endif
@@ -72,10 +76,14 @@ void PS()
   //roughness *= dot(cells, cells) > 0 ? 1.2 : 1.0;
   //roughness = mix(cRoughness, roughness, vFade);
 
-  TriPlanarResult mapped = tri_planar_map(vLocalPos.xyz, vLocalNormal);
-  vec4 diffColor = mapped.diff;
-  float roughness = mapped.prop.r;
-  float metalness = mapped.prop.g;
+  TriPlanarResult mapped = tri_planar_map(vLocalPos.xyz / vScale, vLocalNormal);
+  TriPlanarResult mapped2 = tri_planar_map(vLocalPos.xyz / vScale * 7.654321, vLocalNormal);
+
+  vec4 diffColor = (mapped.diff + mapped2.diff) * cMatDiffColor * 0.5;
+  float roughness = (mapped.prop.r + mapped2.prop.r) * cRoughness;
+  float metalness = (mapped.prop.g + mapped2.prop.g) * cMetallic;
+  vec3 norm = normalize(vLocalNormal + (mapped.norm + mapped2.norm) * 0.5);
+
 
   roughness *= roughness;
 
@@ -99,7 +107,7 @@ void PS()
       //vec3 nn = DecodeNormal(texture2D(sNormalMap, vTexCoord.xy));
       //nn.rg *= 2.0;
       //vec3 normal = normalize(tbn * nn);
-      vec3 normal = normalize(mapped.norm * vNormalMatrix);
+      vec3 normal = normalize(norm * vNormalMatrix);
     #else
         vec3 normal = normalize(vNormal);
     #endif
@@ -122,7 +130,7 @@ void PS()
     vec3 cubeColor = vec3(1.0);
 
     #ifdef IBL
-      vec3 iblColor = ImageBasedLighting(reflection, tangent, bitangent, normal, toCamera, diffColor.rgb, specColor.rgb, roughness, cubeColor);
+      vec3 iblColor = ImageBasedLighting(reflection, tangent, bitangent, normal, toCamera, diffColor.rgb, specColor.rgb, roughness + 0.1, cubeColor);
       float gamma = 0.0;
       finalColor.rgb += iblColor;
     #endif

@@ -222,7 +222,8 @@ bool MeshBuffer::update()
     PODVector<VertexElement> elements;
     elements.Push(VertexElement(TYPE_VECTOR3, SEM_POSITION));
     elements.Push(VertexElement(TYPE_VECTOR3, SEM_NORMAL));
-    elements.Push(VertexElement(TYPE_FLOAT, SEM_CUSTOM)); // Radius
+    elements.Push(VertexElement(TYPE_FLOAT, SEM_CUSTOM, 1)); // Radius
+    elements.Push(VertexElement(TYPE_FLOAT, SEM_CUSTOM, 2)); // Scale
     m_vertex_buffer->SetSize(vertices_count, elements, true);
     begin = 0;
     end = m_mesh_geometry->vertices().Size() - 1;
@@ -258,6 +259,7 @@ bool MeshBuffer::update()
       *buffer = vertex.normal.y_; ++buffer;
       *buffer = vertex.normal.z_; ++buffer;
       *buffer = vertex.radius; ++buffer;
+      *buffer = vertex.scale; ++buffer;
       if (vertex.radius > max_r) {
         max_r = vertex.radius;
       }
