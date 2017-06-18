@@ -22,6 +22,7 @@
 #include "View/CameraController.h"
 
 #include "MeshGenerators/TestGenerator.h"
+#include "MeshGenerators/BaseTruss.h"
 
 // Includes from Urho
 #include <Urho3D/Core/CoreEvents.h>
@@ -67,6 +68,7 @@ SCEditor::SCEditor(Context* context)
   context_->RegisterSubsystem(generator);
   // Register generator functions
   generator->add_function(new TestGenerator());
+  generator->add_function(new BaseTruss());
   // TODO:
 
   // Model

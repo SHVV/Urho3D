@@ -330,7 +330,7 @@ void NodesContext::on_mouse_move(float x, float y)
             //float a = -distance / local_pos.Length();
             //a = a * 180 / M_PI;
             // TODO: factor out rotational snapping
-            a = round(a / 3) * 3;
+            a = round(a / 1.5) * 1.5;
             if (0 == i) {
               set_tooltip(String(a) + deg);
             }

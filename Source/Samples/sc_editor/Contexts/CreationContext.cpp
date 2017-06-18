@@ -282,7 +282,7 @@ void CreationContext::on_mouse_move(float x, float y)
         if (cursor_pos.Length() >= FLT_EPSILON) {
           diagonal /= cursor_pos.Length();
         }
-        raw_value = (cur_position - m_last_position).Length() * diagonal;
+        raw_value = (cur_position - m_last_position).Length() * diagonal * 2;
       } else {
         Graphics* graphics = GetSubsystem<Graphics>();
         diagonal /= (graphics->GetWidth() + graphics->GetHeight()) / 4;
@@ -307,8 +307,33 @@ void CreationContext::on_mouse_move(float x, float y)
         if (flags & pfLINEAR_VALUE) {
           tooltip_text += "m";
         }
+      } else if (m_initial_value.GetType() == VAR_INT) {
+        // For size in cells - search cell size
+        if (flags & pfCELLS) {
+          auto& descriptions = m_rollowers[0]->parameters_description();
+          const Vector<ParameterID> ids = descriptions.parameter_ids();
+          float cell_size = 1;
+          for (int i = 0; i < ids.Size(); ++i) {
+            ParameterID cur_id = ids[i];
+            if (descriptions[cur_id].m_flags & pfCELL_SIZE) {
+              cell_size = m_rollowers[0]->parameters()[cur_id].GetFloat();
+              break;
+            }
+          }
+          raw_value /= cell_size;
+        }
+
+        raw_value = raw_value + m_initial_value.GetInt();
+        raw_value = round(raw_value);
+
+        // Checking limits
+        raw_value = Max(raw_value, description.m_min.GetInt());
+        raw_value = Min(raw_value, description.m_max.GetInt());
+
+        real_value = (int)raw_value;
+        tooltip_text += String(real_value);
       } else {
-        // TODO: other parameter types: Integer, Vector2
+        // TODO: other parameter types: Vector2
         real_value = m_initial_value;
       }
       set_tooltip(tooltip_text);
