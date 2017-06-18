@@ -77,11 +77,12 @@ void PS()
   //roughness = mix(cRoughness, roughness, vFade);
 
   TriPlanarResult mapped = tri_planar_map(vLocalPos.xyz / vScale, vLocalNormal);
+  // TODO: factor out additional scale
   TriPlanarResult mapped2 = tri_planar_map(vLocalPos.xyz / vScale * 7.654321, vLocalNormal);
 
   vec4 diffColor = (mapped.diff + mapped2.diff) * cMatDiffColor * 0.5;
-  float roughness = (mapped.prop.r + mapped2.prop.r) * cRoughness;
-  float metalness = (mapped.prop.g + mapped2.prop.g) * cMetallic;
+  float roughness = (mapped.prop.r * mapped2.prop.r) * cRoughness * 4.0;
+  float metalness = (mapped.prop.g * mapped2.prop.g) * cMetallic * 4.0;
   vec3 norm = normalize(vLocalNormal + (mapped.norm + mapped2.norm) * 0.5);
 
 

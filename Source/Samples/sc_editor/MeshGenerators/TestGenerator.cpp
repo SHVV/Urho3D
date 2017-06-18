@@ -107,9 +107,10 @@ MeshGeometry* TestGenerator::generate(const Parameters& parameters)
   MeshGeometry* geometry = generator()->lathe(
     profile, 
     parameters[s_segments].GetUInt(),
-    ttTRIANGLE
+    //ttTRIANGLE
+    ttDIAMOND
   );
-  float scale = Max(x1 * 2, radius * 2);
+  float scale = Max(x1 * 2, radius * 2) * 0.7;
   for (int i = 0; i < geometry->vertices().Size(); ++i) {
     geometry->set_scale(i, scale);
   }

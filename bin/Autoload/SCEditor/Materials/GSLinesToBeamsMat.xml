@@ -14,9 +14,8 @@
   <parameter name="MatSpecColor" value="1 1 1 1" />
   <parameter name="Roughness" value="0.5" />
   <parameter name="Metallic" value="1" />
-  <parameter name="Radius" value="0.03" />
-  <parameter name="Taper" value="0.2" />
-	<cull value="none" />
+  <parameter name="Dirty" value="0.2" />
+  <cull value="none" />
 	<shadowcull value="ccw" />
 	<fill value="solid" />
 	<primitivesinput value="lines list" />

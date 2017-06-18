@@ -6,6 +6,8 @@ struct TriPlanarResult {
   vec2 prop;
 };
 
+uniform float cDirty;
+
 TriPlanarResult tri_planar_map(vec3 pos, vec3 norm) {
   // Determine the blend weights for the 3 planar projections.  
   // N_orig is the vertex-interpolated normal vector.  
@@ -65,6 +67,9 @@ TriPlanarResult tri_planar_map(vec3 pos, vec3 norm) {
   result.prop = prop1.xy * blend_weights.xx +
                 prop2.xy * blend_weights.yy +
                 prop3.xy * blend_weights.zz;
+  result.prop -= vec2(0.5, 0.5);
+  result.prop *= cDirty;
+  result.prop += vec2(0.5, 0.5);
 
   //result.diff *= cMatDiffColor;
 
