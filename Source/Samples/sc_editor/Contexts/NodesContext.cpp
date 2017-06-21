@@ -305,7 +305,7 @@ void NodesContext::on_mouse_move(float x, float y)
           float cosa = a1.DotProduct(a2);
           float a = atan2(sina, cosa) * 180 / M_PI;
           // TODO: factor out rotational snapping
-          a = round(a / 3) * 3;
+          a = round(a / 1.5) * 1.5;
           if (0 == i) {
             set_tooltip(String(a) + deg);
           }
@@ -321,8 +321,13 @@ void NodesContext::on_mouse_move(float x, float y)
             node->SetWorldPosition(m_original_nodes_pos[i] + distance * axis);
             //node->Translate(distance * axis, TS_WORLD);
           } else {
-            Vector3 a1 = (m_gizmo_pos - parent_pos).Normalized();
-            Vector3 a2 = (cur_pos - parent_pos).Normalized();
+            Plane gizmo_plane(parent_z, m_gizmo_pos);
+            Vector3 projected_cur_pos = gizmo_plane.Project(cur_pos);
+            Vector3 projected_parent_pos = gizmo_plane.Project(parent_pos);
+
+            Vector3 a1 = (m_gizmo_pos - projected_parent_pos).Normalized();
+            Vector3 a2 = (projected_cur_pos - projected_parent_pos).Normalized();
+
             float sina = a1.CrossProduct(a2).DotProduct(parent_z);
             float cosa = a1.DotProduct(a2);
             float a = atan2(sina, cosa) * 180 / M_PI;
