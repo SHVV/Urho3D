@@ -76,13 +76,16 @@ protected:
   Vector<Node*> get_symmety_nodes(Node* node);
 
   /// Quantize by tenths
-  static float quantize(float value);
+  float quantize(float value);
 
   /// Calculate quantizing step
-  static float quantizing_step(float value);
+  float quantizing_step(float value);
 
   /// Get min axis size of node's drawable
   static float node_size(Node* node);
+
+  /// Angle snapping
+  float snap_angle(float value);
 
   /// Picking filter function
   virtual bool is_pickable(Node* node);

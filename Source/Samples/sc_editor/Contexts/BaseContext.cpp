@@ -241,7 +241,21 @@ float BaseContext::quantizing_step(float value)
   } else if (steps > base_steps * 2) {
     step *= 2;
   }
+  Input* input = GetSubsystem<Input>();
+  // TODO: factor out accelerators
+  if (input->GetKeyDown(KEY_CTRL)) {
+    step /= 10;
+  }
   return step;
+}
+
+/// Angle snapping
+float BaseContext::snap_angle(float value)
+{
+  Input* input = GetSubsystem<Input>();
+  // TODO: factor out accelerators
+  float snap_step = input->GetKeyDown(KEY_CTRL) ? 0.5 : 3;
+  return round(value / snap_step) * snap_step;
 }
 
 /// Get min axis size of node's drawable

@@ -147,7 +147,7 @@ void NodesContext::initialize()
       Vector3(),
       Quaternion(90, 90, 0),
       1.0
-      );
+    );
     mesh->transform(tr);
     SharedPtr<MeshBuffer> mesh_buffer(new MeshBuffer(context_));
     mesh_buffer->set_mesh_geometry(mesh);
@@ -303,9 +303,8 @@ void NodesContext::on_mouse_move(float x, float y)
           Vector3 a2 = (cur_pos - m_gizmo->GetWorldPosition()).Normalized();
           float sina = a1.CrossProduct(a2).DotProduct(axis3);
           float cosa = a1.DotProduct(a2);
-          float a = atan2(sina, cosa) * 180 / M_PI;
-          // TODO: factor out rotational snapping
-          a = round(a / 1.5) * 1.5;
+          float a = atan2(sina, cosa) * M_RADTODEG;
+          a = snap_angle(a);
           if (0 == i) {
             set_tooltip(String(a) + deg);
           }
@@ -330,12 +329,9 @@ void NodesContext::on_mouse_move(float x, float y)
 
             float sina = a1.CrossProduct(a2).DotProduct(parent_z);
             float cosa = a1.DotProduct(a2);
-            float a = atan2(sina, cosa) * 180 / M_PI;
+            float a = atan2(sina, cosa) * M_RADTODEG;
             Vector3 local_pos = m_original_nodes_pos[i] - parent_pos;
-            //float a = -distance / local_pos.Length();
-            //a = a * 180 / M_PI;
-            // TODO: factor out rotational snapping
-            a = round(a / 1.5) * 1.5;
+            a = snap_angle(a);
             if (0 == i) {
               set_tooltip(String(a) + deg);
             }
