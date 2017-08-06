@@ -351,7 +351,7 @@ MeshGeometry::Polygon* MeshGeometry::get_polygon(int index)
 /// Transform mesh with matrix
 void MeshGeometry::transform(const Matrix3x4& tr)
 {
-  for (int i = 0; i < m_vertices.Size(); ++i) {
+  for (unsigned int i = 0; i < m_vertices.Size(); ++i) {
     Vertex& vertex = m_vertices[i];
     if (!vertex.deleted) {
       vertex.position = tr * vertex.position;
@@ -434,7 +434,7 @@ PODVector<int> MeshGeometry::primitives_by_flags(
 ) const
 {
   PODVector<int> result;
-  for (int i = 0; i < primitives.Size(); ++i) {
+  for (unsigned int i = 0; i < primitives.Size(); ++i) {
     if (primitives[i].check_flags(flags)) {
       result.Push(i);
     }
@@ -453,7 +453,7 @@ bool MeshGeometry::ray_cast_vertices(
   URHO3D_PROFILE(RayCastVertices);
   // TODO: use search tree for faster ray cast
   bool res = false;
-  for (int i = 0; i < m_vertices.Size(); ++i) {
+  for (unsigned int i = 0; i < m_vertices.Size(); ++i) {
     const Vertex& vertex = m_vertices[i];
     if (vertex.check_flags(flags)) {
       float cur_t = ray.HitDistance(Sphere(vertex.position, vertex.radius));
@@ -530,7 +530,7 @@ bool MeshGeometry::ray_cast_edges(
   URHO3D_PROFILE(RayCastEdges);
   // TODO: use search tree for faster ray cast
   bool res = false;
-  for (int i = 0; i < m_edges.Size(); ++i) {
+  for (unsigned int i = 0; i < m_edges.Size(); ++i) {
     const Edge& edge = m_edges[i];
     if (edge.check_flags(flags)) {
       const Vertex& v1 = m_vertices[edge.vertexes[0]];
@@ -602,7 +602,7 @@ bool MeshGeometry::ray_cast_polygons(
   // TODO: use search tree for faster ray cast
   // TODO: backface picking does not work
   bool res = false;
-  for (int i = 0; i < m_polygons.Size(); ++i) {
+  for (unsigned int i = 0; i < m_polygons.Size(); ++i) {
     const Polygon& polygon = m_polygons[i];
     if (polygon.check_flags(flags)) {
       /*float pre_t = ray.HitDistance(
@@ -657,7 +657,7 @@ void MeshGeometry::remove_notification_receiver(NotificationReceiver* target)
 /// Send update to all subscribers
 void MeshGeometry::send_update(UpdateType type, int index)
 {
-  for (int i = 0; i < m_notification_receivers.Size(); ++i) {
+  for (unsigned int i = 0; i < m_notification_receivers.Size(); ++i) {
     m_notification_receivers[i]->on_update(type, index);
   }
 }

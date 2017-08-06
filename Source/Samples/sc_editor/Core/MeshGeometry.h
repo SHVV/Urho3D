@@ -12,6 +12,7 @@ namespace Urho3D {
 
 using namespace Urho3D;
 
+// TODO: switch to std::bitset
 enum SubObjectType {
   sotVERTEX = 1,
   sotEDGE = 2,
@@ -19,6 +20,7 @@ enum SubObjectType {
 };
 
 // Basic mesh flags
+// TODO: refactor
 #define mgfVISIBLE  1
 #define mgfCOLLISION 2
 #define mgfATTACHABLE 4
@@ -41,15 +43,9 @@ public:
 
   // Base primitive
   struct BasePrimitive {
-    int material;
-    unsigned int flags;
-    bool deleted;
-
-    BasePrimitive() :
-      material(0),
-      flags(0),
-      deleted(false)
-    {};
+    int material = 0;
+    unsigned int flags = 0;
+    bool deleted = false;
 
     bool check_flags(unsigned int a_flags) const
     {
@@ -58,32 +54,23 @@ public:
   };
 
   // Vertices
-  struct Vertex : public BasePrimitive {
+  struct Vertex : BasePrimitive {
     Vector3 position;
     Vector3 normal;
     // TODO: add UVW coordinates
     //Vector3 UVW;
-    float radius;
-    float scale;
-
-    Vertex() : BasePrimitive(),
-      radius(0),
-      scale(5)
-    {};
+    float radius = 0;
+    float scale = 1;
   };
 
   // Edges
-  struct Edge : public BasePrimitive {
+  struct Edge : BasePrimitive {
     int vertexes[2];
-    bool secondary;
-
-    Edge() : BasePrimitive(),
-      secondary(false)
-    {}
+    bool secondary = false;
   };
 
   // Polygons
-  struct Polygon : public BasePrimitive {
+  struct Polygon : BasePrimitive {
     // TODO: support any polygons
     int vertexes[4];
 
