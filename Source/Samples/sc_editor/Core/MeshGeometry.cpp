@@ -149,6 +149,17 @@ bool MeshGeometry::set_vertex_material(int index, int material)
   return !!vertex;
 }
 
+/// Set flags
+bool MeshGeometry::set_vertex_flags(int index, unsigned int flags)
+{
+  Vertex* vertex = get_vertex(index);
+  if (vertex) {
+    vertex->flags = flags;
+    send_update(VERTEX_PAINTED, index);
+  }
+  return !!vertex;
+}
+
 // Edges
 /// Add
 int MeshGeometry::add(const Edge& edge)
@@ -197,6 +208,17 @@ bool MeshGeometry::set_edge_material(int index, int material)
   Edge* edge = get_edge(index);
   if (edge) {
     edge->material = material;
+    send_update(EDGE_PAINTED, index);
+  }
+  return !!edge;
+}
+
+/// Set flags
+bool MeshGeometry::set_edge_flags(int index, unsigned int flags)
+{
+  Edge* edge = get_edge(index);
+  if (edge) {
+    edge->flags = flags;
     send_update(EDGE_PAINTED, index);
   }
   return !!edge;
@@ -267,6 +289,17 @@ bool MeshGeometry::set_polygon_material(int index, int material)
   return !!polygon;
 }
 
+/// Set flags
+bool MeshGeometry::set_polygon_flags(int index, unsigned int flags)
+{
+  Polygon* polygon = get_polygon(index);
+  if (polygon) {
+    polygon->flags = flags;
+    send_update(POLYGON_PAINTED, index);
+  }
+  return !!polygon;
+}
+
 /// Pack everything, if there are too much empty objects
 void MeshGeometry::compact()
 {
@@ -275,9 +308,12 @@ void MeshGeometry::compact()
 
 MeshGeometry::Vertex* MeshGeometry::get_vertex(int index)
 {
+#ifdef _DEBUG
   if (index < 0 || index >= m_vertices.Size()) {
+    assert(0);
     return nullptr;
   }
+#endif // _DEBUG
   if (m_vertices[index].deleted) {
     return nullptr;
   }
@@ -286,9 +322,12 @@ MeshGeometry::Vertex* MeshGeometry::get_vertex(int index)
 
 MeshGeometry::Edge* MeshGeometry::get_edge(int index)
 {
+#ifdef _DEBUG
   if (index < 0 || index >= m_edges.Size()) {
+    assert(0);
     return nullptr;
   }
+#endif // _DEBUG
   if (m_edges[index].deleted) {
     return nullptr;
   }
@@ -297,9 +336,12 @@ MeshGeometry::Edge* MeshGeometry::get_edge(int index)
 
 MeshGeometry::Polygon* MeshGeometry::get_polygon(int index)
 {
+#ifdef _DEBUG
   if (index < 0 || index >= m_polygons.Size()) {
+    assert(0);
     return nullptr;
   }
+#endif // _DEBUG
   if (m_polygons[index].deleted) {
     return nullptr;
   }
@@ -319,18 +361,35 @@ void MeshGeometry::transform(const Matrix3x4& tr)
   send_update(GLOBAL_UPDATE);
 }
 
+/// Returns indexies of all verteces by flags
+PODVector<int> MeshGeometry::vertices_by_flags(unsigned int flags) const
+{
+  return primitives_by_flags(m_vertices, flags);
+}
+
+/// Returns indexies of all edges by flags
+PODVector<int> MeshGeometry::edges_by_flags(unsigned int flags) const
+{
+  return primitives_by_flags(m_edges, flags);
+}
+
+/// Returns indexies of all polygons by flags
+PODVector<int> MeshGeometry::polygons_by_flags(unsigned int flags) const
+{
+  return primitives_by_flags(m_polygons, flags);
+}
 
 /// Raycast mesh. Returns index of sub object and its type
 int MeshGeometry::raycast(
   const Ray& ray,
   SubObjectType& res_type,
   int types,
-  bool pick_hidden
+  unsigned int flags
 ) const
 {
   float t = M_INFINITY;
   
-  return raycast(ray, res_type, types, pick_hidden, t);
+  return raycast(ray, res_type, types, flags, t);
 }
 
 /// The same with returning t result
@@ -338,7 +397,7 @@ int MeshGeometry::raycast(
   const Ray& ray,
   SubObjectType& res_type,
   int types,
-  bool pick_hidden,
+  unsigned int flags,
   float& t
 ) const
 {
@@ -347,19 +406,19 @@ int MeshGeometry::raycast(
   int index = -1;
 
   if (types & sotVERTEX) {
-    if (ray_cast_vertices(ray, pick_hidden, t, index)) {
+    if (ray_cast_vertices(ray, flags, t, index)) {
       res_type = sotVERTEX;
     }
   }
 
   if (types & sotEDGE) {
-    if (ray_cast_edges(ray, pick_hidden, t, index)) {
+    if (ray_cast_edges(ray, flags, t, index)) {
       res_type = sotEDGE;
     }
   }
 
   if (types & sotPOLYGON) {
-    if (ray_cast_polygons(ray, pick_hidden, t, index)) {
+    if (ray_cast_polygons(ray, flags, t, index)) {
       res_type = sotPOLYGON;
     }
   }
@@ -367,10 +426,26 @@ int MeshGeometry::raycast(
   return index;
 }
 
+/// Get primitive indexes by flag
+template<class T>
+PODVector<int> MeshGeometry::primitives_by_flags(
+  const PODVector<T>& primitives, 
+  unsigned int flags
+) const
+{
+  PODVector<int> result;
+  for (int i = 0; i < primitives.Size(); ++i) {
+    if (primitives[i].check_flags(flags)) {
+      result.Push(i);
+    }
+  }
+  return result;
+}
+
 /// Raycast vertices
 bool MeshGeometry::ray_cast_vertices(
   const Ray& ray,
-  bool pick_hidden,
+  unsigned int flags,
   float& t,
   int& index
 ) const
@@ -380,7 +455,7 @@ bool MeshGeometry::ray_cast_vertices(
   bool res = false;
   for (int i = 0; i < m_vertices.Size(); ++i) {
     const Vertex& vertex = m_vertices[i];
-    if (!vertex.deleted && (pick_hidden || vertex.material >= 0)) {
+    if (vertex.check_flags(flags)) {
       float cur_t = ray.HitDistance(Sphere(vertex.position, vertex.radius));
       if (cur_t < t) {
         t = cur_t;
@@ -447,7 +522,7 @@ float raycast_quadric(const Matrix4& q, const Ray& r)
 /// Raycast edges
 bool MeshGeometry::ray_cast_edges(
   const Ray& ray,
-  bool pick_hidden,
+  unsigned int flags,
   float& t,
   int& index
 ) const
@@ -457,7 +532,7 @@ bool MeshGeometry::ray_cast_edges(
   bool res = false;
   for (int i = 0; i < m_edges.Size(); ++i) {
     const Edge& edge = m_edges[i];
-    if (!edge.deleted && (pick_hidden || edge.material >= 0)) {
+    if (edge.check_flags(flags)) {
       const Vertex& v1 = m_vertices[edge.vertexes[0]];
       const Vertex& v2 = m_vertices[edge.vertexes[1]];
       Vector3 beam_dir = v2.position - v1.position;
@@ -518,7 +593,7 @@ bool MeshGeometry::ray_cast_edges(
 /// Raycast polygons
 bool MeshGeometry::ray_cast_polygons(
   const Ray& ray,
-  bool pick_hidden,
+  unsigned int flags,
   float& t,
   int& index
 ) const
@@ -529,7 +604,7 @@ bool MeshGeometry::ray_cast_polygons(
   bool res = false;
   for (int i = 0; i < m_polygons.Size(); ++i) {
     const Polygon& polygon = m_polygons[i];
-    if (!polygon.deleted && (pick_hidden || polygon.material >= 0)) {
+    if (polygon.check_flags(flags)) {
       /*float pre_t = ray.HitDistance(
         Sphere(
           (m_vertices[polygon.vertexes[0]].position, +v2.position) * 0.5,

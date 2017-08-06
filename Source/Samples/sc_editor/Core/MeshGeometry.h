@@ -18,6 +18,11 @@ enum SubObjectType {
   sotPOLYGON = 4
 };
 
+// Basic mesh flags
+#define mgfVISIBLE  1
+#define mgfCOLLISION 2
+#define mgfATTACHABLE 4
+
 // TODO: extract painting
 // TODO: LODs as flags
 // TODO: abstract components instead of hardcoded structures
@@ -34,49 +39,55 @@ public:
 
   // Internal structures
 
+  // Base primitive
+  struct BasePrimitive {
+    int material;
+    unsigned int flags;
+    bool deleted;
+
+    BasePrimitive() :
+      material(0),
+      flags(0),
+      deleted(false)
+    {};
+
+    bool check_flags(unsigned int a_flags) const
+    {
+      return !deleted && (!a_flags || (a_flags & flags) != 0);
+    }
+  };
+
   // Vertices
-  struct Vertex {
+  struct Vertex : public BasePrimitive {
     Vector3 position;
     Vector3 normal;
     // TODO: add UVW coordinates
     //Vector3 UVW;
     float radius;
-    int material;
     float scale;
-    bool deleted;
 
-    Vertex() :
+    Vertex() : BasePrimitive(),
       radius(0),
-      material(0),
-      scale(5),
-      deleted(false)
+      scale(5)
     {};
   };
 
   // Edges
-  struct Edge {
+  struct Edge : public BasePrimitive {
     int vertexes[2];
-    int material;
     bool secondary;
-    bool deleted;
 
-    Edge() :
-      material(0),
-      secondary(false),
-      deleted(false)
+    Edge() : BasePrimitive(),
+      secondary(false)
     {}
   };
 
   // Polygons
-  struct Polygon {
+  struct Polygon : public BasePrimitive {
     // TODO: support any polygons
     int vertexes[4];
-    int material;
-    bool deleted;
 
-    Polygon() :
-      material(0),
-      deleted(false)
+    Polygon() : BasePrimitive()
     {
       vertexes[3] = -1;
     }
@@ -120,6 +131,9 @@ public:
   /// Set material
   bool set_vertex_material(int index, int material);
 
+  /// Set flags
+  bool set_vertex_flags(int index, unsigned int flags);
+
   // Edges
   /// Add
   int add(const Edge& edge);
@@ -130,6 +144,9 @@ public:
 
   /// Set material
   bool set_edge_material(int index, int material);
+
+  /// Set flags
+  bool set_edge_flags(int index, unsigned int flags);
 
   // Polygons
   /// Add
@@ -143,6 +160,9 @@ public:
   /// Set material
   bool set_polygon_material(int index, int material);
 
+  /// Set flags
+  bool set_polygon_flags(int index, unsigned int flags);
+
   /// Pack everything, if there are too much empty objects
   void compact();
 
@@ -154,16 +174,23 @@ public:
     const Ray& ray,
     SubObjectType& res_type,
     int types,
-    bool pick_hidden
+    unsigned int flags
   ) const;
   /// The same with returning t result
   int raycast(
     const Ray& ray,
     SubObjectType& res_type,
     int types,
-    bool pick_hidden,
+    unsigned int flags,
     float& t
   ) const;
+
+  /// Returns indexies of all verteces by flags
+  PODVector<int> vertices_by_flags(unsigned int flags) const;
+  /// Returns indexies of all edges by flags
+  PODVector<int> edges_by_flags(unsigned int flags) const;
+  /// Returns indexies of all polygons by flags
+  PODVector<int> polygons_by_flags(unsigned int flags) const;
 
   // TODO: names for material slots
   // TODO: ability to merge models and combine material IDs by slot names
@@ -199,14 +226,18 @@ protected:
   Edge* get_edge(int index);
   Polygon* get_polygon(int index);
 
+  /// Get primitive indexes by flag
+  template<class T>
+  PODVector<int> primitives_by_flags(const PODVector<T>& primitives, unsigned int flags) const;
+
   /// Raycast vertices
-  bool ray_cast_vertices(const Ray& ray, bool pick_hidden, float& t, int& index) const;
+  bool ray_cast_vertices(const Ray& ray, unsigned int flags, float& t, int& index) const;
 
   /// Raycast edges
-  bool ray_cast_edges(const Ray& ray, bool pick_hidden, float& t, int& index) const;
+  bool ray_cast_edges(const Ray& ray, unsigned int flags, float& t, int& index) const;
 
   /// Raycast polygons
-  bool ray_cast_polygons(const Ray& ray, bool pick_hidden, float& t, int& index) const;
+  bool ray_cast_polygons(const Ray& ray, unsigned int flags, float& t, int& index) const;
 
   /// Send update to all subscribers
   void send_update(UpdateType type, int i = -1);

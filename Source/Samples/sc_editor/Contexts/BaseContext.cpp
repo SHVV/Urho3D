@@ -132,11 +132,11 @@ Node* BaseContext::get_unit_under_mouse()
         Ray local_ray = ray.Transformed(inverse);
 
         SubObjectType sub_type;
-        if (mesh->raycast(local_ray, sub_type, sotPOLYGON, true, t) >= 0) {
+        if (mesh->raycast(local_ray, sub_type, sotPOLYGON, 0, t) >= 0) {
           res = node;
         }
 
-        /*int ind = mesh->raycast(local_ray, sub_type, sotVERTEX | sotEDGE | sotPOLYGON, true);
+        /*int ind = mesh->raycast(local_ray, sub_type, sotVERTEX | sotEDGE | sotPOLYGON, 0);
         if (ind >= 0) {
           switch (sub_type) {
           case sotVERTEX:
