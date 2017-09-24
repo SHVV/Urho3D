@@ -5,6 +5,7 @@
 #include "CameraController.h"
 
 // Includes from Editor
+#include "../Core/MathUtils.h"
 #include "../Model/NodeModel.h"
 #include "../Model/SceneModel.h"
 #include "../View/SceneView.h"
@@ -41,27 +42,32 @@ void CameraController::on_mouse_down(VariantMap& event_data)
 
   Camera* camera = m_view->camera()->GetComponent<Camera>();
   PODVector<Drawable*> results;
-  FrustumOctreeQuery query(results, camera->GetFrustum());
+  Frustum fr = camera->GetFrustum();
+  FrustumOctreeQuery query(results, fr);
   query.viewMask_ = 0x7fffffff;
   m_view->scene()->GetComponent<Octree>()->GetDrawables(query);
   BoundingBox visible_scene_box;
   for (int i = 0; i < results.Size(); ++i) {
-    visible_scene_box.Merge(results[i]->GetWorldBoundingBox());
+    // Build intesection between world BB and frustrum
+    visible_scene_box.Merge(MathUtils::clip(results[i]->GetWorldBoundingBox(), fr));
   };
-  // TODO: build intesection between world BB and frustrum
   if (visible_scene_box.Defined()) {
     Vector3 potential_target = visible_scene_box.Center();
     Node* node = get_unit_under_mouse();
     if (node) {
-      //auto drawable = node->GetDerivedComponent<Drawable>();
-      Vector3 node_center = node->GetWorldTransform().Translation();
+      auto drawable = node->GetDerivedComponent<Drawable>();
+      if (drawable) {
+        // TODO: use all drawables
+        Vector3 node_center = MathUtils::clip(drawable->GetWorldBoundingBox(), fr).Center();
+        //Vector3 node_center = node->GetWorldTransform().Translation();
 
-      // Check camera distance
-      // TODO: check angular size instead of distance
-      float scene_dist = (m_target - potential_target).Length();
-      float node_dist = (m_target - node_center).Length();
-      if (1.3 * node_dist < scene_dist) {
-        potential_target = node_center;
+        // Check camera distance
+        // TODO: check angular size instead of distance
+        float scene_dist = (m_target - potential_target).Length();
+        float node_dist = (m_target - node_center).Length();
+        if (1.3 * node_dist < scene_dist) {
+          potential_target = node_center;
+        }
       }
     }
 
