@@ -60,6 +60,14 @@ public:
     float start_angle = 0.0, float end_angle = 0.0 // if start == end - build full circle
   );
 
+  /// Lathe
+  void lathe(
+    MeshGeometry* mesh_geometry,
+    const Polyline2& polyline, int sectors,
+    TriangulationType triangulation = ttQUAD,
+    float start_angle = 0.0, float end_angle = 0.0 // if start == end - build full circle
+  );
+
 private:
   /// All registered functions
   HashMap<StringHash, SharedPtr<MeshGenerationFunction>> m_functions;

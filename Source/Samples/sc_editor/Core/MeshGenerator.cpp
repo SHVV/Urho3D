@@ -107,6 +107,19 @@ MeshGeometry* MeshGenerator::lathe(
   float start_angle, float end_angle
 )
 {
+  MeshGeometry* mesh = new MeshGeometry(context_);
+  lathe(mesh, profile, sectors, triangulation, start_angle, end_angle);
+  return mesh;
+}
+
+/// Lathe
+void MeshGenerator::lathe(
+  MeshGeometry* mesh,
+  const Polyline2& profile, int sectors,
+  TriangulationType triangulation,
+  float start_angle, float end_angle
+)
+{
   // TODO: support closed polylines
   // TODO: smooth segments
   // TODO: control triangulation by segment
@@ -120,7 +133,6 @@ MeshGeometry* MeshGenerator::lathe(
   // TODO: factor out normals calculation
 
   // Assert(end_angle > start_angle);
-  MeshGeometry* mesh = new MeshGeometry(context_);
 
   int vertices = sectors + 1;
   bool full_circle = start_angle == end_angle;
@@ -366,11 +378,9 @@ MeshGeometry* MeshGenerator::lathe(
     last_segment = cur_segment;
     cur_segment.Clear();
   }
-
-  return mesh;
 }
 
-
+/// Serpinsky triangle piramid (inner recursion)
 void piramid(
   int n, float scale, const Vector3& pos,
   const Vector<Vector3>& base, MeshGeometry* mesh
@@ -405,6 +415,7 @@ void piramid(
   }
 }
 
+/// Serpinsky triangle piramid (interface function)
 void piramid(int level, float size, MeshGeometry* mesh)
 {
   // Base

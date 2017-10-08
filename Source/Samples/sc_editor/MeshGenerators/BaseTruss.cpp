@@ -77,9 +77,16 @@ MeshGeometry* BaseTruss::generate(const Parameters& parameters)
     M_PI / segments,
     M_PI / segments
   );
-  float scale = Max(cell_size * cells, radius * 2) * 0.7;
+  float scale = Min(cell_size * cells, radius * 2) * 1.3;
   for (int i = 0; i < geometry->vertices().Size(); ++i) {
     geometry->set_scale(i, scale);
+    geometry->set_vertex_flags(i, mgfATTACHABLE);
+  }
+  for (int i = 0; i < geometry->edges().Size(); ++i) {
+    geometry->set_edge_flags(i, mgfATTACHABLE);
+  }
+  for (int i = 0; i < geometry->polygons().Size(); ++i) {
+    geometry->set_polygon_flags(i, mgfATTACHABLE);
   }
   return geometry;
 }
