@@ -15,6 +15,7 @@
 // Forward declaration
 class MeshGeometry; 
 class MeshGenerator;
+class ProceduralUnit;
 
 using namespace Urho3D;
 
@@ -38,6 +39,9 @@ public:
 
   /// Generate mesh geometry, basing on parameters
   virtual MeshGeometry* generate(const Parameters& parameters) = 0;
+
+  /// Update procedural unit guts
+  virtual void update_unit(const Parameters& parameters, ProceduralUnit* unit);
 
 protected:
   /// Constructor with parameters.

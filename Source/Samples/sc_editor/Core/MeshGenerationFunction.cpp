@@ -7,6 +7,8 @@
 
 // Editor includes
 #include "MeshGenerator.h"
+#include "../Model/ProceduralUnit.h"
+#include "../Model/DynamicModel.h"
 
 /// Destructor
 MeshGenerationFunction::~MeshGenerationFunction()
@@ -54,6 +56,20 @@ ParametersDescription& MeshGenerationFunction::access_parameters_description()
 MeshGenerationFunction::MeshGenerationFunction(String name)
 : m_name(name)
 {
+}
+
+/// Update unit, by using provided parameters
+void MeshGenerationFunction::update_unit(
+  const Parameters& parameters, 
+  ProceduralUnit* unit
+)
+{
+  // Default implementation - just self dynamic model.
+  MeshBuffer* mesh_buffer = m_generator->generate_buffer(m_name, parameters);
+  if (mesh_buffer) {
+    DynamicModel* dynamic_model = unit->get_component<DynamicModel>();
+    dynamic_model->mesh_buffer(mesh_buffer);
+  }
 }
 
 /// Set default parameters

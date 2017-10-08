@@ -8,6 +8,7 @@
 #include "../Core/MeshGeometry.h"
 #include "../Core/MeshBuffer.h"
 #include "../Core/MeshGenerator.h"
+#include "../Core/MeshGenerationFunction.h"
 
 #include "DynamicModel.h"
 
@@ -39,8 +40,10 @@ ProceduralUnit::~ProceduralUnit()
 /// Get all parameters description of the component
 const ParametersDescription& ProceduralUnit::parameters_description() const
 {
+  static ParametersDescription empty;
   auto generator = GetSubsystem<MeshGenerator>();
-  return generator->parameters_description(m_function);
+  const MeshGenerationFunction* function = generator->function(m_function);
+  return function ? function->parameters_description() : empty;
 }
 
 /// Set function name
@@ -48,7 +51,10 @@ void ProceduralUnit::set_function_name(StringHash name)
 {
   m_function = name;
   auto generator = GetSubsystem<MeshGenerator>();
-  set_parameters(generator->default_parameters(m_function));
+  const MeshGenerationFunction* function = generator->function(m_function);
+  if (function) {
+    set_parameters(function->default_parameters());
+  }
 }
 
 /// Set function name
@@ -62,10 +68,9 @@ void ProceduralUnit::update_guts_int()
 {
   if (m_function) {
     auto generator = GetSubsystem<MeshGenerator>();
-    MeshBuffer* mesh_buffer = generator->generate_buffer(m_function, parameters());
-    if (mesh_buffer) {
-      DynamicModel* dynamic_model = get_component<DynamicModel>();
-      dynamic_model->mesh_buffer(mesh_buffer);
+    MeshGenerationFunction* function = generator->function(m_function);
+    if (function) {
+      function->update_unit(parameters(), this);
     }
   }
 }

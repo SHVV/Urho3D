@@ -37,11 +37,8 @@ public:
   /// Destructor
   virtual ~MeshGenerator();
 
-  /// Returns default parameters of function
-  const Parameters& default_parameters(StringHash name) const;
-
-  /// Get all parameters description of function
-  const ParametersDescription& parameters_description(StringHash name) const;
+  /// Get function by name
+  MeshGenerationFunction* function(StringHash name);
 
   /// Generate mesh and return buffer for visualizing it.
   // TODO: make it in future async an generate in background thread

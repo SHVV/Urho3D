@@ -22,20 +22,11 @@ MeshGenerator::~MeshGenerator()
 {
 }
 
-/// Returns default parameters of function
-const Parameters& MeshGenerator::default_parameters(StringHash name) const
+/// Get function by name
+MeshGenerationFunction* MeshGenerator::function(StringHash name)
 {
-  static Parameters empty;
   auto it = m_functions.Find(name);
-  return it != m_functions.End() ? it->second_->default_parameters() : empty;
-}
-
-/// Get all parameters description of function
-const ParametersDescription& MeshGenerator::parameters_description(StringHash name) const
-{
-  static ParametersDescription empty;
-  auto it = m_functions.Find(name);
-  return it != m_functions.End() ? it->second_->parameters_description() : empty;
+  return it != m_functions.End() ? it->second_ : nullptr;
 }
 
 /// Generate mesh and return buffer for visualizing it.
