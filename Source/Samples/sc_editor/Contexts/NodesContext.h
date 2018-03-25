@@ -5,6 +5,7 @@
 #pragma once
 
 #include "BaseContext.h"
+#include "../Model/BasePositioner.h"
 
 // Urho predeclarations
 namespace Urho3D {
@@ -49,12 +50,12 @@ private:
   /// Calculates closest point for current gizmo part
   Vector3 calculate_gizmo_point();
 
+  /// Updates gizmo state
+  void update_gizmo();
+
   // Gizmo node for manipulation
   SharedPtr<Node> m_gizmo;
   // Gizmo part
-  enum Axis {
-    aX, aY, aZ
-  };
   struct GizmoPart {
     SharedPtr<StaticModel> m_component;
     Axis m_axis;

@@ -98,7 +98,7 @@ void NodesContext::initialize()
     axis.m_component->SetOccludee(false);
     axis.m_component->SetModel(mesh_buffer->model());
     axis.m_component->SetMaterial(0, cache->GetResource<Material>("Materials/Editor/BlueUnlit.xml"));
-    axis.m_axis = aZ;
+    axis.m_axis = Axis::Z;
     axis.m_rotation = false;
     m_gizmo_parts.Push(axis);
 
@@ -108,7 +108,7 @@ void NodesContext::initialize()
     axis.m_component->SetOccludee(false);
     axis.m_component->SetModel(mesh_buffer_ring->model());
     axis.m_component->SetMaterial(0, cache->GetResource<Material>("Materials/Editor/BlueUnlit.xml"));
-    axis.m_axis = aZ;
+    axis.m_axis = Axis::Z;
     axis.m_rotation = true;
     m_gizmo_parts.Push(axis);
   }
@@ -127,7 +127,7 @@ void NodesContext::initialize()
     axis.m_component->SetOccludee(false);
     axis.m_component->SetModel(mesh_buffer->model());
     axis.m_component->SetMaterial(0, cache->GetResource<Material>("Materials/Editor/GreenUnlit.xml"));
-    axis.m_axis = aY;
+    axis.m_axis = Axis::Y;
     axis.m_rotation = false;
     m_gizmo_parts.Push(axis);
 
@@ -138,7 +138,7 @@ void NodesContext::initialize()
     axis.m_component->SetOccludee(false);
     axis.m_component->SetModel(mesh_buffer_ring->model());
     axis.m_component->SetMaterial(0, cache->GetResource<Material>("Materials/Editor/GreenUnlit.xml"));
-    axis.m_axis = aY;
+    axis.m_axis = Axis::Y;
     axis.m_rotation = true;
     m_gizmo_parts.Push(axis);
   }
@@ -156,7 +156,7 @@ void NodesContext::initialize()
     axis.m_component->SetOccludee(false);
     axis.m_component->SetModel(mesh_buffer->model());
     axis.m_component->SetMaterial(0, cache->GetResource<Material>("Materials/Editor/RedUnlit.xml"));
-    axis.m_axis = aX;
+    axis.m_axis = Axis::X;
     axis.m_rotation = false;
     m_gizmo_parts.Push(axis);
 
@@ -167,7 +167,7 @@ void NodesContext::initialize()
     axis.m_component->SetOccludee(false);
     axis.m_component->SetModel(mesh_buffer_ring->model());
     axis.m_component->SetMaterial(0, cache->GetResource<Material>("Materials/Editor/RedUnlit.xml"));
-    axis.m_axis = aX;
+    axis.m_axis = Axis::X;
     axis.m_rotation = true;
     m_gizmo_parts.Push(axis);
   }
@@ -183,13 +183,7 @@ void NodesContext::initialize()
 void NodesContext::activate()
 {
   BaseContext::activate();
-  auto selected = view()->selected();
-  if (selected.Size()) {
-    //m_gizmo->SetPosition(selected.Back()->GetPosition());
-    m_gizmo->SetEnabled(true);
-  } else {
-    m_gizmo->SetEnabled(false);
-  }
+  update_gizmo();
 }
 
 /// Deactivate context and remove all temporary objects
@@ -199,6 +193,35 @@ void NodesContext::deactivate()
   m_focus_part = nullptr;
   //view()->clear_selection();
   BaseContext::deactivate();
+}
+
+/// Updates gizmo state
+void NodesContext::update_gizmo()
+{
+  auto selected = view()->selected();
+  if (selected.Size()) {
+    m_gizmo->SetEnabled(true);
+    // Calculate most restrictive set of available axis
+    Axis linear_axis = Axis::XYZ;
+    Axis rotation_axis = Axis::XYZ;
+    for (int i = 0; i < selected.Size(); ++i) {
+      Node* node = selected[i];
+      BasePositioner* positioner = node->GetComponent<BasePositioner>();
+      if (positioner) {
+        linear_axis = (Axis)((int)linear_axis & (int)positioner->linear_axis());
+        rotation_axis = (Axis)((int)rotation_axis & (int)positioner->rotation_axis());
+      }
+    }
+    // And enable only allowed components
+    for (int i = 0; i < m_gizmo_parts.Size(); ++i) {
+      auto& axis = m_gizmo_parts[i];
+      axis.m_component->SetEnabled(
+        !!((int)axis.m_axis & int(axis.m_rotation ? rotation_axis : linear_axis))
+      );
+    }
+  } else {
+    m_gizmo->SetEnabled(false);
+  }
 }
 
 /// Mouse button down handler
@@ -233,6 +256,12 @@ void NodesContext::on_mouse_up()
     commit_transaction();
   } else {
     Node* node = get_unit_under_mouse();
+    // Go up by hierarhy until node with positioner will be found.
+    BasePositioner* positioner;
+    while (node && !(positioner = node->GetDerivedComponent<BasePositioner>())) {
+      node = node->GetParent();
+    }
+
     Vector<Node*> symmetry_nodes = get_symmety_nodes(node);
     if (input->GetKeyDown(KEY_CTRL)) {
       if (node) {
@@ -249,14 +278,8 @@ void NodesContext::on_mouse_up()
         view()->select(symmetry_nodes);
       }
     }
-    auto selected = view()->selected();
-    if (selected.Size()) {
-      //m_gizmo->SetPosition(selected.Back()->GetPosition());
-      m_gizmo->SetEnabled(true);
-    } else {
-      m_gizmo->SetEnabled(false);
-    }
   }
+  update_gizmo();
 }
 
 /// Mouse button move handler
@@ -270,9 +293,9 @@ void NodesContext::on_mouse_move(float x, float y)
 
     Vector4 axis;
     switch (m_active_part->m_axis) {
-      case aX: axis = Vector4(1.0, 0.0, 0.0, 0.0); break;
-      case aY: axis = Vector4(0.0, 1.0, 0.0, 0.0); break;
-      case aZ: axis = Vector4(0.0, 0.0, 1.0, 0.0); break;
+      case Axis::X: axis = Vector4(1.0, 0.0, 0.0, 0.0); break;
+      case Axis::Y: axis = Vector4(0.0, 1.0, 0.0, 0.0); break;
+      case Axis::Z: axis = Vector4(0.0, 0.0, 1.0, 0.0); break;
     }
     Vector3 axis3 = (m_gizmo->GetWorldTransform() * axis).Normalized();
     char deg[3] = { 0xC2, 0xB0, 0x0 };
@@ -292,9 +315,9 @@ void NodesContext::on_mouse_move(float x, float y)
 
       Vector3 axis;
       switch (m_active_part->m_axis){
-        case aX: axis = parent_x; break;
-        case aY: axis = parent_y; break;
-        case aZ: axis = parent_z; break;
+        case Axis::X: axis = parent_x; break;
+        case Axis::Y: axis = parent_y; break;
+        case Axis::Z: axis = parent_z; break;
       }
 
       if (axis.LengthSquared() > 0.9) {
@@ -313,7 +336,7 @@ void NodesContext::on_mouse_move(float x, float y)
         } else {
           float distance = axis3.DotProduct(cur_pos - m_gizmo_pos);
           distance = round(distance / move_step) * move_step;
-          if (m_active_part->m_axis != aX) {
+          if (m_active_part->m_axis != Axis::X) {
             if (0 == i) {
               set_tooltip(String(distance) + "m");
             }
@@ -394,27 +417,29 @@ void NodesContext::update(float dt)
       PODVector<RayQueryResult> results;
       RayOctreeQuery query(results, ray, RAY_OBB, 2000, DRAWABLE_GEOMETRY);
       for (int i = 0; i < m_gizmo_parts.Size(); ++i) {
-        m_gizmo_parts[i].m_component->ProcessRayQuery(query, results);
-        if (results.Size() && results[0].distance_ < t) {
-          m_focus_part = &m_gizmo_parts[i];
-          t = results[0].distance_;
+        if (m_gizmo_parts[i].m_component->IsEnabled()) {
+          m_gizmo_parts[i].m_component->ProcessRayQuery(query, results);
+          if (results.Size() && results[0].distance_ < t) {
+            m_focus_part = &m_gizmo_parts[i];
+            t = results[0].distance_;
+          }
+          results.Clear();
         }
-        results.Clear();
       }
       ResourceCache* cache = GetSubsystem<ResourceCache>();
       for (int i = 0; i < m_gizmo_parts.Size(); ++i) {
         auto& axis = m_gizmo_parts[i];
         if (m_focus_part != &axis) {
           switch (axis.m_axis) {
-            case aX: axis.m_component->SetMaterial(0, cache->GetResource<Material>("Materials/Editor/RedUnlit.xml")); break;
-            case aY: axis.m_component->SetMaterial(0, cache->GetResource<Material>("Materials/Editor/GreenUnlit.xml")); break;
-            case aZ: axis.m_component->SetMaterial(0, cache->GetResource<Material>("Materials/Editor/BlueUnlit.xml")); break;
+            case Axis::X: axis.m_component->SetMaterial(0, cache->GetResource<Material>("Materials/Editor/RedUnlit.xml")); break;
+            case Axis::Y: axis.m_component->SetMaterial(0, cache->GetResource<Material>("Materials/Editor/GreenUnlit.xml")); break;
+            case Axis::Z: axis.m_component->SetMaterial(0, cache->GetResource<Material>("Materials/Editor/BlueUnlit.xml")); break;
           }
         } else {
           switch (axis.m_axis) {
-            case aX: axis.m_component->SetMaterial(0, cache->GetResource<Material>("Materials/Editor/BrightRedUnlit.xml")); break;
-            case aY: axis.m_component->SetMaterial(0, cache->GetResource<Material>("Materials/Editor/BrightGreenUnlit.xml")); break;
-            case aZ: axis.m_component->SetMaterial(0, cache->GetResource<Material>("Materials/Editor/BrightBlueUnlit.xml")); break;
+            case Axis::X: axis.m_component->SetMaterial(0, cache->GetResource<Material>("Materials/Editor/BrightRedUnlit.xml")); break;
+            case Axis::Y: axis.m_component->SetMaterial(0, cache->GetResource<Material>("Materials/Editor/BrightGreenUnlit.xml")); break;
+            case Axis::Z: axis.m_component->SetMaterial(0, cache->GetResource<Material>("Materials/Editor/BrightBlueUnlit.xml")); break;
           }
         }
       }
@@ -479,9 +504,9 @@ Vector3 NodesContext::calculate_gizmo_point()
     Ray ray = calculate_ray();
     Vector4 axis;
     switch (m_active_part->m_axis) {
-      case aX: axis = Vector4(1.0, 0.0, 0.0, 0.0); break;
-      case aY: axis = Vector4(0.0, 1.0, 0.0, 0.0); break;
-      case aZ: axis = Vector4(0.0, 0.0, 1.0, 0.0); break;
+      case Axis::X: axis = Vector4(1.0, 0.0, 0.0, 0.0); break;
+      case Axis::Y: axis = Vector4(0.0, 1.0, 0.0, 0.0); break;
+      case Axis::Z: axis = Vector4(0.0, 0.0, 1.0, 0.0); break;
     }
     if (m_active_part->m_rotation) {
       Plane plane(m_gizmo->GetWorldTransform() * axis, m_gizmo->GetWorldPosition());

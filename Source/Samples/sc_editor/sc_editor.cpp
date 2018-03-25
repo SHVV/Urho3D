@@ -12,6 +12,7 @@
 #include "Model/NodeModel.h"
 #include "Model/SceneModel.h"
 #include "Model/DynamicModel.h"
+#include "Model/BasePositioner.h"
 
 #include "Contexts/BaseContext.h"
 #include "Contexts/NodesContext.h"
@@ -74,6 +75,7 @@ SCEditor::SCEditor(Context* context)
   // Model
   UnitModel::RegisterObject(context);
   ProceduralUnit::RegisterObject(context);
+  BasePositioner::RegisterObject(context);
 
   // Components
   DynamicModel::RegisterObject(context);

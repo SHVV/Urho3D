@@ -8,6 +8,7 @@
 #include "../Model/DynamicModel.h"
 #include "../Model/SceneModel.h"
 #include "../Model/ProceduralUnit.h"
+#include "../Model/BasePositioner.h"
 #include "../View/SceneView.h"
 
 // Includes from Urho3D
@@ -87,6 +88,20 @@ void CreationContext::create_rollower()
   }
 }
 
+template<class T>
+T* get_or_create_positioner(Node* node)
+{
+  T* result = node->GetComponent<T>();
+  if (!result) {
+    // Remove old positioner, if it is not compatiable with requied.
+    result = node->GetDerivedComponent<BasePositioner>();
+    node->RemoveComponent(result);
+    // Create new one
+    result = node->CreateComponent<T>();
+  }
+  return result;
+}
+
 /// Updates rollower position
 void CreationContext::update_rollower_position()
 {
@@ -96,6 +111,7 @@ void CreationContext::update_rollower_position()
     Node* unit_under_mouse = get_unit_under_mouse();
     if (!unit_under_mouse) {
       // TODO: localisation
+      // TODO: turn symmetry off for inserting to main axis
       String snap_text = "main axis";
       Ray camera_ray = calculate_ray();
       Ray main_axis_ray(Vector3(0, 0, 0), Vector3(0, 0, 1));
@@ -141,6 +157,11 @@ void CreationContext::update_rollower_position()
       Vector3 z(0, 0, 1);
       for (int i = 0; i < m_rollowers.Size(); ++i) {
         Node* rollower_node = m_rollowers[i]->GetNode();
+        // Insert positioner and update its internal position
+        BasePositioner* positioner = 
+          get_or_create_positioner<BasePositioner>(rollower_node);
+        positioner->update_internal_position();
+
         pos = positions[i];
         rollower_node->SetPosition(pos);
         Vector3 y = pos;
