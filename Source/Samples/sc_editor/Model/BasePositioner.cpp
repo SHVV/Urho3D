@@ -27,11 +27,6 @@ BasePositioner::BasePositioner(Context* context)
 {
 }
 
-/// Destructor
-BasePositioner::~BasePositioner()
-{
-}
-
 /// Updates internal position representation, based on current node position.
 void BasePositioner::update_internal_position()
 {

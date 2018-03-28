@@ -405,21 +405,21 @@ int MeshGeometry::raycast(
 
   int index = -1;
 
-  if (types & sotVERTEX) {
+  if (types & (int)SubObjectType::VERTEX) {
     if (ray_cast_vertices(ray, flags, t, index)) {
-      res_type = sotVERTEX;
+      res_type = SubObjectType::VERTEX;
     }
   }
 
-  if (types & sotEDGE) {
+  if (types & (int)SubObjectType::EDGE) {
     if (ray_cast_edges(ray, flags, t, index)) {
-      res_type = sotEDGE;
+      res_type = SubObjectType::EDGE;
     }
   }
 
-  if (types & sotPOLYGON) {
+  if (types & (int)SubObjectType::POLYGON) {
     if (ray_cast_polygons(ray, flags, t, index)) {
-      res_type = sotPOLYGON;
+      res_type = SubObjectType::POLYGON;
     }
   }
 

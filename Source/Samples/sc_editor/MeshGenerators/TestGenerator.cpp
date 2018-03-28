@@ -143,17 +143,17 @@ MeshGeometry* TestGenerator::generate(const Parameters& parameters)
   // Set mountable surfaces
   for (int i = 0; i < geometry->vertices().Size(); ++i) {
     if (geometry->vertices()[i].material == 0) {
-      geometry->set_vertex_flags(i, mgfATTACHABLE);
+      geometry->set_vertex_flags(i, mgfATTACHABLE | mgfVISIBLE);
     }
   }
   for (int i = 0; i < geometry->edges().Size(); ++i) {
     if (geometry->edges()[i].material == 0) {
-      geometry->set_edge_flags(i, mgfATTACHABLE);
+      geometry->set_edge_flags(i, mgfATTACHABLE | mgfVISIBLE);
     }
   }
   for (int i = 0; i < geometry->polygons().Size(); ++i) {
     if (geometry->polygons()[i].material == 1) {
-      geometry->set_polygon_flags(i, mgfATTACHABLE);
+      geometry->set_polygon_flags(i, mgfATTACHABLE | mgfVISIBLE);
     }
   }
 

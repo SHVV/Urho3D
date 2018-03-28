@@ -80,10 +80,10 @@ MeshGeometry* BaseTruss::generate(const Parameters& parameters)
   float scale = Min(cell_size * cells, radius * 2) * 1.3;
   for (int i = 0; i < geometry->vertices().Size(); ++i) {
     geometry->set_scale(i, scale);
-    geometry->set_vertex_flags(i, mgfATTACHABLE);
+    geometry->set_vertex_flags(i, mgfATTACHABLE | mgfVISIBLE);
   }
   for (int i = 0; i < geometry->edges().Size(); ++i) {
-    geometry->set_edge_flags(i, mgfATTACHABLE);
+    geometry->set_edge_flags(i, mgfATTACHABLE | mgfVISIBLE);
   }
   for (int i = 0; i < geometry->polygons().Size(); ++i) {
     geometry->set_polygon_flags(i, mgfATTACHABLE);

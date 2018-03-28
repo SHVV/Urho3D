@@ -80,9 +80,9 @@ void MeshBuffer::on_update_views(StringHash eventType, VariantMap& eventData)
 static PrimitiveType convert(SubObjectType type)
 {
   switch (type) {
-    case sotVERTEX: return POINT_LIST;
-    case sotEDGE: return LINE_LIST;
-    case sotPOLYGON: return TRIANGLE_LIST;
+    case SubObjectType::VERTEX: return POINT_LIST;
+    case SubObjectType::EDGE: return LINE_LIST;
+    case SubObjectType::POLYGON: return TRIANGLE_LIST;
     default: {
       // TODO: Assert
       return TRIANGLE_LIST;
@@ -277,7 +277,7 @@ bool MeshBuffer::update()
   if (m_vertices_dirty) {
     auto& vertices = m_mesh_geometry->vertices();
     create_geometry<MeshGeometry::Vertex>(
-      vertices, sotVERTEX,
+      vertices, SubObjectType::VERTEX,
       geometries_description, geometries,
       [](int i, const MeshGeometry::Vertex& primitive, PODVector<int>& indexies){
         indexies.Push(i);
@@ -288,14 +288,14 @@ bool MeshBuffer::update()
     m_vertices_dirty = false;
   } else {
     // Move everything from existing mesh
-    move_geometry(sotVERTEX, geometries_description, geometries);
+    move_geometry(SubObjectType::VERTEX, geometries_description, geometries);
   }
 
   // Update edges indexes and geometries
   if (m_edges_dirty) {
     // Indexies by material ID
     create_geometry<MeshGeometry::Edge>(
-      m_mesh_geometry->edges(), sotEDGE,
+      m_mesh_geometry->edges(), SubObjectType::EDGE,
       geometries_description, geometries,
       [](int i, const MeshGeometry::Edge& primitive, PODVector<int>& indexies){
         indexies.Push(primitive.vertexes[0]);
@@ -307,14 +307,14 @@ bool MeshBuffer::update()
     m_edges_dirty = false;
   } else {
     // Move everything from existing mesh
-    move_geometry(sotEDGE, geometries_description, geometries);
+    move_geometry(SubObjectType::EDGE, geometries_description, geometries);
   }
 
   // Update polygons indexes and geometries
   if (m_polygons_dirty) {
     // Indexies by material ID
     create_geometry<MeshGeometry::Polygon>(
-      m_mesh_geometry->polygons(), sotPOLYGON,
+      m_mesh_geometry->polygons(), SubObjectType::POLYGON,
       geometries_description, geometries,
       [](int i, const MeshGeometry::Polygon& primitive, PODVector<int>& indexies){
         // TODO: deal with secondary edge
@@ -333,7 +333,7 @@ bool MeshBuffer::update()
     m_polygons_dirty = false;
   } else {
     // Move everything from existing mesh
-    move_geometry(sotPOLYGON, geometries_description, geometries);
+    move_geometry(SubObjectType::POLYGON, geometries_description, geometries);
   }
   // TODO: add quads support
 

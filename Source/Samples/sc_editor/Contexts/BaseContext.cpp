@@ -132,7 +132,7 @@ Node* BaseContext::get_unit_under_mouse()
         Ray local_ray = ray.Transformed(inverse);
 
         SubObjectType sub_type;
-        if (mesh->raycast(local_ray, sub_type, sotPOLYGON, 0, t) >= 0) {
+        if (mesh->raycast(local_ray, sub_type, (int)SubObjectType::POLYGON, 0, t) >= 0) {
           res = node;
         }
 

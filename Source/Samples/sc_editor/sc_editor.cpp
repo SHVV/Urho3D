@@ -13,6 +13,8 @@
 #include "Model/SceneModel.h"
 #include "Model/DynamicModel.h"
 #include "Model/BasePositioner.h"
+#include "Model/BaseAttachableSurface.h"
+#include "Model/SurfaceSurfacePositioner.h"
 
 #include "Contexts/BaseContext.h"
 #include "Contexts/NodesContext.h"
@@ -76,6 +78,8 @@ SCEditor::SCEditor(Context* context)
   UnitModel::RegisterObject(context);
   ProceduralUnit::RegisterObject(context);
   BasePositioner::RegisterObject(context);
+  BaseAttachableSurface::RegisterObject(context);
+  SurfaceSurfacePositioner::RegisterObject(context);
 
   // Components
   DynamicModel::RegisterObject(context);

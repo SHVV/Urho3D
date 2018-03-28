@@ -120,19 +120,19 @@ void DynamicModel::update_model()
       auto& geometry_description = m_mesh_buffer->geometry_description(i);
       Material* material;
       switch (geometry_description.geometry_type) {
-        case sotVERTEX: {
+        case SubObjectType::VERTEX: {
           material = scene->get_vertex_material(
             material_name(m_vertex_materials, geometry_description.material)
           );
           break;
         }
-        case sotEDGE: {
+        case SubObjectType::EDGE: {
           material = scene->get_edge_material(
             material_name(m_edge_materials, geometry_description.material)
           );
           break;
         }
-        case sotPOLYGON: {
+        case SubObjectType::POLYGON: {
           material = scene->get_polygon_material(
             material_name(m_polygon_materials, geometry_description.material)
           );

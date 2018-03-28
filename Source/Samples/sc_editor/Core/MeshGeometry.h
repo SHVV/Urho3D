@@ -13,10 +13,11 @@ namespace Urho3D {
 using namespace Urho3D;
 
 // TODO: switch to std::bitset
-enum SubObjectType {
-  sotVERTEX = 1,
-  sotEDGE = 2,
-  sotPOLYGON = 4
+enum class SubObjectType {
+  NONE = 0,
+  VERTEX = 1,
+  EDGE = 2,
+  POLYGON = 4
 };
 
 // Basic mesh flags
