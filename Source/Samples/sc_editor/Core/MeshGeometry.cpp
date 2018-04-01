@@ -8,6 +8,7 @@
 #include "Urho3D/Core/Profiler.h"
 #include "Urho3D/Math/Ray.h"
 #include "Urho3D/Math/Sphere.h"
+#include "Urho3D/Math/Plane.h"
 
 /// Default constructor.
 MeshGeometry::MeshGeometry(Context* context)
@@ -426,6 +427,232 @@ int MeshGeometry::raycast(
   return index;
 }
 
+/// Distance from point P to edge p1-p2
+float point_edge_distance(const Vector3& p, const Vector3& p1, const Vector3& p2)
+{
+  Vector3 edge_vector = p2 - p1;
+  Vector3 d1 = p - p1;
+  Vector3 d2 = p - p2;
+  float dd1 = d1.DotProduct(edge_vector);
+  float dd2 = d2.DotProduct(edge_vector);
+  // If edge is closer, than vertex - choose it
+  if (dd1 * dd2 < 0) {
+    float edge_length_sq = edge_vector.LengthSquared();
+    dd1 /= edge_length_sq;
+    Vector3 proj = p1 + edge_vector * dd1;
+    return (proj - p).Length();
+  } else if (dd1 < 0) {
+    return d1.Length();
+  } else {
+    return d2.Length();
+  }
+}
+
+// Distance from point to triangle
+float point_triangle_distance(const Vector3& p, const Vector3& p1, const Vector3& p2, const Vector3& p3)
+{
+  Plane plane(p1, p2, p3);
+  float plane_distance = plane.normal_.DotProduct(p - p1);
+  float d1 = (p2 - p1).DotProduct(p - p1);
+  float d2 = (p3 - p2).DotProduct(p - p2);
+  float d3 = (p1 - p3).DotProduct(p - p3);
+  // Inside
+  if ((d1 > 0 && d2 > 0 && d3 > 0) || (d1 < 0 && d2 < 0 && d3 < 0)) {
+    return plane_distance;
+  }
+  // Check edges
+  float edge1_distance = point_edge_distance(p, p1, p2);
+  float edge2_distance = point_edge_distance(p, p2, p3);
+  float edge3_distance = point_edge_distance(p, p3, p1);
+  return Min(Min(edge1_distance, edge2_distance), edge3_distance);
+}
+
+/// Find sub object, closest to the ray
+int MeshGeometry::closest(
+  const Ray& ray,
+  SubObjectType& res_type,
+  int types,
+  unsigned int flags
+) const
+{
+  URHO3D_PROFILE(Closest);
+  float distance = M_INFINITY;
+  int result = -1;
+
+  // First - find closest vertex
+  float vertex_distance = M_INFINITY;
+  int vertex_index = closest_vertex(ray, flags, vertex_distance);
+
+  // If only vertex needed - return it (early return)
+  if ((types & ~(int)SubObjectType::VERTEX) == 0) {
+    res_type = SubObjectType::VERTEX;
+    return vertex_index;
+  }
+
+  // Not found
+  if (vertex_index < 0) {
+    return -1;
+  }
+
+  // Second - find closest edge, connected to closest vertex.
+  // Assuming edge is always connected to the same type vertex.
+  PODVector<int> edges = vertex_edges(vertex_index, flags);
+  int edge_index = -1;
+  float edge_distance = M_INFINITY;
+
+  for (int i = 0; i < edges.Size(); ++i) {
+    auto& edge = m_edges[edges[i]];
+    float cur_edge_distance = point_edge_distance(
+      ray.origin_,
+      m_vertices[edge.vertexes[0]].position,
+      m_vertices[edge.vertexes[1]].position
+    );
+
+    if (cur_edge_distance < edge_distance) {
+      edge_distance = cur_edge_distance;
+      edge_index = edges[i];
+    }
+  }
+
+  // Third - closest polygon
+  int polygon_index = -1;
+  float polygon_distance = M_INFINITY;
+  if (edge_index >= 0) {
+    PODVector<int> polygons = edge_polygons(edge_index, flags);
+    for (int i = 0; i < polygons.Size(); ++i) {
+      auto& polygon = m_polygons[polygons[i]];
+      float current_distance = point_triangle_distance(
+        ray.origin_,
+        m_vertices[polygon.vertexes[0]].position,
+        m_vertices[polygon.vertexes[1]].position,
+        m_vertices[polygon.vertexes[2]].position
+      );
+      if (current_distance < polygon_distance) {
+        polygon_distance = current_distance;
+        polygon_index = polygons[i];
+      }
+      if (polygon.vertexes[3] >= 0) {
+        current_distance = point_triangle_distance(
+          ray.origin_,
+          m_vertices[polygon.vertexes[2]].position,
+          m_vertices[polygon.vertexes[3]].position,
+          m_vertices[polygon.vertexes[1]].position
+        );
+        if (current_distance < polygon_distance) {
+          polygon_distance = current_distance;
+          polygon_index = polygons[i];
+        }
+      }
+    }
+  }
+
+  // Combine all together
+  if (types & (int)SubObjectType::VERTEX) {
+    if (vertex_distance < distance) {
+      res_type = SubObjectType::VERTEX;
+      distance = vertex_distance;
+      result = vertex_index;
+    }
+  }
+
+  if (types & (int)SubObjectType::EDGE) {
+    if (edge_distance < distance) {
+      res_type = SubObjectType::EDGE;
+      distance = edge_distance;
+      result = edge_index;
+    }
+  }
+
+  if (types & (int)SubObjectType::POLYGON) {
+    if (polygon_distance < distance) {
+      res_type = SubObjectType::POLYGON;
+      distance = polygon_distance;
+      result = polygon_index;
+    }
+  }
+
+  return result;
+}
+
+/// Find vertex, closest to the ray
+int MeshGeometry::closest_vertex(
+  const Ray& ray,
+  unsigned int flags,
+  float& distance
+) const
+{
+  int result = -1;
+  // TODO: use search tree for faster ray cast
+  for (unsigned int i = 0; i < m_vertices.Size(); ++i) {
+    const Vertex& vertex = m_vertices[i];
+    if (vertex.check_flags(flags)) {
+      if (vertex.normal.DotProduct(ray.direction_) < 0) {
+        float cur_dist = (ray.origin_ - vertex.position).LengthSquared();
+        if (cur_dist < distance) {
+          distance = cur_dist;
+          result = i;
+        }
+      }
+    }
+  }
+  if (result >= 0) {
+    distance = sqrt(distance);
+  }
+  return result;
+}
+
+/// Find edges by vertex and flag
+PODVector<int> MeshGeometry::vertex_edges(
+  int vertex, 
+  unsigned int flags
+) const
+{
+  PODVector<int> result;
+  for (unsigned int i = 0; i < m_edges.Size(); ++i) {
+    const Edge& edge = m_edges[i];
+    if (edge.check_flags(flags)) {
+      if (edge.vertexes[0] == vertex || edge.vertexes[1] == vertex) {
+        result.Push(i);
+      }
+    }
+  }
+  return result;
+}
+
+/// Find faces by edge
+PODVector<int> MeshGeometry::edge_polygons(int edge, unsigned int flags) const
+{
+  PODVector<int> result;
+  int v1 = m_edges[edge].vertexes[0];
+  int v2 = m_edges[edge].vertexes[1];
+  for (unsigned int i = 0; i < m_polygons.Size(); ++i) {
+    auto& polygon = m_polygons[i];
+    if (polygon.check_flags(flags)) {
+      if (polygon.has_vertex(v1) && polygon.has_vertex(v2)) {
+        result.Push(i);
+      }
+    }
+  }
+  return result;
+}
+
+/// Calculate count of sub objects by flag
+int MeshGeometry::primitives_count_by_flags(
+  SubObjectType sub_type, 
+  unsigned int flags
+) const
+{
+  switch (sub_type) {
+    case SubObjectType::VERTEX: 
+      return primitives_count_by_flags(m_vertices, flags);
+    case SubObjectType::EDGE:
+      return primitives_count_by_flags(m_edges, flags);
+    case SubObjectType::POLYGON:
+      return primitives_count_by_flags(m_polygons, flags);
+  }
+  return 0;
+}
+
 /// Get primitive indexes by flag
 template<class T>
 PODVector<int> MeshGeometry::primitives_by_flags(
@@ -437,6 +664,22 @@ PODVector<int> MeshGeometry::primitives_by_flags(
   for (unsigned int i = 0; i < primitives.Size(); ++i) {
     if (primitives[i].check_flags(flags)) {
       result.Push(i);
+    }
+  }
+  return result;
+}
+
+/// Get primitivs count by flag
+template<class T>
+int MeshGeometry::primitives_count_by_flags(
+  const PODVector<T>& primitives, 
+  unsigned int flags
+) const
+{
+  int result;
+  for (unsigned int i = 0; i < primitives.Size(); ++i) {
+    if (primitives[i].check_flags(flags)) {
+      ++result;
     }
   }
   return result;

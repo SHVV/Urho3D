@@ -12,6 +12,8 @@ namespace Urho3D {
   class Ray;
 }
 
+class DynamicModel;
+
 using namespace Urho3D;
 
 // Base structure for topology independent attchment.
@@ -21,21 +23,29 @@ public:
   BaseTopologyAttachment(
     const Vector3& position,
     const Vector3& normal,
-    SubObjectType snaped_to
+    SubObjectType snaped_to,
+    int primitive_index,
+    int primitives_count
   ) 
     : m_position(position),
       m_normal(normal),
-      m_snaped_to(snaped_to){};
+      m_snaped_to(snaped_to),
+      m_primitive_index(primitive_index),
+      m_primitives_count(primitives_count) {};
   virtual ~BaseTopologyAttachment() = default;
 
   SubObjectType snapped_to() const { return m_snaped_to; };
   const Vector3& position() const { return m_position; };
   const Vector3& normal() const { return m_normal; };
+  int primitive_index() const { return m_primitive_index; };
+  int primitives_count() const { return m_primitives_count; };
 
 protected:
   Vector3 m_position;
   Vector3 m_normal;
   SubObjectType m_snaped_to;
+  int m_primitive_index;
+  int m_primitives_count;
 };
 
 class BaseAttachableSurface : public Component {
@@ -66,7 +76,8 @@ public:
     Vector3& position,
     Vector3& normal,
     Vector3& tangent,
-    int snap_to = (int)SubObjectType::NONE
+    int snap_to = (int)SubObjectType::NONE,
+    bool snap_optional = true
   );
   
   /// Convert topology position to local position
@@ -78,6 +89,28 @@ public:
   );
 
 protected:
+  /// Dynamic model component for attaching to.
+  DynamicModel* dynamic_model();
+
+  /// Convert sub-object into local position
+  void sub_object_to_local(
+    SubObjectType sub_type,
+    int sub_index,
+    Vector3& position,
+    Vector3& normal,
+    Vector3& tangent
+  );
+
+  bool snap_to_primitive(
+    Vector3& position,
+    Vector3& normal,
+    Vector3& tangent,
+    int snap_to,
+    bool snap_optional,
+    SubObjectType& snap_type,
+    int& primitive_index
+  );
+
   // Existing overrides
   /// Handle node being assigned.
   //virtual void OnNodeSet(Node* node) override;
@@ -85,5 +118,6 @@ protected:
   //virtual void OnMarkedDirty(Node* node) override;
 
 private:
-
+  /// Cached dynamic model component for attaching to.
+  WeakPtr<DynamicModel> m_dynamic_model;
 };

@@ -7,8 +7,10 @@
 
 // Editor includes
 #include "MeshGenerator.h"
+#include "../Core/MeshGeometry.h"
 #include "../Model/ProceduralUnit.h"
 #include "../Model/DynamicModel.h"
+#include "../Model/BaseAttachableSurface.h"
 
 /// Destructor
 MeshGenerationFunction::~MeshGenerationFunction()
@@ -69,6 +71,10 @@ void MeshGenerationFunction::update_unit(
   if (mesh_buffer) {
     DynamicModel* dynamic_model = unit->get_component<DynamicModel>();
     dynamic_model->mesh_buffer(mesh_buffer);
+    // If mesh contains attachable nodes - create base attachable surface component
+    if (mesh_buffer->mesh_geometry()->vertices_by_flags(mgfATTACHABLE).Size() > 0){
+      unit->get_component<BaseAttachableSurface>();
+    }
   }
 }
 

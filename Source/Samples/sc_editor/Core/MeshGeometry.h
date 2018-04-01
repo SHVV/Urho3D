@@ -79,6 +79,13 @@ public:
     {
       vertexes[3] = -1;
     }
+    bool has_vertex(int i) const {
+      return
+        vertexes[0] == i ||
+        vertexes[1] == i ||
+        vertexes[2] == i ||
+        vertexes[3] == i;
+    }
   };
 
   // Access functions
@@ -173,12 +180,36 @@ public:
     float& t
   ) const;
 
+  /// Find sub object, closest to the ray
+  int closest(
+    const Ray& ray,
+    SubObjectType& res_type,
+    int types,
+    unsigned int flags
+  ) const;
+
+  /// Find vertex, closest to the ray
+  int closest_vertex(
+    const Ray& ray,
+    unsigned int flags,
+    float& distance
+  ) const;
+
+  /// Find edges by vertex and flag
+  PODVector<int> vertex_edges(int vertex, unsigned int flags) const;
+
+  /// Find faces by edge
+  PODVector<int> edge_polygons(int edge, unsigned int flags) const;
+
   /// Returns indexies of all verteces by flags
   PODVector<int> vertices_by_flags(unsigned int flags) const;
   /// Returns indexies of all edges by flags
   PODVector<int> edges_by_flags(unsigned int flags) const;
   /// Returns indexies of all polygons by flags
   PODVector<int> polygons_by_flags(unsigned int flags) const;
+
+  /// Calculate count of sub objects by flag
+  int primitives_count_by_flags(SubObjectType sub_type, unsigned int flags) const;
 
   // TODO: names for material slots
   // TODO: ability to merge models and combine material IDs by slot names
@@ -217,6 +248,10 @@ protected:
   /// Get primitive indexes by flag
   template<class T>
   PODVector<int> primitives_by_flags(const PODVector<T>& primitives, unsigned int flags) const;
+
+  /// Get primitivs count by flag
+  template<class T>
+  int primitives_count_by_flags(const PODVector<T>& primitives, unsigned int flags) const;
 
   /// Raycast vertices
   bool ray_cast_vertices(const Ray& ray, unsigned int flags, float& t, int& index) const;
