@@ -12,6 +12,7 @@
 #include "../Model/ProceduralUnit.h"
 #include "../MeshGenerators/TestGenerator.h"
 #include "../MeshGenerators/BaseTruss.h"
+#include "../MeshGenerators/WingRadiator.h"
 
 // Include all contexts for registering
 #include "../Contexts/NodesContext.h"
@@ -56,6 +57,20 @@ ContextToolbar::ContextToolbar(Context* context, EditorUI* editor)
   );
   set_default_context(id);
 
+  // Base truss context
+  Parameters base_truss;
+  base_truss[s_unit_class] = ProceduralUnit::GetTypeStatic();
+  base_truss[s_function_name] = StringHash(BaseTruss::s_name);
+
+  add_context(
+    CreationContext::GetTypeStatic(), // Context type name
+    base_truss,                       // Context parameters, like model,..
+    "Structure",                      // Category of context, determines tab
+    "Truss",                          // Toolbar icon // TODO: change icon
+    "Base truss",                     // Button title
+    "Create base truss"               // Button description for tooltip
+  );
+
   // Spherical tank context
   Parameters spherical_tank;
   spherical_tank[s_unit_class] = ProceduralUnit::GetTypeStatic();
@@ -70,18 +85,18 @@ ContextToolbar::ContextToolbar(Context* context, EditorUI* editor)
     "Create spherical fuel tank"      // Button description for tooltip
   );
 
-  // Base truss context
-  Parameters base_truss;
-  base_truss[s_unit_class] = ProceduralUnit::GetTypeStatic();
-  base_truss[s_function_name] = StringHash(BaseTruss::s_name);
+  // Radiator context
+  Parameters wing_radiator;
+  wing_radiator[s_unit_class] = ProceduralUnit::GetTypeStatic();
+  wing_radiator[s_function_name] = StringHash(WingRadiator::s_name);
 
   add_context(
     CreationContext::GetTypeStatic(), // Context type name
-    base_truss,                       // Context parameters, like model,..
-    "Structure",                      // Category of context, determines tab
-    "Truss",                          // Toolbar icon // TODO: change icon
-    "Base truss",                     // Button title
-    "Create base truss"               // Button description for tooltip
+    wing_radiator,                    // Context parameters, like model,..
+    "Propulsion",                     // Category of context, determines tab
+    "WingRadiator",                   // Toolbar icon
+    "Wing Radiator",                  // Button title
+    "Create wing-shaped radiator"     // Button description for tooltip
   );
 
   //add_context(

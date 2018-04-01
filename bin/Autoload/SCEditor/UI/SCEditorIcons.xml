@@ -15,6 +15,10 @@
     <attribute name="Texture" value="Texture2D;Textures/UI/SCEditorIcons.png" />
     <attribute name="Image Rect" value="96 0 126 30" />
   </element>
+  <element type="WingRadiator">
+    <attribute name="Texture" value="Texture2D;Textures/UI/SCEditorIcons.png" />
+    <attribute name="Image Rect" value="128 0 158 30" />
+  </element>
   <element type="Symmetry2">
     <attribute name="Texture" value="Texture2D;Textures/UI/SCEditorIcons.png" />
     <attribute name="Image Rect" value="0 32 30 62" />

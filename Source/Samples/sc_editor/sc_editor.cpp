@@ -26,6 +26,7 @@
 
 #include "MeshGenerators/TestGenerator.h"
 #include "MeshGenerators/BaseTruss.h"
+#include "MeshGenerators/WingRadiator.h"
 
 // Includes from Urho
 #include <Urho3D/Core/CoreEvents.h>
@@ -72,6 +73,7 @@ SCEditor::SCEditor(Context* context)
   // Register generator functions
   generator->add_function(new TestGenerator());
   generator->add_function(new BaseTruss());
+  generator->add_function(new WingRadiator());
   // TODO:
 
   // Model
