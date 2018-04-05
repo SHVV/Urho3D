@@ -676,7 +676,7 @@ int MeshGeometry::primitives_count_by_flags(
   unsigned int flags
 ) const
 {
-  int result;
+  int result = 0;
   for (unsigned int i = 0; i < primitives.Size(); ++i) {
     if (primitives[i].check_flags(flags)) {
       ++result;

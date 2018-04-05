@@ -316,10 +316,12 @@ void SceneView::post_render()
 {
   auto debug_renderer = m_urho_scene->GetComponent<DebugRenderer>();
   for (int i = 0; i < m_selected.Size(); ++i) {
-    debug_renderer->AddNode(m_selected[i], 2, false);
-    auto drawable = m_selected[i]->GetDerivedComponent<Drawable>();
-    if (drawable) {
-      debug_renderer->AddBoundingBox(drawable->GetBoundingBox(), m_selected[i]->GetWorldTransform(), Color(1.0, 1.0, 1.0), false);
+    if (m_selected[i]->IsEnabled()) {
+      debug_renderer->AddNode(m_selected[i], 2, false);
+      auto drawable = m_selected[i]->GetDerivedComponent<Drawable>();
+      if (drawable) {
+        debug_renderer->AddBoundingBox(drawable->GetBoundingBox(), m_selected[i]->GetWorldTransform(), Color(1.0, 1.0, 1.0), false);
+      }
     }
   }
 }

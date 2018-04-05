@@ -111,7 +111,7 @@ void BaseContext::update(float dt)
 }
 
 /// Get unit under mouse cursor
-Node* BaseContext::get_unit_under_mouse()
+Node* BaseContext::get_unit_under_mouse(Vector3* position, Vector3* normal)
 {
   Ray ray = calculate_ray();
   
@@ -133,6 +133,12 @@ Node* BaseContext::get_unit_under_mouse()
 
         SubObjectType sub_type;
         if (mesh->raycast(local_ray, sub_type, (int)SubObjectType::POLYGON, 0, t) >= 0) {
+          if (position) {
+            *position = local_ray.origin_ + local_ray.direction_ * t;
+          }
+          if (normal) {
+            *normal = -local_ray.direction_;
+          }
           res = node;
         }
 

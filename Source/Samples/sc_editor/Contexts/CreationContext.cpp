@@ -9,6 +9,9 @@
 #include "../Model/SceneModel.h"
 #include "../Model/ProceduralUnit.h"
 #include "../Model/BasePositioner.h"
+#include "../Model/BaseAttachableSurface.h"
+#include "../Model/SurfaceNodePositioner.h"
+#include "../Model/SurfaceSurfacePositioner.h"
 #include "../View/SceneView.h"
 
 // Includes from Urho3D
@@ -93,9 +96,9 @@ T* get_or_create_positioner(Node* node)
 {
   T* result = node->GetComponent<T>();
   if (!result) {
-    // Remove old positioner, if it is not compatiable with requied.
-    result = node->GetDerivedComponent<BasePositioner>();
-    node->RemoveComponent(result);
+    // Remove old positioner, if it is not compatiable with requested.
+    auto old = node->GetDerivedComponent<BasePositioner>();
+    node->RemoveComponent(old);
     // Create new one
     result = node->CreateComponent<T>();
   }
@@ -108,78 +111,128 @@ void CreationContext::update_rollower_position()
   if (m_rollowers.Size()) {
     // Symmetry
     Node* first_rollower_node = m_rollowers[0]->GetNode();
-    Node* unit_under_mouse = get_unit_under_mouse();
-    if (!unit_under_mouse) {
-      // TODO: localisation
-      // TODO: turn symmetry off for inserting to main axis
-      String snap_text = "main axis";
-      Ray camera_ray = calculate_ray();
-      Ray main_axis_ray(Vector3(0, 0, 0), Vector3(0, 0, 1));
-      Vector3 pos = main_axis_ray.ClosestPoint(camera_ray);
-      // Insert into vertical / horizontal plane, stick to main axis, only if it close to it
-      float t = M_INFINITY;
-      Plane hor_plane(Vector4(0, 1, 0, 0));
-      String plane_text = "horizontal plane";
-      float cur_t = camera_ray.HitDistance(hor_plane);
-      if (cur_t > 0) {
-        t = Min(cur_t, t);
-      }
-      Plane vert_plane(Vector4(1, 0, 0, 0));
-      cur_t = camera_ray.HitDistance(vert_plane);
-      if (cur_t > 0) {
-        if (cur_t < t) {
-          t = cur_t;
-          plane_text = "vertical plane";
+    Vector3 attach_position;
+    Vector3 attach_normal;
+    Node* unit_under_mouse = get_unit_under_mouse(&attach_position, &attach_normal);
+    auto surface =
+      first_rollower_node->GetDerivedComponent<BaseAttachableSurface>();
+
+    // TODO: use some more explicit way to detect possible attachments
+    // If module has attable surface - use free positioner, or surface - surface
+    if (surface) {
+      if (!unit_under_mouse) {
+        // TODO: localisation
+        // TODO: turn symmetry off for inserting to main axis
+        String snap_text = "main axis";
+        Ray camera_ray = calculate_ray();
+        Ray main_axis_ray(Vector3(0, 0, 0), Vector3(0, 0, 1));
+        Vector3 pos = main_axis_ray.ClosestPoint(camera_ray);
+        // Insert into vertical / horizontal plane, stick to main axis, only if it close to it
+        float t = M_INFINITY;
+        Plane hor_plane(Vector4(0, 1, 0, 0));
+        String plane_text = "horizontal plane";
+        float cur_t = camera_ray.HitDistance(hor_plane);
+        if (cur_t > 0) {
+          t = Min(cur_t, t);
         }
-      }
-      float min_size = node_size(first_rollower_node);
-      if (t < M_INFINITY) {
-        Vector3 plane_pos = camera_ray.origin_ + camera_ray.direction_ * t;
-        if ((plane_pos - pos).Length() > min_size) {
-          snap_text = plane_text;
-          pos = plane_pos;
+        Plane vert_plane(Vector4(1, 0, 0, 0));
+        cur_t = camera_ray.HitDistance(vert_plane);
+        if (cur_t > 0) {
+          if (cur_t < t) {
+            t = cur_t;
+            plane_text = "vertical plane";
+          }
         }
-      }
-
-      // Snapping
-      if (min_size > 0) {
-        float step = quantizing_step(min_size * 2);
-        pos.x_ = round(pos.x_ / step) * step;
-        pos.y_ = round(pos.y_ / step) * step;
-        pos.z_ = round(pos.z_ / step) * step;
-      }
-      String tooltip_text = "Snap to: " + snap_text + "\n";
-      tooltip_text += String(pos.x_) + "m; " + String(pos.y_) + "m; " + String(pos.z_) + "m";
-      set_tooltip(tooltip_text);
-
-      auto positions = get_symmetry_positions(pos);
-      assert(m_rollowers.Size() == positions.Size());
-      Vector3 z(0, 0, 1);
-      for (int i = 0; i < m_rollowers.Size(); ++i) {
-        Node* rollower_node = m_rollowers[i]->GetNode();
-        // Insert positioner and update its internal position
-        BasePositioner* positioner = 
-          get_or_create_positioner<BasePositioner>(rollower_node);
-        positioner->update_internal_position();
-
-        pos = positions[i];
-        rollower_node->SetPosition(pos);
-        Vector3 y = pos;
-        y.z_ = 0;
-        y.Normalize();
-        Quaternion symmetry_rotation;
-        if (y.LengthSquared() > 0.9) {
-          Vector3 x = y.CrossProduct(z);
-          symmetry_rotation.FromAxes(x, y, z);
+        float min_size = node_size(first_rollower_node);
+        if (t < M_INFINITY) {
+          Vector3 plane_pos = camera_ray.origin_ + camera_ray.direction_ * t;
+          if ((plane_pos - pos).Length() > min_size) {
+            snap_text = plane_text;
+            pos = plane_pos;
+          }
         }
 
-        // WASDQE-rotation
-        rollower_node->SetRotation(symmetry_rotation * m_orientation);
+        // Snapping
+        if (min_size > 0) {
+          float step = quantizing_step(min_size * 2);
+          pos.x_ = round(pos.x_ / step) * step;
+          pos.y_ = round(pos.y_ / step) * step;
+          pos.z_ = round(pos.z_ / step) * step;
+        }
+        String tooltip_text = "Snap to: " + snap_text + "\n";
+        tooltip_text += String(pos.x_) + "m; " + String(pos.y_) + "m; " + String(pos.z_) + "m";
+        set_tooltip(tooltip_text);
+
+        auto positions = get_symmetry_positions(pos);
+        assert(m_rollowers.Size() == positions.Size());
+        Vector3 z(0, 0, 1);
+        for (int i = 0; i < m_rollowers.Size(); ++i) {
+          Node* rollower_node = m_rollowers[i]->GetNode();
+          // Insert positioner and update its internal position
+          BasePositioner* positioner = 
+            get_or_create_positioner<BasePositioner>(rollower_node);
+          positioner->update_internal_position();
+
+          pos = positions[i];
+          rollower_node->SetPosition(pos);
+          Vector3 y = pos;
+          y.z_ = 0;
+          y.Normalize();
+          Quaternion symmetry_rotation;
+          if (y.LengthSquared() > 0.9) {
+            Vector3 x = y.CrossProduct(z);
+            symmetry_rotation.FromAxes(x, y, z);
+          }
+
+          // WASDQE-rotation
+          rollower_node->SetRotation(symmetry_rotation * m_orientation);
+        }
+      } else {
+        hide_tooltip();
+        // TODO: attachment
+        // TODO: highlight attach point
       }
     } else {
+      // Case for surface - node attachable units
+      if (unit_under_mouse) {
+        surface = unit_under_mouse->GetDerivedComponent<BaseAttachableSurface>();
+        if (surface) {
+          // Get symmetry nodes
+          auto attach_nodes = get_symmety_nodes(unit_under_mouse);
+          // If more than one unit
+          if (attach_nodes.Size() > 1) {
+            // Use underlaying nodes as a gide
+            // TODO:
+            // Attach rollower node to corresponding symmetry node
+            // calcualte rough local position and orientation
+            // update attachment position
+          } else {
+            // for just one unit - use symmetry positions
+            auto positions = get_symmetry_positions(attach_position);
+            // and normals
+            auto normals = get_symmetry_positions(attach_normal);
+            for (int i = 0; i < m_rollowers.Size(); ++i) {
+              Node* rollower_node = m_rollowers[i]->GetNode();
+              rollower_node->SetEnabled(true);
+              // Set new parent
+              rollower_node->SetParent(unit_under_mouse);
+              // Get positioner
+              auto positioner =
+                get_or_create_positioner<SurfaceNodePositioner>(rollower_node);
+              // and set position
+              positioner->set_position(positions[i], normals[i]);
+            }
+          }
+
+          set_tooltip("Attach to module");
+          return;
+        }
+      }
+      // If no unit under cursor with attachable surface - hide rollowers
+      for (int i = 0; i < m_rollowers.Size(); ++i) {
+        m_rollowers[i]->GetNode()->SetEnabled(false);
+      }
       hide_tooltip();
-      // TODO: attachment
-      // TODO: highlight attach point
     }
   }
 }

@@ -67,7 +67,7 @@ protected:
   Ray calculate_ray();
 
   /// Get unit under mouse cursor
-  Node* get_unit_under_mouse();
+  Node* get_unit_under_mouse(Vector3* position = nullptr, Vector3* normal = nullptr);
 
   /// Returns all positions, based on symmetry mode
   Vector<Vector3> get_symmetry_positions(const Vector3& base);

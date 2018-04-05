@@ -189,6 +189,7 @@ void BaseAttachableSurface::sub_object_to_local(
     }
   }
 
+  // TODO: fix this
   tangent = normal.CrossProduct(Vector3::FORWARD);
   if (tangent.LengthSquared() < M_LARGE_EPSILON) {
     tangent = Vector3::RIGHT;
