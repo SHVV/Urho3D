@@ -148,7 +148,11 @@ MeshGeometry* TestGenerator::generate(const Parameters& parameters)
   }
   for (int i = 0; i < geometry->edges().Size(); ++i) {
     if (geometry->edges()[i].material == 0) {
-      geometry->set_edge_flags(i, mgfATTACHABLE | mgfVISIBLE);
+      if (geometry->edges()[i].secondary) {
+        geometry->set_edge_material(i, -1);
+      } else {
+        geometry->set_edge_flags(i, mgfATTACHABLE | mgfVISIBLE);
+      }
     }
   }
   for (int i = 0; i < geometry->polygons().Size(); ++i) {

@@ -204,13 +204,19 @@ void NodesContext::update_gizmo()
     // Calculate most restrictive set of available axis
     Axis linear_axis = Axis::XYZ;
     Axis rotation_axis = Axis::XYZ;
+    bool found = false;
     for (int i = 0; i < selected.Size(); ++i) {
       Node* node = selected[i];
-      BasePositioner* positioner = node->GetComponent<BasePositioner>();
+      BasePositioner* positioner = node->GetDerivedComponent<BasePositioner>();
       if (positioner) {
+        found = true;
         linear_axis = (Axis)((int)linear_axis & (int)positioner->linear_axis());
         rotation_axis = (Axis)((int)rotation_axis & (int)positioner->rotation_axis());
       }
+    }
+    if (!found) {
+      linear_axis = Axis::NONE;
+      rotation_axis = Axis::NONE;
     }
     // And enable only allowed components
     for (int i = 0; i < m_gizmo_parts.Size(); ++i) {
@@ -367,6 +373,7 @@ void NodesContext::on_mouse_move(float x, float y)
             //node->Rotate(tr, TS_WORLD);
           }
         }
+        node->GetDerivedComponent<BasePositioner>()->update_internal_position();
       }
     }
     //m_gizmo_pos = cur_pos;

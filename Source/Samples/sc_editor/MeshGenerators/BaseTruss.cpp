@@ -83,7 +83,11 @@ MeshGeometry* BaseTruss::generate(const Parameters& parameters)
     geometry->set_vertex_flags(i, mgfATTACHABLE | mgfVISIBLE);
   }
   for (int i = 0; i < geometry->edges().Size(); ++i) {
-    geometry->set_edge_flags(i, mgfATTACHABLE | mgfVISIBLE);
+    if (geometry->edges()[i].secondary) {
+      geometry->set_edge_flags(i, mgfVISIBLE);
+    } else {
+      geometry->set_edge_flags(i, mgfATTACHABLE | mgfVISIBLE);
+    }
   }
   for (int i = 0; i < geometry->polygons().Size(); ++i) {
     geometry->set_polygon_flags(i, mgfATTACHABLE);

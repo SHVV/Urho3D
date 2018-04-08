@@ -154,6 +154,9 @@ void BaseAttachableSurface::sub_object_to_local(
   if (!geometry) {
     return;
   }
+  if (sub_index < 0) {
+    return;
+  }
 
   switch (sub_type) {
     case SubObjectType::VERTEX: {
@@ -190,9 +193,11 @@ void BaseAttachableSurface::sub_object_to_local(
   }
 
   // TODO: fix this
-  tangent = normal.CrossProduct(Vector3::FORWARD);
-  if (tangent.LengthSquared() < M_LARGE_EPSILON) {
+  Vector3 bitangent = Vector3::FORWARD.CrossProduct(normal);
+  if (bitangent.LengthSquared() < M_LARGE_EPSILON) {
     tangent = Vector3::RIGHT;
+  } else {
+    tangent = normal.CrossProduct(bitangent);
   }
 }
 
