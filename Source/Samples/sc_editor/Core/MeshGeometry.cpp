@@ -479,124 +479,209 @@ int MeshGeometry::closest(
   float distance = M_INFINITY;
   int result = -1;
 
-  // First - find closest vertex
-  float vertex_distance = M_INFINITY;
-  int vertex_index = closest_vertex(ray, flags, vertex_distance);
-
-  // If only vertex needed - return it (early return)
-  if ((types & ~(int)SubObjectType::VERTEX) == 0) {
-    res_type = SubObjectType::VERTEX;
-    return vertex_index;
-  }
-
-  // Not found
-  if (vertex_index < 0) {
-    return -1;
-  }
-
-  // Second - find closest edge, connected to closest vertex.
-  // Assuming edge is always connected to the same type vertex.
-  PODVector<int> edges = vertex_edges(vertex_index, flags);
-  int edge_index = -1;
-  float edge_distance = M_INFINITY;
-
-  for (int i = 0; i < edges.Size(); ++i) {
-    auto& edge = m_edges[edges[i]];
-    float cur_edge_distance = point_edge_distance(
-      ray.origin_,
-      m_vertices[edge.vertexes[0]].position,
-      m_vertices[edge.vertexes[1]].position
-    );
-
-    if (cur_edge_distance < edge_distance) {
-      edge_distance = cur_edge_distance;
-      edge_index = edges[i];
-    }
-  }
-
-  // Third - closest polygon
-  int polygon_index = -1;
-  float polygon_distance = M_INFINITY;
-  if (edge_index >= 0) {
-    PODVector<int> polygons = edge_polygons(edge_index, flags);
-    for (int i = 0; i < polygons.Size(); ++i) {
-      auto& polygon = m_polygons[polygons[i]];
-      float current_distance = point_triangle_distance(
-        ray.origin_,
-        m_vertices[polygon.vertexes[0]].position,
-        m_vertices[polygon.vertexes[1]].position,
-        m_vertices[polygon.vertexes[2]].position
-      );
-      if (current_distance < polygon_distance) {
-        polygon_distance = current_distance;
-        polygon_index = polygons[i];
-      }
-      if (polygon.vertexes[3] >= 0) {
-        current_distance = point_triangle_distance(
-          ray.origin_,
-          m_vertices[polygon.vertexes[2]].position,
-          m_vertices[polygon.vertexes[3]].position,
-          m_vertices[polygon.vertexes[1]].position
-        );
-        if (current_distance < polygon_distance) {
-          polygon_distance = current_distance;
-          polygon_index = polygons[i];
-        }
-      }
-    }
-  }
-
-  // Combine all together
   if (types & (int)SubObjectType::VERTEX) {
-    if (vertex_distance < distance) {
+    if (closest_vertex(ray, flags, distance, result)) {
       res_type = SubObjectType::VERTEX;
-      distance = vertex_distance;
-      result = vertex_index;
     }
   }
 
   if (types & (int)SubObjectType::EDGE) {
-    if (edge_distance < distance) {
+    if (closest_edge(ray, flags, distance, result)) {
       res_type = SubObjectType::EDGE;
-      distance = edge_distance;
-      result = edge_index;
     }
   }
 
   if (types & (int)SubObjectType::POLYGON) {
-    if (polygon_distance < distance) {
+    if (closest_polygon(ray, flags, distance, result)) {
       res_type = SubObjectType::POLYGON;
-      distance = polygon_distance;
-      result = polygon_index;
     }
   }
 
   return result;
 }
+///// Find sub object, closest to the ray
+//int MeshGeometry::closest(
+//  const Ray& ray,
+//  SubObjectType& res_type,
+//  int types,
+//  unsigned int flags
+//) const
+//{
+//  URHO3D_PROFILE(Closest);
+//  float distance = M_INFINITY;
+//  int result = -1;
+//
+//  // First - find closest vertex
+//  float vertex_distance = M_INFINITY;
+//  int vertex_index = closest_vertex(ray, flags, vertex_distance);
+//
+//  // If only vertex needed - return it (early return)
+//  if ((types & ~(int)SubObjectType::VERTEX) == 0) {
+//    res_type = SubObjectType::VERTEX;
+//    return vertex_index;
+//  }
+//
+//  // Not found
+//  if (vertex_index < 0) {
+//    return -1;
+//  }
+//
+//  // Second - find closest edge, connected to closest vertex.
+//  // Assuming edge is always connected to the same type vertex.
+//  PODVector<int> edges = vertex_edges(vertex_index, flags);
+//  int edge_index = -1;
+//  float edge_distance = M_INFINITY;
+//
+//  for (int i = 0; i < edges.Size(); ++i) {
+//    auto& edge = m_edges[edges[i]];
+//    float cur_edge_distance = point_edge_distance(
+//      ray.origin_,
+//      m_vertices[edge.vertexes[0]].position,
+//      m_vertices[edge.vertexes[1]].position
+//    );
+//
+//    if (cur_edge_distance < edge_distance) {
+//      edge_distance = cur_edge_distance;
+//      edge_index = edges[i];
+//    }
+//  }
+//
+//  // Third - closest polygon
+//  int polygon_index = -1;
+//  float polygon_distance = M_INFINITY;
+//  if (edge_index >= 0) {
+//    PODVector<int> polygons = edge_polygons(edge_index, flags);
+//    for (int i = 0; i < polygons.Size(); ++i) {
+//      auto& polygon = m_polygons[polygons[i]];
+//      float current_distance = point_triangle_distance(
+//        ray.origin_,
+//        m_vertices[polygon.vertexes[0]].position,
+//        m_vertices[polygon.vertexes[1]].position,
+//        m_vertices[polygon.vertexes[2]].position
+//      );
+//      if (current_distance < polygon_distance) {
+//        polygon_distance = current_distance;
+//        polygon_index = polygons[i];
+//      }
+//      if (polygon.vertexes[3] >= 0) {
+//        current_distance = point_triangle_distance(
+//          ray.origin_,
+//          m_vertices[polygon.vertexes[2]].position,
+//          m_vertices[polygon.vertexes[3]].position,
+//          m_vertices[polygon.vertexes[1]].position
+//        );
+//        if (current_distance < polygon_distance) {
+//          polygon_distance = current_distance;
+//          polygon_index = polygons[i];
+//        }
+//      }
+//    }
+//  }
+//
+//  // Combine all together
+//  if (types & (int)SubObjectType::VERTEX) {
+//    if (vertex_distance < distance) {
+//      res_type = SubObjectType::VERTEX;
+//      distance = vertex_distance;
+//      result = vertex_index;
+//    }
+//  }
+//
+//  if (types & (int)SubObjectType::EDGE) {
+//    if (edge_distance < distance) {
+//      res_type = SubObjectType::EDGE;
+//      distance = edge_distance;
+//      result = edge_index;
+//    }
+//  }
+//
+//  if (types & (int)SubObjectType::POLYGON) {
+//    if (polygon_distance < distance) {
+//      res_type = SubObjectType::POLYGON;
+//      distance = polygon_distance;
+//      result = polygon_index;
+//    }
+//  }
+//
+//  return result;
+//}
 
 /// Find vertex, closest to the ray
-int MeshGeometry::closest_vertex(
+bool MeshGeometry::closest_vertex(
   const Ray& ray,
   unsigned int flags,
-  float& distance
+  float& distance,
+  int& index
 ) const
 {
-  int result = -1;
+  bool result = false;
+
   // TODO: use search tree for faster ray cast
   for (unsigned int i = 0; i < m_vertices.Size(); ++i) {
     const Vertex& vertex = m_vertices[i];
     if (vertex.check_flags(flags)) {
       if (vertex.normal.DotProduct(ray.direction_) < 0) {
-        float cur_dist = (ray.origin_ - vertex.position).LengthSquared();
+        float cur_dist = (ray.origin_ - vertex.position).Length();
         if (cur_dist < distance) {
           distance = cur_dist;
-          result = i;
+          index = i;
+          result = true;
         }
       }
     }
   }
-  if (result >= 0) {
-    distance = sqrt(distance);
+  return result;
+}
+
+/// Find edge, closest to the ray origin
+bool MeshGeometry::closest_edge(
+  const Ray& ray,
+  unsigned int flags,
+  float& distance,
+  int& index
+) const
+{
+  bool result = false;
+
+  // TODO: use search tree for faster ray cast
+  for (unsigned int i = 0; i < m_edges.Size(); ++i) {
+    const Edge& edge = m_edges[i];
+    if (edge.check_flags(flags)) {
+      if (edge.normal(*this).DotProduct(ray.direction_) < 0) {
+        float cur_dist = (ray.origin_ - edge.center(*this)).Length();
+        if (cur_dist < distance) {
+          distance = cur_dist;
+          index = i;
+          result = true;
+        }
+      }
+    }
+  }
+  return result;
+}
+
+/// Find polygon, closest to the ray origin
+bool MeshGeometry::closest_polygon(
+  const Ray& ray,
+  unsigned int flags,
+  float& distance,
+  int& index
+) const
+{
+  bool result = false;
+  // TODO: use search tree for faster ray cast
+  for (unsigned int i = 0; i < m_polygons.Size(); ++i) {
+    const Polygon& polygon = m_polygons[i];
+    if (polygon.check_flags(flags)) {
+      if (polygon.normal(*this).DotProduct(ray.direction_) < 0) {
+        float cur_dist = (ray.origin_ - polygon.center(*this)).Length();
+        if (cur_dist < distance) {
+          distance = cur_dist;
+          index = i;
+          result = true;
+        }
+      }
+    }
   }
   return result;
 }

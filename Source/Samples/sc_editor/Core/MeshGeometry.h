@@ -68,6 +68,18 @@ public:
   struct Edge : BasePrimitive {
     int vertexes[2];
     bool secondary = false;
+    Vector3 center(const MeshGeometry& mesh) const {
+      return (mesh.m_vertices[vertexes[0]].position + 
+              mesh.m_vertices[vertexes[1]].position) * 0.5;
+    };
+    Vector3 normal(const MeshGeometry& mesh) const {
+      return (mesh.m_vertices[vertexes[0]].normal +
+              mesh.m_vertices[vertexes[1]].normal).Normalized();
+    };
+    Vector3 direction(const MeshGeometry& mesh) const {
+      return (mesh.m_vertices[vertexes[1]].position -
+              mesh.m_vertices[vertexes[0]].position).Normalized();
+    };
   };
 
   // Polygons
@@ -86,6 +98,24 @@ public:
         vertexes[2] == i ||
         vertexes[3] == i;
     }
+    Vector3 center(const MeshGeometry& mesh) const {
+      int i = 0;
+      Vector3 result = Vector3::ZERO;
+      while (i < 4 && vertexes[i] >= 0) {
+        result += mesh.m_vertices[vertexes[i]].position;
+        ++i;
+      }
+      return result / i;
+    };
+    Vector3 normal(const MeshGeometry& mesh) const {
+      int i = 0;
+      Vector3 result = Vector3::ZERO;
+      while (i < 4 && vertexes[i] >= 0) {
+        result += mesh.m_vertices[vertexes[i]].normal;
+        ++i;
+      }
+      return result.Normalized();
+    };
   };
 
   // Access functions
@@ -188,13 +218,6 @@ public:
     unsigned int flags
   ) const;
 
-  /// Find vertex, closest to the ray
-  int closest_vertex(
-    const Ray& ray,
-    unsigned int flags,
-    float& distance
-  ) const;
-
   /// Find edges by vertex and flag
   PODVector<int> vertex_edges(int vertex, unsigned int flags) const;
 
@@ -261,6 +284,30 @@ protected:
 
   /// Raycast polygons
   bool ray_cast_polygons(const Ray& ray, unsigned int flags, float& t, int& index) const;
+
+  /// Find vertex, closest to the ray origin
+  bool closest_vertex(
+    const Ray& ray,
+    unsigned int flags,
+    float& distance,
+    int& index
+  ) const;
+
+  /// Find edge, closest to the ray origin
+  bool closest_edge(
+    const Ray& ray,
+    unsigned int flags,
+    float& distance,
+    int& index
+  ) const;
+
+  /// Find polygon, closest to the ray origin
+  bool closest_polygon(
+    const Ray& ray,
+    unsigned int flags,
+    float& distance,
+    int& index
+  ) const;
 
   /// Send update to all subscribers
   void send_update(UpdateType type, int i = -1);

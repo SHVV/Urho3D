@@ -167,28 +167,17 @@ void BaseAttachableSurface::sub_object_to_local(
     }
     case SubObjectType::EDGE: {
       auto& edge = geometry->edges()[sub_index];
-      auto& v1 = geometry->vertices()[edge.vertexes[0]];
-      auto& v2 = geometry->vertices()[edge.vertexes[1]];
-      position = (v1.position + v2.position) * 0.5f;
-      normal = (v1.normal + v2.normal).Normalized();
-      tangent = (v2.position - v1.position).Normalized();
+      position = edge.center(*geometry);
+      normal = edge.normal(*geometry);
+      tangent = edge.direction(*geometry);
 
       // Don't need to recalculate tangent, because it is defined already
       return;
     }
     case SubObjectType::POLYGON: {
       auto& polygon = geometry->polygons()[sub_index];
-      int i = 0;
-      position = Vector3::ZERO;
-      normal = Vector3::ZERO;
-      while (i < 4 && polygon.vertexes[i] >= 0) {
-        auto& v = geometry->vertices()[polygon.vertexes[i]];
-        position += v.position;
-        normal += v.normal;
-        ++i;
-      }
-      position /= i;
-      normal.Normalize();
+      position = polygon.center(*geometry);
+      normal = polygon.normal(*geometry);
     }
   }
 
@@ -222,17 +211,17 @@ bool BaseAttachableSurface::snap_to_primitive(
 
   int result = true;
   if (!!snap_to) {
-    float dist = 1.0;
+    float dist = 0.0;
     Ray ray(position + normal * dist, -normal);
     // Find proper sub object type
-    primitive_index = geometry->raycast(ray, snap_type, snap_to, mgfATTACHABLE);
+    //primitive_index = geometry->raycast(ray, snap_type, snap_to, mgfATTACHABLE);
     // If no attachable sub object under position
-    if (primitive_index < 0) {
+    //if (primitive_index < 0) {
       // Find just closest one
       primitive_index = geometry->closest(ray, snap_type, snap_to, mgfATTACHABLE);
       // Use real snapping in this case, only if it is not optional
       result = !snap_optional;
-    }
+    //}
 
     // Calculate position, normal and tangent, based on component (and main axis)
     Vector3 new_position;
