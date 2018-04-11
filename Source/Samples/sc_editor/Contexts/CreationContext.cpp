@@ -201,11 +201,22 @@ void CreationContext::update_rollower_position()
           auto attach_nodes = get_symmety_nodes(unit_under_mouse);
           // If more than one unit
           if (attach_nodes.Size() > 1) {
-            // Use underlaying nodes as a gide
-            // TODO:
-            // Attach rollower node to corresponding symmetry node
-            // calcualte rough local position and orientation
-            // update attachment position
+            // Use underlaying nodes as a guide
+            for (int i = 0; i < m_rollowers.Size(); ++i) {
+              Node* rollower_node = m_rollowers[i]->GetNode();
+              if (i < attach_nodes.Size()) {
+                rollower_node->SetEnabled(true);
+                // Set new parent
+                rollower_node->SetParent(attach_nodes[i]);
+                // Get positioner
+                auto positioner =
+                  get_or_create_positioner<SurfaceNodePositioner>(rollower_node);
+                // and set position
+                positioner->set_position(attach_position, attach_normal);
+              } else {
+                rollower_node->SetEnabled(false);
+              }
+            }
           } else {
             // for just one unit - use symmetry positions
             auto positions = get_symmetry_positions(attach_position);
@@ -300,6 +311,13 @@ void CreationContext::on_mouse_up()
     if (m_rollowers.Size()) {
       Pair<StringHash, StringHash> key(unit_class(), function_name());
       m_latest_parameters[key] = m_rollowers[0]->parameters();
+    }
+
+    for (int i = 0; i < m_rollowers.Size(); ++i) {
+      Node* node = m_rollowers[i]->GetNode();
+      if (!node->IsEnabled()) {
+        model()->delete_unit(node);
+      }
     }
 
     m_rollowers.Clear();

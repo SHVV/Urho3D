@@ -132,12 +132,13 @@ Node* BaseContext::get_unit_under_mouse(Vector3* position, Vector3* normal)
         Ray local_ray = ray.Transformed(inverse);
 
         SubObjectType sub_type;
-        if (mesh->raycast(local_ray, sub_type, (int)SubObjectType::POLYGON, 0, t) >= 0) {
+        int index = mesh->raycast(local_ray, sub_type, (int)SubObjectType::POLYGON, 0, t);
+        if (index >= 0) {
           if (position) {
             *position = local_ray.origin_ + local_ray.direction_ * t;
           }
           if (normal) {
-            *normal = -local_ray.direction_;
+            *normal = mesh->normal(sub_type, index);
           }
           res = node;
         }
@@ -192,22 +193,31 @@ Vector<Node*> BaseContext::get_symmety_nodes(Node* node)
   if (node) {
     UnitModel* unit = node->GetDerivedComponent<UnitModel>();
     if (unit) {
-      Vector<Vector3> positions = get_symmetry_positions(node->GetWorldPosition());
+      auto original_pos = node->GetWorldPosition();
+      auto drawable = node->GetDerivedComponent<Drawable>();
+      if (drawable) {
+        original_pos = node->LocalToWorld(drawable->GetBoundingBox().Center());
+      }
+      Vector<Vector3> positions = get_symmetry_positions(original_pos);
       for (int i = 0; i < positions.Size(); ++i) {
         Vector3& point = positions[i];
         PODVector<Drawable*> query_result;
         PointOctreeQuery query(query_result, point, DRAWABLE_GEOMETRY);
         view()->scene()->GetComponent<Octree>()->GetDrawables(query);
+
         for (int j = 0; j < query_result.Size(); ++j) {
           Node* test_node = query_result[j]->GetNode();
           if (test_node && test_node != node) {
-            // TODO: softer limits
-            if ((test_node->GetWorldPosition() - point).LengthSquared() < M_LARGE_EPSILON) {
-              UnitModel* test_unit = test_node->GetDerivedComponent<UnitModel>();
-              if (test_unit && test_unit->GetType() == unit->GetType()) {
-                if (test_unit->parameters() == unit->parameters()) {
-                  if (result.Find(test_node) == result.End()) {
-                    result.Push(test_node);
+            UnitModel* test_unit = test_node->GetDerivedComponent<UnitModel>();
+            if (test_unit && test_unit->GetType() == unit->GetType()) {
+              if (test_unit->parameters() == unit->parameters()) {
+                // TODO: use all drawables, including child nodes.
+                auto drawable = test_node->GetDerivedComponent<Drawable>();
+                if (drawable) {
+                  if (drawable->GetBoundingBox().IsInside(test_node->WorldToLocal(point))) {
+                    if (result.Find(test_node) == result.End()) {
+                      result.Push(test_node);
+                    }
                   }
                 }
               }

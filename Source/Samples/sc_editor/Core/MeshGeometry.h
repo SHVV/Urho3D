@@ -234,6 +234,12 @@ public:
   /// Calculate count of sub objects by flag
   int primitives_count_by_flags(SubObjectType sub_type, unsigned int flags) const;
 
+  /// Calcualte and return intermediate position of sub-object
+  Vector3 position(SubObjectType& type, int index) const;
+
+  /// Calcualte and return intermediate normal of sub-object
+  Vector3 normal(SubObjectType& type, int index) const;
+
   // TODO: names for material slots
   // TODO: ability to merge models and combine material IDs by slot names
 

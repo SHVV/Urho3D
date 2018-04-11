@@ -770,6 +770,28 @@ int MeshGeometry::primitives_count_by_flags(
   return result;
 }
 
+/// Calcualte and return intermediate position of sub-object
+Vector3 MeshGeometry::position(SubObjectType& type, int index) const
+{
+  switch (type) {
+    case SubObjectType::VERTEX: return m_vertices[index].position;
+    case SubObjectType::EDGE: return m_edges[index].center(*this);
+    case SubObjectType::POLYGON: return m_polygons[index].center(*this);
+  }
+  return Vector3::ZERO;
+}
+
+/// Calcualte and return intermediate normal of sub-object
+Vector3 MeshGeometry::normal(SubObjectType& type, int index) const
+{
+  switch (type) {
+    case SubObjectType::VERTEX: return m_vertices[index].normal;
+    case SubObjectType::EDGE: return m_edges[index].normal(*this);
+    case SubObjectType::POLYGON: return m_polygons[index].normal(*this);
+  }
+  return Vector3::UP;
+}
+
 /// Raycast vertices
 bool MeshGeometry::ray_cast_vertices(
   const Ray& ray,
