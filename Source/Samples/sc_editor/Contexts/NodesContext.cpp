@@ -314,10 +314,13 @@ void NodesContext::on_mouse_move(float x, float y)
       Vector3 node_pos = node->GetWorldPosition();
       // Calculate orientation
       Vector3 parent_pos = node->GetParent()->GetWorldPosition();
-      Vector3 parent_z = node->GetParent()->GetWorldTransform() * Vector4(0, 0, 1, 0);
-      Vector3 parent_y = (node_pos - parent_pos).Normalized();
-      Vector3 parent_x = parent_y.CrossProduct(parent_z).Normalized();
-      parent_y = parent_z.CrossProduct(parent_x).Normalized();
+
+      Vector3 parent_x;
+      Vector3 parent_y;
+      Vector3 parent_z;
+      node->GetDerivedComponent<BasePositioner>()->axis(
+        parent_x, parent_y, parent_z
+      );
 
       Vector3 axis;
       switch (m_active_part->m_axis){
@@ -393,13 +396,15 @@ void NodesContext::update(float dt)
       m_gizmo->SetPosition(node_pos);
 
       // Calculate orientation
-      Vector3 parent_pos = node->GetParent()->GetWorldPosition();
-      Vector3 parent_z = node->GetParent()->GetWorldTransform() * Vector4(0, 0, 1, 0);
-      // TODO: handle zero position
-      Vector3 parent_y = (node_pos - parent_pos).Normalized();
-      Vector3 parent_x = parent_y.CrossProduct(parent_z).Normalized();
-      parent_y = parent_z.CrossProduct(parent_x).Normalized();
-      m_gizmo->SetRotation(Quaternion(parent_x, parent_y, parent_z));
+      Vector3 axis_x;
+      Vector3 axis_y;
+      Vector3 axis_z;
+      node->GetDerivedComponent<BasePositioner>()->axis(
+        axis_x, axis_y, axis_z
+      );
+      m_gizmo->SetRotation(
+        Quaternion(axis_x, axis_y, axis_z)
+      );
     }
 
     // Update gizmo scale

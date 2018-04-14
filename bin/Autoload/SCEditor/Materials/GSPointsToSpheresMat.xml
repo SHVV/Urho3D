@@ -1,24 +1,25 @@
 <?xml version="1.0"?>
 <material>
-	<technique name="Techniques/DiffGSPointsToSpheres.xml" quality="1" loddistance="0" />
+  <technique name="Techniques/DiffGSPointsToSpheres.xml" quality="1" loddistance="0" />
   <texture unit="diffuse" name="Textures/Plaster1D.dds" />
   <texture unit="normal" name="Textures/Plaster1N.dds" />
   <texture unit="specular" name="Textures/Plaster1RM.dds" />
   <parameter name="UOffset" value="1 0 0 0" />
-	<parameter name="VOffset" value="0 1 0 0" />
-	<!--parameter name="MatDiffColor" value="0.96 0.84 0.47 1" /-->
+  <parameter name="VOffset" value="0 1 0 0" />
+  <!--parameter name="MatDiffColor" value="0.96 0.84 0.47 1" /-->
   <parameter name="MatDiffColor" value="1.0 1.0 1.0 1" />
-	<parameter name="MatEmissiveColor" value="0 0 0" />
-	<parameter name="MatEnvMapColor" value="1 1 1" />
-	<!--parameter name="MatSpecColor" value="0.5 0.3 0.1 16" /-->
+  <parameter name="MatEmissiveColor" value="0 0 0" />
+  <parameter name="MatEnvMapColor" value="1 1 1" />
+  <!--parameter name="MatSpecColor" value="0.5 0.3 0.1 16" /-->
   <parameter name="MatSpecColor" value="1 1 1 1" />
   <parameter name="Roughness" value="0.5" />
   <parameter name="Metallic" value="1" />
   <parameter name="Dirty" value="0.2" />
-	<cull value="none" />
-	<shadowcull value="ccw" />
-	<fill value="solid" />
-	<primitivesinput value="points list" />
-	<depthbias constant="0" slopescaled="0" />
-	<renderorder value="129" />
+  <parameter name="Bump" value="0.2" />
+  <cull value="none" />
+  <shadowcull value="ccw" />
+  <fill value="solid" />
+  <primitivesinput value="points list" />
+  <depthbias constant="0" slopescaled="0" />
+  <renderorder value="129" />
 </material>

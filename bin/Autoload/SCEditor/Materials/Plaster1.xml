@@ -10,7 +10,8 @@
   <parameter name="MatSpecColor" value="1 1 1 1" />
   <parameter name="Roughness" value="0.5" />
   <parameter name="Metallic" value="0" />
-  <parameter name="Dirty" value="0.4" />
+  <parameter name="Bump" value="0.3" />
+  <parameter name="Dirty" value="0.3" />
   <cull value="ccw" />
   <shadowcull value="cw" />
   <fill value="solid" />

@@ -41,14 +41,22 @@ public:
   /// Get supported rotations around local linear axis
   virtual Axis rotation_axis() override;
   /// Returns move space for moving this node
-  virtual MoveSpace move_space() override;
+  //virtual MoveSpace move_space() override;
+  /// Calculate and return gizmo orientation in world coordinates
+  virtual void axis(
+    Vector3& axis_x,
+    Vector3& axis_y,
+    Vector3& axis_z
+  );
+
 
   // TODO: Create in proper position, potentially can have several positions for two points units
   //bool update_position(Node* unit_under_mouse, const Ray& pointer_ray, rotation, symmetry_rotation);
   // TODO: attach and listen for attached events
   // TODO: Update on changes
+
   /// Set position
-  void set_position(const Vector3& position, const Vector3& normal);
+  void set_position(const Vector3& position, const Vector3& normal, const Quaternion& rotation);
 
 protected:
   // Existing overrides
@@ -56,12 +64,16 @@ protected:
   virtual void OnNodeSet(Node* node) override;
   /// Get surface we attached to.
   BaseAttachableSurface* get_surface();
+  /// Convert rotation to angles, and limit them.
+  Vector3 calculate_angles(const Quaternion& rotation, SubObjectType snapped_to);
   /// Handle node (not only our) transform being dirtied.
   //virtual void OnMarkedDirty(Node* node) override;
 
 private:
   /// Topology attachment
   SharedPtr<BaseTopologyAttachment> m_attachment;
+  /// Euler angles
+  Vector3 m_angles;
   /// Surface, we attached to
   WeakPtr<BaseAttachableSurface> m_surface;
 };

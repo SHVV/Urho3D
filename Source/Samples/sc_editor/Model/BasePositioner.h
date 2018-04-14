@@ -62,7 +62,13 @@ public:
   /// Get supported rotations around local linear axis
   virtual Axis rotation_axis();
   /// Returns move space for moving this node
-  virtual MoveSpace move_space();
+  //virtual MoveSpace move_space();
+  /// Calculate and return gizmo orientation in world coordinates
+  virtual void axis(
+    Vector3& axis_x,
+    Vector3& axis_y,
+    Vector3& axis_z
+  );
 
   // TODO: Create in proper position, potentially can have several positions for two points units
   //bool update_position(Node* unit_under_mouse, const Ray& pointer_ray, rotation, symmetry_rotation);

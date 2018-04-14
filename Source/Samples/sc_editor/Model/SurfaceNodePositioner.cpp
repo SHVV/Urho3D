@@ -23,14 +23,16 @@ void SurfaceNodePositioner::RegisterObject(Context* context)
 
 /// Construct.
 SurfaceNodePositioner::SurfaceNodePositioner(Context* context)
-  : BasePositioner(context)
+  : BasePositioner(context),
+    m_angles(Vector3::ZERO)
 {
 }
 
 /// Set position externally.
 void SurfaceNodePositioner::set_position(
   const Vector3& position,
-  const Vector3& normal
+  const Vector3& normal,
+  const Quaternion& rotation
 )
 {
   if (m_surface) {
@@ -51,6 +53,7 @@ void SurfaceNodePositioner::set_position(
     );
 
     if (m_attachment) {
+      m_angles = calculate_angles(rotation, m_attachment->snapped_to());
       update_node_position();
     }
   }
@@ -67,6 +70,11 @@ void SurfaceNodePositioner::update_internal_position()
     auto normal = rotation * Vector3::FORWARD;
     auto tangent = rotation * Vector3::RIGHT;
 
+    // Preserve original normal
+    if (m_attachment) {
+      normal = m_attachment->normal();
+    }
+
     m_attachment = surface->local_to_topology(
       position,
       normal,
@@ -74,11 +82,45 @@ void SurfaceNodePositioner::update_internal_position()
       (int)SubObjectType::POLYGON | (int)SubObjectType::EDGE,
       false
     );
-    // TODO: calculate angles between current position and snapped to ajust them
     if (m_attachment) {
+      // Calculate angles between current position and snapped to ajust them
+      Vector3 binormal = normal.CrossProduct(tangent);
+      Quaternion base_rotation(tangent, binormal, normal);
+      Quaternion base_rotation_inverse = base_rotation.Inverse();
+      Quaternion additional_rotation = base_rotation_inverse * rotation;
+      m_angles = calculate_angles(additional_rotation, m_attachment->snapped_to());
+
       update_node_position();
     }
   }
+}
+
+/// Convert rotation to angles, and limit them.
+Vector3 SurfaceNodePositioner::calculate_angles(
+  const Quaternion& rotation,
+  SubObjectType snapped_to
+)
+{
+  Vector3 angles = rotation.EulerAngles();
+  // Reset euler angles for specific coordinates
+  switch (snapped_to) {
+    case SubObjectType::POLYGON:
+      angles.x_ = 0;
+      // Fall-through
+    case SubObjectType::EDGE:
+      angles.y_ = 0;
+  }
+
+  // Limit Euler angles
+  angles.x_ = Clamp(angles.x_, -45.0f, 45.0f);
+  angles.y_ = Clamp(angles.y_, -45.0f, 45.0f);
+
+  // Quantize angles
+  float snap_step = 3;
+  angles.x_ = round(angles.x_ / snap_step) * snap_step;
+  angles.y_ = round(angles.y_ / snap_step) * snap_step;
+  angles.z_ = round(angles.z_ / snap_step) * snap_step;
+  return angles;
 }
 
 /// Updates node position, based on reference and internal position.
@@ -97,12 +139,12 @@ void SurfaceNodePositioner::update_node_position()
       normal,
       tangent
     );
-    Vector3 binormal = normal.CrossProduct(tangent);
-
-    // TODO: apply local angles
-    Quaternion rotation(tangent, binormal, normal);
     node->SetPosition(position);
-    node->SetRotation(rotation);
+
+    Vector3 binormal = normal.CrossProduct(tangent);
+    Quaternion rotation(tangent, binormal, normal);
+    // Apply local angles
+    node->SetRotation(rotation * Quaternion(m_angles.x_, m_angles.y_, m_angles.z_));
   }
 }
 
@@ -125,10 +167,44 @@ Axis SurfaceNodePositioner::rotation_axis()
   return Axis::NONE;
 }
 
-/// Returns move space for moving this node
-MoveSpace SurfaceNodePositioner::move_space()
+///// Returns move space for moving this node
+//MoveSpace SurfaceNodePositioner::move_space()
+//{
+//  return MoveSpace::LOCAL;
+//}
+
+/// Calculate and return gizmo orientation in world coordinates
+void SurfaceNodePositioner::axis(
+  Vector3& axis_x,
+  Vector3& axis_y,
+  Vector3& axis_z
+)
 {
-  return MoveSpace::LOCAL;
+  BaseAttachableSurface* surface = get_surface();
+  Node* node = GetNode();
+  if (surface && node && m_attachment) {
+    Vector3 position;
+    Vector3 normal;
+    Vector3 tangent;
+    surface->topology_to_local(
+      *m_attachment,
+      position,
+      normal,
+      tangent
+    );
+    Vector3 binormal = normal.CrossProduct(tangent);
+    Quaternion rotation(tangent, binormal, normal);
+    // Ignore Z axis rotation
+    rotation = rotation * Quaternion(m_angles.x_, m_angles.y_, 0);
+    rotation = node->GetParent()->GetWorldRotation() * rotation;
+    axis_x = rotation * Vector3(1, 0, 0);
+    axis_y = rotation * Vector3(0, 1, 0);
+    axis_z = rotation * Vector3(0, 0, 1);
+  } else {
+    axis_x = Vector3(1, 0, 0);
+    axis_y = Vector3(0, 1, 0);
+    axis_z = Vector3(0, 0, 1);
+  }
 }
 
 /// Handle node being assigned.

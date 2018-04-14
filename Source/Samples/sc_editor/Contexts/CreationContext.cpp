@@ -212,7 +212,7 @@ void CreationContext::update_rollower_position()
                 auto positioner =
                   get_or_create_positioner<SurfaceNodePositioner>(rollower_node);
                 // and set position
-                positioner->set_position(attach_position, attach_normal);
+                positioner->set_position(attach_position, attach_normal, m_orientation);
               } else {
                 rollower_node->SetEnabled(false);
               }
@@ -231,7 +231,7 @@ void CreationContext::update_rollower_position()
               auto positioner =
                 get_or_create_positioner<SurfaceNodePositioner>(rollower_node);
               // and set position
-              positioner->set_position(positions[i], normals[i]);
+              positioner->set_position(positions[i], normals[i], m_orientation);
             }
           }
 

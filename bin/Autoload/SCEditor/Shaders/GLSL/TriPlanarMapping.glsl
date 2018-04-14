@@ -7,6 +7,8 @@ struct TriPlanarResult {
 };
 
 uniform float cDirty;
+uniform float cBump;
+
 
 TriPlanarResult tri_planar_map(vec3 pos, vec3 norm) {
   // Determine the blend weights for the 3 planar projections.  
@@ -56,9 +58,9 @@ TriPlanarResult tri_planar_map(vec3 pos, vec3 norm) {
   vec3 bump2 = vec3(bumpFetch2.y, 0.5, bumpFetch2.x) * 2.0 - 1.0;
   vec3 bump3 = vec3(bumpFetch3.x, bumpFetch3.y, 0.5) * 2.0 - 1.0;
 
-  result.norm = bump1.xyz * blend_weights.xxx +
-                bump2.xyz * blend_weights.yyy +
-                bump3.xyz * blend_weights.zzz;
+  result.norm = (bump1.xyz * blend_weights.xxx +
+                 bump2.xyz * blend_weights.yyy +
+                 bump3.xyz * blend_weights.zzz) * cBump;
 
   vec4 prop1 = texture2D(sSpecMap, coord1);
   vec4 prop2 = texture2D(sSpecMap, coord2);

@@ -56,9 +56,28 @@ Axis BasePositioner::rotation_axis()
 }
 
 /// Returns default move space
-MoveSpace BasePositioner::move_space()
+//MoveSpace BasePositioner::move_space()
+//{
+//  return MoveSpace::PARENT;
+//}
+
+/// Calculate and return gizmo orientation in world coordinates
+void BasePositioner::axis(
+  Vector3& axis_x,
+  Vector3& axis_y,
+  Vector3& axis_z
+)
 {
-  return MoveSpace::PARENT;
+  Node* node = GetNode();
+  Vector3 node_pos = node->GetWorldPosition();
+
+  // Calculate orientation
+  Vector3 parent_pos = node->GetParent()->GetWorldPosition();
+  axis_z = node->GetParent()->GetWorldTransform() * Vector4(0, 0, 1, 0);
+  // TODO: handle zero position
+  axis_y = (node_pos - parent_pos).Normalized();
+  axis_x = axis_y.CrossProduct(axis_z).Normalized();
+  axis_y = axis_z.CrossProduct(axis_x).Normalized();
 }
 
 /// Handle node being assigned.
