@@ -363,21 +363,22 @@ void MeshGeometry::transform(const Matrix3x4& tr)
 }
 
 /// Returns indexies of all verteces by flags
-PODVector<int> MeshGeometry::vertices_by_flags(unsigned int flags) const
+PODVector<int>& MeshGeometry::vertices_by_flags(unsigned int flags) const
 {
-  return primitives_by_flags(m_vertices, flags);
+
+  return primitives_by_flags(flags, m_vertices, m_vertex_by_flag);
 }
 
 /// Returns indexies of all edges by flags
-PODVector<int> MeshGeometry::edges_by_flags(unsigned int flags) const
+PODVector<int>& MeshGeometry::edges_by_flags(unsigned int flags) const
 {
-  return primitives_by_flags(m_edges, flags);
+  return primitives_by_flags(flags, m_edges, m_edge_by_flag);
 }
 
 /// Returns indexies of all polygons by flags
-PODVector<int> MeshGeometry::polygons_by_flags(unsigned int flags) const
+PODVector<int>& MeshGeometry::polygons_by_flags(unsigned int flags) const
 {
-  return primitives_by_flags(m_polygons, flags);
+  return primitives_by_flags(flags, m_polygons, m_polygon_by_flag);
 }
 
 /// Raycast mesh. Returns index of sub object and its type
@@ -617,8 +618,9 @@ bool MeshGeometry::closest_vertex(
   bool result = false;
 
   // TODO: use search tree for faster ray cast
-  for (unsigned int i = 0; i < m_vertices.Size(); ++i) {
-    const Vertex& vertex = m_vertices[i];
+  auto& index_map = vertices_by_flags(flags);
+  for (unsigned int i = 0; i < index_map.Size(); ++i) {
+    const Vertex& vertex = m_vertices[index_map[i]];
     if (vertex.check_flags(flags)) {
       if (vertex.normal.DotProduct(ray.direction_) < 0) {
         float cur_dist = (ray.origin_ - vertex.position).Length();
@@ -644,8 +646,9 @@ bool MeshGeometry::closest_edge(
   bool result = false;
 
   // TODO: use search tree for faster ray cast
-  for (unsigned int i = 0; i < m_edges.Size(); ++i) {
-    const Edge& edge = m_edges[i];
+  auto& index_map = edges_by_flags(flags);
+  for (unsigned int i = 0; i < index_map.Size(); ++i) {
+    const Edge& edge = m_edges[index_map[i]];
     if (edge.check_flags(flags)) {
       if (edge.normal(*this).DotProduct(ray.direction_) < 0) {
         float cur_dist = (ray.origin_ - edge.center(*this)).Length();
@@ -669,9 +672,11 @@ bool MeshGeometry::closest_polygon(
 ) const
 {
   bool result = false;
+
   // TODO: use search tree for faster ray cast
-  for (unsigned int i = 0; i < m_polygons.Size(); ++i) {
-    const Polygon& polygon = m_polygons[i];
+  auto& index_map = polygons_by_flags(flags);
+  for (unsigned int i = 0; i < index_map.Size(); ++i) {
+    const Polygon& polygon = m_polygons[index_map[i]];
     if (polygon.check_flags(flags)) {
       if (polygon.normal(*this).DotProduct(ray.direction_) < 0) {
         float cur_dist = (ray.origin_ - polygon.center(*this)).Length();
@@ -729,46 +734,52 @@ int MeshGeometry::primitives_count_by_flags(
 {
   switch (sub_type) {
     case SubObjectType::VERTEX: 
-      return primitives_count_by_flags(m_vertices, flags);
+      return vertices_by_flags(flags).Size();
     case SubObjectType::EDGE:
-      return primitives_count_by_flags(m_edges, flags);
+      return edges_by_flags(flags).Size();
     case SubObjectType::POLYGON:
-      return primitives_count_by_flags(m_polygons, flags);
+      return polygons_by_flags(flags).Size();
   }
   return 0;
 }
 
 /// Get primitive indexes by flag
 template<class T>
-PODVector<int> MeshGeometry::primitives_by_flags(
-  const PODVector<T>& primitives, 
-  unsigned int flags
+PODVector<int>& MeshGeometry::primitives_by_flags(
+  unsigned int flags,
+  const PODVector<T>& primitives,
+  HashMap<int, PODVector<int>>& index_map
 ) const
 {
-  PODVector<int> result;
-  for (unsigned int i = 0; i < primitives.Size(); ++i) {
-    if (primitives[i].check_flags(flags)) {
-      result.Push(i);
+  auto it = index_map.Find(flags);
+  if (it == index_map.End()) {
+    it = index_map.Insert(Pair<int, PODVector<int>>(flags, PODVector<int>()));
+
+    for (unsigned int i = 0; i < primitives.Size(); ++i) {
+      if (primitives[i].check_flags(flags)) {
+        it->second_.Push(i);
+      }
     }
   }
-  return result;
+
+  return it->second_;
 }
 
 /// Get primitivs count by flag
-template<class T>
-int MeshGeometry::primitives_count_by_flags(
-  const PODVector<T>& primitives, 
-  unsigned int flags
-) const
-{
-  int result = 0;
-  for (unsigned int i = 0; i < primitives.Size(); ++i) {
-    if (primitives[i].check_flags(flags)) {
-      ++result;
-    }
-  }
-  return result;
-}
+//template<class T>
+//int MeshGeometry::primitives_count_by_flags(
+//  const PODVector<T>& primitives, 
+//  unsigned int flags
+//) const
+//{
+//  int result = 0;
+//  for (unsigned int i = 0; i < primitives.Size(); ++i) {
+//    if (primitives[i].check_flags(flags)) {
+//      ++result;
+//    }
+//  }
+//  return result;
+//}
 
 /// Calcualte and return intermediate position of sub-object
 Vector3 MeshGeometry::position(SubObjectType& type, int index) const

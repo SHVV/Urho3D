@@ -225,11 +225,11 @@ public:
   PODVector<int> edge_polygons(int edge, unsigned int flags) const;
 
   /// Returns indexies of all verteces by flags
-  PODVector<int> vertices_by_flags(unsigned int flags) const;
+  PODVector<int>& vertices_by_flags(unsigned int flags) const;
   /// Returns indexies of all edges by flags
-  PODVector<int> edges_by_flags(unsigned int flags) const;
+  PODVector<int>& edges_by_flags(unsigned int flags) const;
   /// Returns indexies of all polygons by flags
-  PODVector<int> polygons_by_flags(unsigned int flags) const;
+  PODVector<int>& polygons_by_flags(unsigned int flags) const;
 
   /// Calculate count of sub objects by flag
   int primitives_count_by_flags(SubObjectType sub_type, unsigned int flags) const;
@@ -276,7 +276,11 @@ protected:
 
   /// Get primitive indexes by flag
   template<class T>
-  PODVector<int> primitives_by_flags(const PODVector<T>& primitives, unsigned int flags) const;
+  PODVector<int>& primitives_by_flags(
+    unsigned int flags,
+    const PODVector<T>& primitives,
+    HashMap<int, PODVector<int>>& index_map
+  ) const;
 
   /// Get primitivs count by flag
   template<class T>
@@ -332,6 +336,11 @@ private:
   PODVector<int> m_free_edges;
   /// Free polygon positions
   PODVector<int> m_free_polygons;
+
+  /// Cached indexes by flag
+  mutable HashMap<int, PODVector<int>> m_vertex_by_flag;
+  mutable HashMap<int, PODVector<int>> m_edge_by_flag;
+  mutable HashMap<int, PODVector<int>> m_polygon_by_flag;
 
   /// Notification receivers
   PODVector<NotificationReceiver*> m_notification_receivers;

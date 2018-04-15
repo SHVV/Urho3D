@@ -103,7 +103,7 @@ bool BaseAttachableSurface::topology_to_local(
   int primitive_index = topology_position.primitive_index();
   if (snap_type != SubObjectType::NONE &&
       geometry->primitives_count_by_flags(snap_type, mgfATTACHABLE) 
-      == primitive_index) {
+      == topology_position.primitives_count()) {
     sub_object_to_local(snap_type, primitive_index, position, normal, tangent);
 
     return true;
@@ -160,13 +160,15 @@ void BaseAttachableSurface::sub_object_to_local(
 
   switch (sub_type) {
     case SubObjectType::VERTEX: {
-      auto& vertex = geometry->vertices()[sub_index];
+      int real_index = geometry->vertices_by_flags(mgfATTACHABLE)[sub_index];
+      auto& vertex = geometry->vertices()[real_index];
       position = vertex.position;
       normal = vertex.normal;
       break;
     }
     case SubObjectType::EDGE: {
-      auto& edge = geometry->edges()[sub_index];
+      int real_index = geometry->edges_by_flags(mgfATTACHABLE)[sub_index];
+      auto& edge = geometry->edges()[real_index];
       position = edge.center(*geometry);
       normal = edge.normal(*geometry);
       tangent = edge.direction(*geometry);
@@ -175,7 +177,8 @@ void BaseAttachableSurface::sub_object_to_local(
       return;
     }
     case SubObjectType::POLYGON: {
-      auto& polygon = geometry->polygons()[sub_index];
+      int real_index = geometry->polygons_by_flags(mgfATTACHABLE)[sub_index];
+      auto& polygon = geometry->polygons()[real_index];
       position = polygon.center(*geometry);
       normal = polygon.normal(*geometry);
     }
@@ -245,7 +248,31 @@ DynamicModel* BaseAttachableSurface::dynamic_model()
     Node* node = GetNode();
     if (node) {
       m_dynamic_model = node->GetComponent<DynamicModel>();
+
+      // Subscribe for dynamic object changes
+      SubscribeToEvent(
+        m_dynamic_model,
+        E_DYNAMIC_MODEL_CHANGED,
+        URHO3D_HANDLER(BaseAttachableSurface, on_changed)
+      );
     }
   }
   return m_dynamic_model.Get();
+}
+
+/// Event handler on dynamic model change
+void BaseAttachableSurface::on_changed(
+  StringHash eventType,
+  VariantMap& eventData
+)
+{
+  // TODO: possible filtering out unnecessary updates
+
+  // Notify subscribers
+  using namespace AttachableSurfaceChanged;
+
+  VariantMap& event_data = GetEventDataMap();
+  event_data[P_COMP] = this;
+
+  SendEvent(E_ATTACHABLE_SURFACE_CHANGED, event_data);
 }

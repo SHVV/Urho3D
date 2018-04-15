@@ -15,6 +15,12 @@ using namespace Urho3D;
 class MeshGeometry;
 class SceneModel;
 
+/// Dynamic model changed.
+URHO3D_EVENT(E_DYNAMIC_MODEL_CHANGED, DynamicModelChanged)
+{
+  URHO3D_PARAM(P_COMP, Component);                    // Component pointer
+}
+
 class DynamicModel : public StaticModel, public MeshBuffer::NotificationReceiver {
   // Enable type information.
   URHO3D_OBJECT(DynamicModel, StaticModel);

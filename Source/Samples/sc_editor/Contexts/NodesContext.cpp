@@ -485,28 +485,31 @@ void NodesContext::update(float dt)
       commit_transaction();
     }
   }
+
   // Testing procedural units update
-  //auto& selected = view()->selected();
-  //if (selected.Size()) {
-  //  Input* input = GetSubsystem<Input>();
-  //  int delta = 0;
-  //  if (input->GetKeyPress(KEY_KP_PLUS)) {
-  //    delta = 1;
-  //  }
-  //  if (input->GetKeyPress(KEY_KP_MINUS)) {
-  //    delta = -1;
-  //  }
-  //  if (delta) {
-  //    for (int i = 0; i < selected.Size(); ++i) {
-  //      Node* node = selected[i];
-  //      UnitModel* unit = node->GetDerivedComponent<UnitModel>();
-  //      if (unit) {
-  //        unsigned int val = unit->parameters().parameters_vector()[0].GetUInt();
-  //        unit->set_parameter(0, val + delta);
-  //      }
-  //    }
-  //  }
-  //}
+  {
+    auto selected = view()->selected();
+    if (selected.Size()) {
+      Input* input = GetSubsystem<Input>();
+      int delta = 0;
+      if (input->GetKeyPress(KEY_KP_PLUS)) {
+        delta = 1;
+      }
+      if (input->GetKeyPress(KEY_KP_MINUS)) {
+        delta = -1;
+      }
+      if (delta) {
+        for (int i = 0; i < selected.Size(); ++i) {
+          Node* node = selected[i];
+          UnitModel* unit = node->GetDerivedComponent<UnitModel>();
+          if (unit) {
+            float val = unit->parameters()[0].GetFloat();
+            unit->set_parameter(0, val + delta);
+          }
+        }
+      }
+    }
+  }
 }
 
 /// Calculates closest point for current gizmo part

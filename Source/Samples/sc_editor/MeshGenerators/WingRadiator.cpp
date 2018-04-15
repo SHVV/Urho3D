@@ -59,9 +59,9 @@ MeshGeometry* WingRadiator::generate(const Parameters& parameters)
 
   seg.m_pos = Vector2(0, radius);
   profile.segments().Push(seg);
-  seg.m_pos = Vector2(length - radius, radius);
+  seg.m_pos = Vector2(length + width + radius, radius);
   profile.segments().Push(seg);
-  seg.m_pos = Vector2(length, 0);
+  seg.m_pos = Vector2(length + width + radius * 2, 0);
   profile.segments().Push(seg);
 
   MeshGeometry* geometry = generator()->lathe(
@@ -74,14 +74,14 @@ MeshGeometry* WingRadiator::generate(const Parameters& parameters)
   float tapered = width * taper;
 
   int v1_1 = geometry->add(Vector3(0, thickness, radius), Vector3::UP);
-  int v1_2 = geometry->add(Vector3(width, thickness, radius), Vector3::UP);
-  int v1_3 = geometry->add(Vector3(tapered, thickness, length - radius), Vector3::UP);
-  int v1_4 = geometry->add(Vector3(0, thickness, length - radius), Vector3::UP);
+  int v1_2 = geometry->add(Vector3(width, thickness, width + radius), Vector3::UP);
+  int v1_3 = geometry->add(Vector3(tapered, thickness, length + width + radius), Vector3::UP);
+  int v1_4 = geometry->add(Vector3(0, thickness, length + width + radius), Vector3::UP);
 
   int v2_1 = geometry->add(Vector3(0, -thickness, radius), Vector3::DOWN);
-  int v2_2 = geometry->add(Vector3(width, -thickness, radius), Vector3::DOWN);
-  int v2_3 = geometry->add(Vector3(tapered, -thickness, length - radius), Vector3::DOWN);
-  int v2_4 = geometry->add(Vector3(0, -thickness, length - radius), Vector3::DOWN);
+  int v2_2 = geometry->add(Vector3(width, -thickness, width + radius), Vector3::DOWN);
+  int v2_3 = geometry->add(Vector3(tapered, -thickness, length + width + radius), Vector3::DOWN);
+  int v2_4 = geometry->add(Vector3(0, -thickness, length + width + radius), Vector3::DOWN);
 
   int f1 = geometry->add(v2_1, v2_2, v2_3, v2_4);
   int f2 = geometry->add(v1_4, v1_3, v1_2, v1_1);

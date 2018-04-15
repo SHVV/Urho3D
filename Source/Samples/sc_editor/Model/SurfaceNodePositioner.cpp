@@ -37,10 +37,19 @@ void SurfaceNodePositioner::set_position(
 {
   if (m_surface) {
     m_surface.Reset();
+    UnsubscribeFromAllEvents();
   }
   BaseAttachableSurface* surface = get_surface();
   Node* node = GetNode();
   if (surface && node) {
+    // Subscribe for attachable surface changes
+    SubscribeToEvent(
+      m_surface,
+      E_ATTACHABLE_SURFACE_CHANGED,
+      URHO3D_HANDLER(SurfaceNodePositioner, on_changed)
+    );
+
+
     Vector3 position_temp = position;
     Vector3 normal_temp = normal;
     Vector3 tangent = Vector3::RIGHT;
@@ -230,6 +239,17 @@ BaseAttachableSurface* SurfaceNodePositioner::get_surface()
 
   return m_surface.Get();
 }
+
+/// Event handler on attachable surface change
+void SurfaceNodePositioner::on_changed(
+  StringHash eventType,
+  VariantMap& eventData
+)
+{
+  // TODO: may be we need some checks here
+  update_node_position();
+}
+
 
 /*/// Handle node (not only our) transform being dirtied.
 void SurfaceNodePositioner::OnMarkedDirty(Node* node)

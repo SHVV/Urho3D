@@ -16,7 +16,7 @@ namespace Urho3D {
 
 using namespace Urho3D;
 
-/// Particle effect finished.
+/// Node model attribute changed.
 URHO3D_EVENT(E_MODEL_ATTRIBUTE_CHANGED, ModelAttributeChanged)
 {
   URHO3D_PARAM(P_COMP, Component);                    // Component pointer

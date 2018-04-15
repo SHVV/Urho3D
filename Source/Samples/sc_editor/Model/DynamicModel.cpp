@@ -47,6 +47,10 @@ DynamicModel::~DynamicModel()
 /// Set mesh rendering buffer
 void DynamicModel::mesh_buffer(MeshBuffer* mesh)
 {
+  // Don't do anything, if buffer is the same
+  if (m_mesh_buffer == mesh) {
+    return;
+  }
   if (m_mesh_buffer.NotNull()) {
     m_mesh_buffer->remove_notification_receiver(this);
   }
@@ -148,6 +152,14 @@ void DynamicModel::update_model()
   } else {
     SetEnabled(false);
   }
+
+  // Notify subscribers
+  using namespace DynamicModelChanged;
+
+  VariantMap& event_data = GetEventDataMap();
+  event_data[P_COMP] = this;
+
+  SendEvent(E_DYNAMIC_MODEL_CHANGED, event_data);
 }
 
 /// Mesh geometry notifications

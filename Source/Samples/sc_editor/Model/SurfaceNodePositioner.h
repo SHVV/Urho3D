@@ -69,6 +69,12 @@ protected:
   /// Handle node (not only our) transform being dirtied.
   //virtual void OnMarkedDirty(Node* node) override;
 
+  /// Event handler on attachable surface change
+  void on_changed(
+    StringHash eventType,
+    VariantMap& eventData
+  );
+
 private:
   /// Topology attachment
   SharedPtr<BaseTopologyAttachment> m_attachment;

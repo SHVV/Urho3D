@@ -16,6 +16,12 @@ class DynamicModel;
 
 using namespace Urho3D;
 
+/// Attachable surface changed.
+URHO3D_EVENT(E_ATTACHABLE_SURFACE_CHANGED, AttachableSurfaceChanged)
+{
+  URHO3D_PARAM(P_COMP, Component);                    // Component pointer
+}
+
 // Base structure for topology independent attchment.
 // Used for preserving attachment coordinates during topology changes
 class BaseTopologyAttachment : public RefCounted {
@@ -109,6 +115,12 @@ protected:
     bool snap_optional,
     SubObjectType& snap_type,
     int& primitive_index
+  );
+
+  /// Event handler on dynamic model change
+  void on_changed(
+    StringHash eventType,
+    VariantMap& eventData
   );
 
   // Existing overrides

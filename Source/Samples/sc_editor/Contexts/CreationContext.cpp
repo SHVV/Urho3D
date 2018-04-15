@@ -400,11 +400,12 @@ void CreationContext::on_mouse_move(float x, float y)
           tooltip_text += "m";
         }
       } else if (m_initial_value.GetType() == VAR_INT) {
+        String addition = "";
         // For size in cells - search cell size
+        float cell_size = 1;
         if (flags & pfCELLS) {
           auto& descriptions = m_rollowers[0]->parameters_description();
           const Vector<ParameterID> ids = descriptions.parameter_ids();
-          float cell_size = 1;
           for (int i = 0; i < ids.Size(); ++i) {
             ParameterID cur_id = ids[i];
             if (descriptions[cur_id].m_flags & pfCELL_SIZE) {
@@ -423,7 +424,10 @@ void CreationContext::on_mouse_move(float x, float y)
         raw_value = Min(raw_value, description.m_max.GetInt());
 
         real_value = (int)raw_value;
-        tooltip_text += String(real_value);
+        if (flags & pfCELLS) {
+          addition = " (" + String(cell_size * real_value.GetFloat()) + "m)";
+        }
+        tooltip_text += String(real_value) + addition;
       } else {
         // TODO: other parameter types: Vector2
         real_value = m_initial_value;
