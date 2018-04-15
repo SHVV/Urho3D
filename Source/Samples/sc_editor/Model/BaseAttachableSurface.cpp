@@ -114,6 +114,7 @@ bool BaseAttachableSurface::topology_to_local(
   auto& bb = model->GetBoundingBox();
   position = topology_position.position() * bb.HalfSize();
   normal = topology_position.normal();
+  // TODO: calcualte tangent for base convertion too
 
   // If snapped, find closest attachment subobject, using normal and tangent as a guide
   // Calculate position, normal and tangent, based on component (and main axis)
@@ -239,6 +240,7 @@ bool BaseAttachableSurface::snap_to_primitive(
     normal = new_normal;
     tangent = new_tangent;
   }
+  return result;
 }
 
 /// Dynamic model component for attaching to.
