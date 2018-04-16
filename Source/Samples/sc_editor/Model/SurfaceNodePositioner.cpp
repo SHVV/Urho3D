@@ -29,7 +29,7 @@ SurfaceNodePositioner::SurfaceNodePositioner(Context* context)
 }
 
 /// Set position externally.
-void SurfaceNodePositioner::set_position(
+bool SurfaceNodePositioner::set_position(
   const Vector3& position,
   const Vector3& normal,
   const Quaternion& rotation
@@ -64,8 +64,12 @@ void SurfaceNodePositioner::set_position(
     if (m_attachment) {
       m_angles = calculate_angles(rotation, m_attachment->snapped_to());
       update_node_position();
+
+      return true;
     }
   }
+
+  return false;
 }
 
 /// Updates internal position representation, based on current node position.
@@ -142,18 +146,23 @@ void SurfaceNodePositioner::update_node_position()
     Vector3 normal;
     Vector3 tangent;
 
-    surface->topology_to_local(
+    bool valid = surface->topology_to_local(
       *m_attachment,
       position,
       normal,
       tangent
     );
-    node->SetPosition(position);
 
-    Vector3 binormal = normal.CrossProduct(tangent);
-    Quaternion rotation(tangent, binormal, normal);
-    // Apply local angles
-    node->SetRotation(rotation * Quaternion(m_angles.x_, m_angles.y_, m_angles.z_));
+    if (valid) {
+      node->SetPosition(position);
+
+      Vector3 binormal = normal.CrossProduct(tangent);
+      Quaternion rotation(tangent, binormal, normal);
+      // Apply local angles
+      node->SetRotation(rotation * Quaternion(m_angles.x_, m_angles.y_, m_angles.z_));
+    } else {
+      node->Remove();
+    }
   }
 }
 

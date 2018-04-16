@@ -205,14 +205,15 @@ void CreationContext::update_rollower_position()
             for (int i = 0; i < m_rollowers.Size(); ++i) {
               Node* rollower_node = m_rollowers[i]->GetNode();
               if (i < attach_nodes.Size()) {
-                rollower_node->SetEnabled(true);
                 // Set new parent
                 rollower_node->SetParent(attach_nodes[i]);
                 // Get positioner
                 auto positioner =
                   get_or_create_positioner<SurfaceNodePositioner>(rollower_node);
                 // and set position
-                positioner->set_position(attach_position, attach_normal, m_orientation);
+                rollower_node->SetEnabled(
+                  positioner->set_position(attach_position, attach_normal, m_orientation)
+                );
               } else {
                 rollower_node->SetEnabled(false);
               }
@@ -224,18 +225,21 @@ void CreationContext::update_rollower_position()
             auto normals = get_symmetry_positions(attach_normal);
             for (int i = 0; i < m_rollowers.Size(); ++i) {
               Node* rollower_node = m_rollowers[i]->GetNode();
-              rollower_node->SetEnabled(true);
               // Set new parent
               rollower_node->SetParent(unit_under_mouse);
               // Get positioner
               auto positioner =
                 get_or_create_positioner<SurfaceNodePositioner>(rollower_node);
               // and set position
-              positioner->set_position(positions[i], normals[i], m_orientation);
+              rollower_node->SetEnabled(
+                positioner->set_position(positions[i], normals[i], m_orientation)
+              );
             }
           }
 
-          set_tooltip("Attach to module");
+          if (m_rollowers[0]->GetNode()->IsEnabled()) {
+            set_tooltip("Attach to module");
+          }
           return;
         }
       }
@@ -271,6 +275,9 @@ void CreationContext::deactivate()
 /// Mouse button down handler
 void CreationContext::on_mouse_down()
 {
+  if (!(m_rollowers.Size() && m_rollowers[0]->GetNode()->IsEnabled())) {
+    return;
+  }
   Ray camera_ray = calculate_ray();
   // 0 state - switch to attributes editing
   if (0 == m_state) {

@@ -55,8 +55,9 @@ public:
   // TODO: attach and listen for attached events
   // TODO: Update on changes
 
-  /// Set position
-  void set_position(const Vector3& position, const Vector3& normal, const Quaternion& rotation);
+  /// Set position.
+  /// Returns true, if attachment was successfull, false - otherwise.
+  bool set_position(const Vector3& position, const Vector3& normal, const Quaternion& rotation);
 
 protected:
   // Existing overrides

@@ -67,6 +67,10 @@ SharedPtr<BaseTopologyAttachment> BaseAttachableSurface::local_to_topology(
   auto& bb = model->GetBoundingBox();
   Vector3 normalized_position = position / bb.HalfSize();
   
+  if (!snap_optional && sub_type == SubObjectType::NONE) {
+    return nullptr;
+  }
+
   // create and return attachment based on calculated coordinates.
   SubObjectType snap_type = real_snap ? sub_type : SubObjectType::NONE;
   auto result = SharedPtr<BaseTopologyAttachment>(new BaseTopologyAttachment(
@@ -130,6 +134,8 @@ bool BaseAttachableSurface::topology_to_local(
       sub_type,
       sub_index
     );
+
+    return sub_type != SubObjectType::NONE;
   }
 
   // TODO:
