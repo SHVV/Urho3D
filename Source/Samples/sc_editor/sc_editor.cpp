@@ -16,6 +16,7 @@
 #include "Model/BaseAttachableSurface.h"
 #include "Model/SurfaceSurfacePositioner.h"
 #include "Model/SurfaceNodePositioner.h"
+#include "Model/SurfaceMount.h"
 
 #include "Contexts/BaseContext.h"
 #include "Contexts/NodesContext.h"
@@ -84,6 +85,7 @@ SCEditor::SCEditor(Context* context)
   BaseAttachableSurface::RegisterObject(context);
   SurfaceSurfacePositioner::RegisterObject(context);
   SurfaceNodePositioner::RegisterObject(context);
+  SurfaceMount::RegisterObject(context);
 
   // Components
   DynamicModel::RegisterObject(context);

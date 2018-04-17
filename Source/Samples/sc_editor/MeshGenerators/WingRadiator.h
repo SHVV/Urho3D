@@ -23,7 +23,13 @@ public:
   virtual ~WingRadiator();
 
   /// Generate mesh geometry, basing on parameters
-  virtual MeshGeometry* generate(const Parameters& parameters);
+  virtual MeshGeometry* generate(const Parameters& parameters) override;
+
+  /// Update procedural unit guts
+  virtual void update_unit(
+    const Parameters& parameters, 
+    ProceduralUnit* unit
+  ) override;
 
   /// Wing width parameter ID
   static ParameterID s_width;
@@ -40,6 +46,8 @@ public:
   static String s_name;
 
 protected:
+  /// Calculate surface mount size, based on parameters.
+  float mount_size(const Parameters& parameters);
 
 private:
 };

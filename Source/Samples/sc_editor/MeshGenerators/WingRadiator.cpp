@@ -8,6 +8,9 @@
 #include "../Core/MeshGenerator.h"
 #include "../Core/Polyline2.h"
 
+#include "../Model/ProceduralUnit.h"
+#include "../Model/SurfaceMount.h"
+
 /// Generator name
 String WingRadiator::s_name = "WingRadiator";
 
@@ -92,4 +95,24 @@ MeshGeometry* WingRadiator::generate(const Parameters& parameters)
   }
 
   return geometry;
+}
+
+
+/// Update procedural unit guts
+void WingRadiator::update_unit(
+  const Parameters& parameters,
+  ProceduralUnit* unit
+)
+{
+  // Call default implementation first
+  MeshGenerationFunction::update_unit(parameters, unit);
+  auto* surface_mount = unit->get_component<SurfaceMount>();
+  surface_mount->set_mount_size(mount_size(parameters));
+}
+
+/// Calculate surface mount size, based on parameters.
+float WingRadiator::mount_size(const Parameters& parameters)
+{
+  float width = parameters[s_width].GetFloat();
+  return width / 10;
 }

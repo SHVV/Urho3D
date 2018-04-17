@@ -12,6 +12,7 @@
 #include "../Model/BaseAttachableSurface.h"
 #include "../Model/SurfaceNodePositioner.h"
 #include "../Model/SurfaceSurfacePositioner.h"
+#include "../Model/SurfaceMount.h"
 #include "../View/SceneView.h"
 
 // Includes from Urho3D
@@ -116,6 +117,8 @@ void CreationContext::update_rollower_position()
     Node* unit_under_mouse = get_unit_under_mouse(&attach_position, &attach_normal);
     auto surface =
       first_rollower_node->GetDerivedComponent<BaseAttachableSurface>();
+    auto surface_mount =
+      first_rollower_node->GetDerivedComponent<SurfaceMount>();
 
     // TODO: use some more explicit way to detect possible attachments
     // If module has attable surface - use free positioner, or surface - surface
@@ -192,7 +195,7 @@ void CreationContext::update_rollower_position()
         // TODO: attachment
         // TODO: highlight attach point
       }
-    } else {
+    } else if (surface_mount) {
       // Case for surface - node attachable units
       if (unit_under_mouse) {
         surface = unit_under_mouse->GetDerivedComponent<BaseAttachableSurface>();
