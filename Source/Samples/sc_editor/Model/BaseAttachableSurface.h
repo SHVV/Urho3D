@@ -94,10 +94,10 @@ public:
     Vector3& tangent
   );
 
-protected:
   /// Dynamic model component for attaching to.
   DynamicModel* dynamic_model();
 
+protected:
   /// Convert sub-object into local position
   void sub_object_to_local(
     SubObjectType sub_type,

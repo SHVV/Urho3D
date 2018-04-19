@@ -80,6 +80,10 @@ public:
       return (mesh.m_vertices[vertexes[1]].position -
               mesh.m_vertices[vertexes[0]].position).Normalized();
     };
+    float radius(const MeshGeometry& mesh) const {
+      return Min(mesh.m_vertices[vertexes[1]].radius,
+                 mesh.m_vertices[vertexes[0]].radius) * 0.7;
+    }
   };
 
   // Polygons
@@ -116,6 +120,15 @@ public:
       }
       return result.Normalized();
     };
+    float radius(const MeshGeometry& mesh) const {
+      float result = 0;
+      for (int i = 0; i < 4 && vertexes[i] >= 0; ++i) {
+        if (result < mesh.m_vertices[vertexes[i]].radius) {
+          result = mesh.m_vertices[vertexes[i]].radius;
+        }
+      }
+      return result;
+    }
   };
 
   // Access functions

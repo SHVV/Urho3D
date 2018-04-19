@@ -311,7 +311,7 @@ void NodesContext::on_mouse_move(float x, float y)
     float move_step = quantizing_step(min_size * 2);
     for (int i = 0; i < selected.Size(); ++i) {
       Node* node = selected[i];
-      Vector3 node_pos = node->GetWorldPosition();
+      Vector3 node_pos;
       // Calculate orientation
       Vector3 parent_pos = node->GetParent()->GetWorldPosition();
 
@@ -319,7 +319,7 @@ void NodesContext::on_mouse_move(float x, float y)
       Vector3 parent_y;
       Vector3 parent_z;
       node->GetDerivedComponent<BasePositioner>()->axis(
-        parent_x, parent_y, parent_z
+        node_pos, parent_x, parent_y, parent_z
       );
 
       Vector3 axis;
@@ -392,16 +392,17 @@ void NodesContext::update(float dt)
     auto selected = view()->selected();
     if (selected.Size()) {
       Node* node = selected.Back();
-      Vector3 node_pos = node->GetWorldPosition();
-      m_gizmo->SetPosition(node_pos);
+      Vector3 node_pos;
 
       // Calculate orientation
       Vector3 axis_x;
       Vector3 axis_y;
       Vector3 axis_z;
       node->GetDerivedComponent<BasePositioner>()->axis(
-        axis_x, axis_y, axis_z
+        node_pos, axis_x, axis_y, axis_z
       );
+
+      m_gizmo->SetPosition(node_pos);
       m_gizmo->SetRotation(
         Quaternion(axis_x, axis_y, axis_z)
       );

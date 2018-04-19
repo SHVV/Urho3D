@@ -4,6 +4,8 @@
 
 #include "SurfaceNodePositioner.h"
 
+#include "../Model/DynamicModel.h"
+
 #include <Urho3D\Core\Context.h>
 #include <Urho3D\Scene\Node.h>
 
@@ -136,6 +138,46 @@ Vector3 SurfaceNodePositioner::calculate_angles(
   return angles;
 }
 
+/// Calculate shift, based on attachment (and may be size)
+float SurfaceNodePositioner::calculate_shift()
+{
+  BaseAttachableSurface* surface = get_surface();
+  Node* node = GetNode();
+  if (!(surface || node || m_attachment))  {
+    return 0;
+  }
+  DynamicModel* model = surface->dynamic_model();
+  if (!model) {
+    return 0;
+  }
+  const MeshGeometry* geometry = model->mesh_geometry();
+  if (!geometry) {
+    return 0;
+  }
+  SubObjectType snapped_to = m_attachment->snapped_to();
+  int filtered_index = m_attachment->primitive_index();
+  const float mult = 1.5f;
+  switch (snapped_to) {
+    case SubObjectType::EDGE: {
+      int index = geometry->edges_by_flags(mgfATTACHABLE)[filtered_index];
+      MeshGeometry::Edge edge = geometry->edges()[index];
+      return edge.radius(*geometry) * mult;
+    }
+    case SubObjectType::POLYGON: {
+      int index = geometry->polygons_by_flags(mgfATTACHABLE)[filtered_index];
+      MeshGeometry::Polygon polygon = geometry->polygons()[index];
+      if (polygon.flags & mgfVISIBLE) {
+        return 0;
+      } else {
+        return polygon.radius(*geometry) * mult;
+      }
+    }
+  }
+
+  return 0;
+}
+
+
 /// Updates node position, based on reference and internal position.
 void SurfaceNodePositioner::update_node_position()
 {
@@ -154,13 +196,19 @@ void SurfaceNodePositioner::update_node_position()
     );
 
     if (valid) {
-      node->SetPosition(position);
-
       Vector3 binormal = normal.CrossProduct(tangent);
-      Quaternion rotation(tangent, binormal, normal);
+      Quaternion base_rotation(tangent, binormal, normal);
       // Apply local angles
-      node->SetRotation(rotation * Quaternion(m_angles.x_, m_angles.y_, m_angles.z_));
-    } else {
+      Quaternion local_rotation = 
+        base_rotation * Quaternion(m_angles.x_, m_angles.y_, m_angles.z_);
+      node->SetRotation(local_rotation);
+
+      // Apply shift
+      Vector3 axis_z = local_rotation * Vector3(0, 0, 1);
+      float shift = calculate_shift();
+      node->SetPosition(position + axis_z * shift);
+    }
+    else {
       node->Remove();
     }
   }
@@ -193,6 +241,7 @@ Axis SurfaceNodePositioner::rotation_axis()
 
 /// Calculate and return gizmo orientation in world coordinates
 void SurfaceNodePositioner::axis(
+  Vector3& pos,
   Vector3& axis_x,
   Vector3& axis_y,
   Vector3& axis_z
@@ -218,7 +267,12 @@ void SurfaceNodePositioner::axis(
     axis_x = rotation * Vector3(1, 0, 0);
     axis_y = rotation * Vector3(0, 1, 0);
     axis_z = rotation * Vector3(0, 0, 1);
+
+    // Unapply shift
+    float shift = calculate_shift();
+    pos = node->GetWorldPosition() - axis_z * shift;
   } else {
+    pos = Vector3(0, 0, 0);
     axis_x = Vector3(1, 0, 0);
     axis_y = Vector3(0, 1, 0);
     axis_z = Vector3(0, 0, 1);

@@ -44,6 +44,7 @@ public:
   //virtual MoveSpace move_space() override;
   /// Calculate and return gizmo orientation in world coordinates
   virtual void axis(
+    Vector3& pos,
     Vector3& axis_x,
     Vector3& axis_y,
     Vector3& axis_z
@@ -75,6 +76,9 @@ protected:
     StringHash eventType,
     VariantMap& eventData
   );
+
+  /// Calculate shift, based on attachment (and may be size)
+  float calculate_shift();
 
 private:
   /// Topology attachment

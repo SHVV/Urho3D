@@ -65,6 +65,7 @@ public:
   //virtual MoveSpace move_space();
   /// Calculate and return gizmo orientation in world coordinates
   virtual void axis(
+    Vector3& pos,
     Vector3& axis_x,
     Vector3& axis_y,
     Vector3& axis_z
