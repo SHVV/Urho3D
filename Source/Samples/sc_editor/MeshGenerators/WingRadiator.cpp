@@ -47,7 +47,7 @@ MeshGeometry* WingRadiator::generate(const Parameters& parameters)
   float taper = parameters[s_taper].GetFloat();
   // TODO: add rest parameters
 
-  float radius = width / 20;
+  float radius = width / 30;
   
   Polyline2 profile;
   PolylineSegment seg;
@@ -60,19 +60,20 @@ MeshGeometry* WingRadiator::generate(const Parameters& parameters)
   seg.m_smooth_vertex = false;
   seg.m_smooth_segment = false;
 
-  seg.m_pos = Vector2(0, radius);
+  float radius2 = width / 15;
+
+  seg.m_pos = Vector2(0, radius2);
+  profile.segments().Push(seg);
+  seg.m_pos = Vector2(radius, radius2);
+  profile.segments().Push(seg);
+  seg.m_pos = Vector2(radius + radius2, radius);
   profile.segments().Push(seg);
   seg.m_pos = Vector2(length + width + radius, radius);
   profile.segments().Push(seg);
   seg.m_pos = Vector2(length + width + radius * 2, 0);
   profile.segments().Push(seg);
 
-  MeshGeometry* geometry = generator()->lathe(
-    profile, 
-    8,
-    //ttTRIANGLE
-    ttDIAMOND
-  );
+  MeshGeometry* geometry = generator()->lathe(profile, 8, ttDIAMOND);
   float thickness = radius / 5;
   float tapered = width * taper;
 

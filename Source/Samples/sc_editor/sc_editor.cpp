@@ -29,6 +29,7 @@
 #include "MeshGenerators/TestGenerator.h"
 #include "MeshGenerators/BaseTruss.h"
 #include "MeshGenerators/WingRadiator.h"
+#include "MeshGenerators/BeamAdapter.h"
 
 // Includes from Urho
 #include <Urho3D/Core/CoreEvents.h>
@@ -76,6 +77,7 @@ SCEditor::SCEditor(Context* context)
   generator->add_function(new TestGenerator());
   generator->add_function(new BaseTruss());
   generator->add_function(new WingRadiator());
+  generator->add_function(new BeamAdapter());
   // TODO:
 
   // Model
@@ -185,6 +187,12 @@ void SCEditor::CreateScene()
   // Create default camera controller
   // TODO: probably we need to move this into view and allow to switch on demand
   m_camera_controller = new CameraController(context_, m_view);
+
+  //ProceduralUnit* test_unit = static_cast<ProceduralUnit*>(m_model->create_unit(
+  //  ProceduralUnit::GetTypeStatic(),
+  //  Vector3(0, 0, 0)
+  //));
+  //test_unit->set_function_name(BeamAdapter::s_name);
 
   // Create test context
   /*m_nodes_context = new NodesContext(context_, this);
