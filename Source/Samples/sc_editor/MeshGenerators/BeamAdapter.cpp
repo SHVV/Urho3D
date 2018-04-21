@@ -46,7 +46,7 @@ MeshGeometry* BeamAdapter::generate(const Parameters& parameters)
   // TODO: add rest parameters
 
   float x = plate_size;
-  float y = beam_radius * 1.1;
+  float y = beam_radius * 1.2;
   float fillet = beam_radius * 0.1;
   
   Polyline2 profile;
@@ -60,24 +60,27 @@ MeshGeometry* BeamAdapter::generate(const Parameters& parameters)
   seg.m_smooth_vertex = false;
   seg.m_smooth_segment = false;
 
+  MeshGeometry* geometry = nullptr;
   // First - beam support
-  seg.m_pos = Vector2(-x, 0);
-  profile.segments().Push(seg);
-  seg.m_pos = Vector2(-x, y - fillet);
-  profile.segments().Push(seg);
-  seg.m_pos = Vector2(-x + fillet, y);
-  profile.segments().Push(seg);
-  seg.m_pos = Vector2(x - fillet, y);
-  profile.segments().Push(seg);
-  seg.m_pos = Vector2(x, y - fillet);
-  profile.segments().Push(seg);
-  seg.m_pos = Vector2(x, 0);
-  profile.segments().Push(seg);
+  if (beam_radius > 0) {
+    seg.m_pos = Vector2(-x, 0);
+    profile.segments().Push(seg);
+    seg.m_pos = Vector2(-x, y - fillet);
+    profile.segments().Push(seg);
+    seg.m_pos = Vector2(-x + fillet, y);
+    profile.segments().Push(seg);
+    seg.m_pos = Vector2(x - fillet, y);
+    profile.segments().Push(seg);
+    seg.m_pos = Vector2(x, y - fillet);
+    profile.segments().Push(seg);
+    seg.m_pos = Vector2(x, 0);
+    profile.segments().Push(seg);
 
-  MeshGeometry* geometry = generator()->lathe(profile, 8, ttDIAMOND);
-  Quaternion rotation(90, Vector3::UP);
-  Matrix3x4 transform(Vector3(0, 0, -shift), rotation, 1);
-  geometry->transform(transform);
+    geometry = generator()->lathe(profile, 8, ttDIAMOND);
+    Quaternion rotation(90, Vector3::UP);
+    Matrix3x4 transform(Vector3(0, 0, -shift), rotation, 1);
+    geometry->transform(transform);
+  }
 
   // Second - plate
   float start_y = plate_size - shift * 0.75;
@@ -90,8 +93,10 @@ MeshGeometry* BeamAdapter::generate(const Parameters& parameters)
   profile.segments().Clear();
   seg.m_pos = Vector2(-shift, 0);
   profile.segments().Push(seg);
-  seg.m_pos = Vector2(-shift, start_y);
-  profile.segments().Push(seg);
+  if (start_y > 0) {
+    seg.m_pos = Vector2(-shift, start_y);
+    profile.segments().Push(seg);
+  }
   seg.m_pos = Vector2(start_x, plate_size);
   profile.segments().Push(seg);
   seg.m_pos = Vector2(end_x, plate_size);
@@ -100,7 +105,11 @@ MeshGeometry* BeamAdapter::generate(const Parameters& parameters)
   profile.segments().Push(seg);
   seg.m_pos = Vector2(0, 0);
   profile.segments().Push(seg);
-  generator()->lathe(geometry, profile, 16, ttDIAMOND);
+  if (geometry) {
+    generator()->lathe(geometry, profile, 8, ttDIAMOND);
+  } else {
+    geometry = generator()->lathe(profile, 8, ttDIAMOND);
+  }
 
   float scale = Max(plate_size, beam_radius) * 2;
   for (int i = 0; i < geometry->vertices().Size(); ++i) {

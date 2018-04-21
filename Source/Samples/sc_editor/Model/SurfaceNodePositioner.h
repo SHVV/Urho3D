@@ -6,6 +6,8 @@
 
 #include "BasePositioner.h"
 #include "BaseAttachableSurface.h"
+#include "ProceduralUnit.h"
+#include "SurfaceMount.h"
 
 using namespace Urho3D;
 
@@ -64,15 +66,29 @@ protected:
   // Existing overrides
   /// Handle node being assigned.
   virtual void OnNodeSet(Node* node) override;
+
   /// Get surface we attached to.
   BaseAttachableSurface* get_surface();
+  /// Get surface mount
+  SurfaceMount* get_surface_mount();
+  /// Get or create mount adapter
+  ProceduralUnit* get_mount_adapter(bool create = true);
+
   /// Convert rotation to angles, and limit them.
   Vector3 calculate_angles(const Quaternion& rotation, SubObjectType snapped_to);
   /// Handle node (not only our) transform being dirtied.
   //virtual void OnMarkedDirty(Node* node) override;
+  /// Update mount adapter, if nedded
+  void update_adapter();
 
   /// Event handler on attachable surface change
-  void on_changed(
+  void on_surface_changed(
+    StringHash eventType,
+    VariantMap& eventData
+  );
+
+  /// Event handler on surface mount change
+  void on_mount_changed(
     StringHash eventType,
     VariantMap& eventData
   );

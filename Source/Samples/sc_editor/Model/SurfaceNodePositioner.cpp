@@ -4,7 +4,9 @@
 
 #include "SurfaceNodePositioner.h"
 
-#include "../Model/DynamicModel.h"
+#include "DynamicModel.h"
+#include "ProceduralUnit.h"
+#include "../MeshGenerators/BeamAdapter.h"
 
 #include <Urho3D\Core\Context.h>
 #include <Urho3D\Scene\Node.h>
@@ -12,6 +14,8 @@
 using namespace Urho3D;
 
 extern const char* EDITOR_CATEGORY;
+static const char* MOUNT_ADAPTER_NAME = "MountAdapter";
+static const StringHash MOUNT_ADAPTER_NAME_HASH = MOUNT_ADAPTER_NAME;
 
 
 /// Register object attributes.
@@ -48,9 +52,18 @@ bool SurfaceNodePositioner::set_position(
     SubscribeToEvent(
       m_surface,
       E_ATTACHABLE_SURFACE_CHANGED,
-      URHO3D_HANDLER(SurfaceNodePositioner, on_changed)
+      URHO3D_HANDLER(SurfaceNodePositioner, on_surface_changed)
     );
 
+    // Subscribe for surface mount changes
+    SurfaceMount* surface_mount = get_surface_mount();
+    if (surface_mount) {
+      SubscribeToEvent(
+        surface_mount,
+        E_SURFACE_MOUNT_CHANGED,
+        URHO3D_HANDLER(SurfaceNodePositioner, on_mount_changed)
+      );
+    }
 
     Vector3 position_temp = position;
     Vector3 normal_temp = normal;
@@ -207,8 +220,9 @@ void SurfaceNodePositioner::update_node_position()
       Vector3 axis_z = local_rotation * Vector3(0, 0, 1);
       float shift = calculate_shift();
       node->SetPosition(position + axis_z * shift);
-    }
-    else {
+
+      update_adapter();
+    } else {
       node->Remove();
     }
   }
@@ -293,8 +307,7 @@ BaseAttachableSurface* SurfaceNodePositioner::get_surface()
     if (node) {
       node = node->GetParent();
       if (node) {
-        BaseAttachableSurface* surface =
-          node->GetDerivedComponent<BaseAttachableSurface>();
+        auto surface = node->GetDerivedComponent<BaseAttachableSurface>();
         m_surface = surface;
       }
     }
@@ -303,14 +316,113 @@ BaseAttachableSurface* SurfaceNodePositioner::get_surface()
   return m_surface.Get();
 }
 
+/// Get surface mount
+SurfaceMount* SurfaceNodePositioner::get_surface_mount()
+{
+  Node* node = GetNode();
+  if (node) {
+    return node->GetDerivedComponent<SurfaceMount>();
+  }
+}
+
+/// Get or create mount adapter
+ProceduralUnit* SurfaceNodePositioner::get_mount_adapter(bool create)
+{
+  Node* node = GetNode();
+  ProceduralUnit* result = nullptr;
+  if (node) {
+    Node* mount_adapter_node = node->GetChild(MOUNT_ADAPTER_NAME_HASH);
+    if (!mount_adapter_node) {
+      if (create) {
+        mount_adapter_node = node->CreateChild(MOUNT_ADAPTER_NAME);
+        result = mount_adapter_node->CreateComponent<ProceduralUnit>();
+      }
+    } else {
+      result = mount_adapter_node->GetComponent<ProceduralUnit>();
+    }
+  }
+  return result;
+}
+
+/// Update mount adapter, if nedded
+void SurfaceNodePositioner::update_adapter()
+{
+  BaseAttachableSurface* surface = get_surface();
+  Node* node = GetNode();
+  if (!(surface || node || m_attachment))  {
+    return;
+  }
+  DynamicModel* model = surface->dynamic_model();
+  if (!model) {
+    return;
+  }
+  const MeshGeometry* geometry = model->mesh_geometry();
+  if (!geometry) {
+    return;
+  }
+  SurfaceMount* surface_mount = get_surface_mount();
+  if (!surface_mount) {
+    return;
+  }
+  SubObjectType snapped_to = m_attachment->snapped_to();
+  int filtered_index = m_attachment->primitive_index();
+  switch (snapped_to) {
+    case SubObjectType::EDGE: {
+      int index = geometry->edges_by_flags(mgfATTACHABLE)[filtered_index];
+      MeshGeometry::Edge edge = geometry->edges()[index];
+      ProceduralUnit* mount_adapter = get_mount_adapter();
+      mount_adapter->set_function_name(BeamAdapter::s_name);
+      Parameters parameters = mount_adapter->parameters();
+      parameters[BeamAdapter::s_beam_radius] = edge.radius(*geometry);
+      parameters[BeamAdapter::s_plate_size] = surface_mount->mount_size();
+      parameters[BeamAdapter::s_shift] = calculate_shift();
+      mount_adapter->set_parameters(parameters);
+      // Compensate Z rotation
+      mount_adapter->GetNode()->SetRotation(Quaternion(0, 0, -m_angles.z_));
+      mount_adapter->GetNode()->SetEnabled(true);
+      return;
+    }
+    case SubObjectType::POLYGON: {
+      int index = geometry->polygons_by_flags(mgfATTACHABLE)[filtered_index];
+      MeshGeometry::Polygon polygon = geometry->polygons()[index];
+      if (!(polygon.flags & mgfVISIBLE)) {
+        ProceduralUnit* mount_adapter = get_mount_adapter();
+        mount_adapter->set_function_name(BeamAdapter::s_name);
+        Parameters parameters = mount_adapter->parameters();
+        parameters[BeamAdapter::s_beam_radius] = 0;
+        parameters[BeamAdapter::s_plate_size] = surface_mount->mount_size();
+        parameters[BeamAdapter::s_shift] = calculate_shift();
+        mount_adapter->set_parameters(parameters);
+        // Compensate Z rotation
+        mount_adapter->GetNode()->SetRotation(Quaternion(0, 0, -m_angles.z_));
+      }
+      break;
+    }
+  }
+  ProceduralUnit* mount_adapter = get_mount_adapter(false);
+  if (mount_adapter) {
+    mount_adapter->GetNode()->SetEnabled(false);
+  }
+}
+
 /// Event handler on attachable surface change
-void SurfaceNodePositioner::on_changed(
+void SurfaceNodePositioner::on_surface_changed(
   StringHash eventType,
   VariantMap& eventData
 )
 {
   // TODO: may be we need some checks here
   update_node_position();
+}
+
+/// Event handler on surface mount change
+void SurfaceNodePositioner::on_mount_changed(
+  StringHash eventType,
+  VariantMap& eventData
+)
+{
+  // TODO: may be we need some checks here
+  update_adapter();
 }
 
 

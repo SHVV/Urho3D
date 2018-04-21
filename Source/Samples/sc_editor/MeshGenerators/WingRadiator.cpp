@@ -115,5 +115,5 @@ void WingRadiator::update_unit(
 float WingRadiator::mount_size(const Parameters& parameters)
 {
   float width = parameters[s_width].GetFloat();
-  return width / 10;
+  return width / 13;
 }

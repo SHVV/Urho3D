@@ -214,11 +214,11 @@ void CreationContext::update_rollower_position()
                 auto positioner =
                   get_or_create_positioner<SurfaceNodePositioner>(rollower_node);
                 // and set position
-                rollower_node->SetEnabled(
+                rollower_node->SetEnabledRecursive(
                   positioner->set_position(attach_position, attach_normal, m_orientation)
                 );
               } else {
-                rollower_node->SetEnabled(false);
+                rollower_node->SetEnabledRecursive(false);
               }
             }
           } else {
@@ -234,7 +234,7 @@ void CreationContext::update_rollower_position()
               auto positioner =
                 get_or_create_positioner<SurfaceNodePositioner>(rollower_node);
               // and set position
-              rollower_node->SetEnabled(
+              rollower_node->SetEnabledRecursive(
                 positioner->set_position(positions[i], normals[i], m_orientation)
               );
             }
@@ -248,7 +248,7 @@ void CreationContext::update_rollower_position()
       }
       // If no unit under cursor with attachable surface - hide rollowers
       for (int i = 0; i < m_rollowers.Size(); ++i) {
-        m_rollowers[i]->GetNode()->SetEnabled(false);
+        m_rollowers[i]->GetNode()->SetEnabledRecursive(false);
       }
       hide_tooltip();
     }
@@ -507,7 +507,8 @@ bool CreationContext::is_pickable(Node* node)
 {
   for (int i = 0; i < m_rollowers.Size(); ++i) {
     // TODO: support multi-node units
-    if (m_rollowers[i]->GetNode() == node) {
+    Node* sel_node = m_rollowers[i]->GetNode();
+    if (sel_node == node || sel_node == node->GetParent()) {
       return false;
     }
   }
