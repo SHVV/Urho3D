@@ -63,9 +63,7 @@ SharedPtr<BaseTopologyAttachment> BaseAttachableSurface::local_to_topology(
 
   // Second stage
   // convert position to "topology independent"
-  // By default - just scale by BB
-  auto& bb = model->GetBoundingBox();
-  Vector3 normalized_position = position / bb.HalfSize();
+  Vector3 normalized_position = local_to_topology(position, normal);
   
   if (!snap_optional && sub_type == SubObjectType::NONE) {
     return nullptr;
@@ -75,7 +73,7 @@ SharedPtr<BaseTopologyAttachment> BaseAttachableSurface::local_to_topology(
   SubObjectType snap_type = real_snap ? sub_type : SubObjectType::NONE;
   auto result = SharedPtr<BaseTopologyAttachment>(new BaseTopologyAttachment(
     normalized_position,
-    position,
+    normal,
     snap_type,
     sub_index,
     geometry->primitives_count_by_flags(snap_type, mgfATTACHABLE)
@@ -114,10 +112,8 @@ bool BaseAttachableSurface::topology_to_local(
   }
 
   // convert "topology independent" position into local.
-  // By default - just scale by BB
-  auto& bb = model->GetBoundingBox();
-  position = topology_position.position() * bb.HalfSize();
   normal = topology_position.normal();
+  position = topology_to_local(topology_position.position(), normal);
   // TODO: calcualte tangent for base convertion too
 
   // If snapped, find closest attachment subobject, using normal and tangent as a guide
@@ -249,6 +245,38 @@ bool BaseAttachableSurface::snap_to_primitive(
   return result;
 }
 
+/// Convert local position to topology independent one
+Vector3 BaseAttachableSurface::local_to_topology(
+  const Vector3& position,
+  const Vector3& normal
+)
+{
+  DynamicModel* model = dynamic_model();
+  if (model) {
+    // By default - just scale by BB
+    auto& bb = model->GetBoundingBox();
+    return position / bb.HalfSize();
+  } else {
+    return position;
+  }
+}
+
+/// Convert position from topology independent to local
+Vector3 BaseAttachableSurface::topology_to_local(
+  const Vector3& norm_position,
+  const Vector3& normal
+)
+{
+  DynamicModel* model = dynamic_model();
+  if (model) {
+    // By default - just scale by BB
+    auto& bb = model->GetBoundingBox();
+    return norm_position * bb.HalfSize();
+  } else {
+    return norm_position;
+  }
+}
+
 /// Dynamic model component for attaching to.
 DynamicModel* BaseAttachableSurface::dynamic_model()
 {
@@ -275,7 +303,12 @@ void BaseAttachableSurface::on_changed(
 )
 {
   // TODO: possible filtering out unnecessary updates
+  notify_changed();
+}
 
+/// Send notification on changed
+void BaseAttachableSurface::notify_changed()
+{
   // Notify subscribers
   using namespace AttachableSurfaceChanged;
 

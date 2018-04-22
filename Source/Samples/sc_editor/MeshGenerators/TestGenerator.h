@@ -23,7 +23,13 @@ public:
   virtual ~TestGenerator();
 
   /// Generate mesh geometry, basing on parameters
-  virtual MeshGeometry* generate(const Parameters& parameters);
+  virtual MeshGeometry* generate(const Parameters& parameters) override;
+
+  /// Update procedural unit guts
+  virtual void update_unit(
+    const Parameters& parameters, 
+    ProceduralUnit* unit
+  ) override;
 
   /// Tank radius parameter ID
   static ParameterID s_radius;

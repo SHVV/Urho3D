@@ -17,6 +17,7 @@
 #include "Model/SurfaceSurfacePositioner.h"
 #include "Model/SurfaceNodePositioner.h"
 #include "Model/SurfaceMount.h"
+#include "Model/Voxel1DAttachableSurface.h"
 
 #include "Contexts/BaseContext.h"
 #include "Contexts/NodesContext.h"
@@ -88,6 +89,8 @@ SCEditor::SCEditor(Context* context)
   SurfaceSurfacePositioner::RegisterObject(context);
   SurfaceNodePositioner::RegisterObject(context);
   SurfaceMount::RegisterObject(context);
+  Voxel1DAttachableSurface::RegisterObject(context);
+
 
   // Components
   DynamicModel::RegisterObject(context);

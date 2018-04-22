@@ -504,8 +504,8 @@ void NodesContext::update(float dt)
           Node* node = selected[i];
           UnitModel* unit = node->GetDerivedComponent<UnitModel>();
           if (unit) {
-            float val = unit->parameters()[0].GetFloat();
-            unit->set_parameter(0, val + delta);
+            unsigned int val = unit->parameters()[1].GetUInt();
+            unit->set_parameter(1, val + delta);
           }
         }
       }

@@ -78,7 +78,7 @@ public:
 
   /// Convert local coordintaes to topology coordinates. 
   /// With optional snapping, in this case position and normal will be adjusted
-  SharedPtr<BaseTopologyAttachment> local_to_topology(
+  virtual SharedPtr<BaseTopologyAttachment> local_to_topology(
     Vector3& position,
     Vector3& normal,
     Vector3& tangent,
@@ -87,7 +87,7 @@ public:
   );
   
   /// Convert topology position to local position
-  bool topology_to_local(
+  virtual bool topology_to_local(
     const BaseTopologyAttachment& topology_position,
     Vector3& position,
     Vector3& normal,
@@ -121,6 +121,21 @@ protected:
   void on_changed(
     StringHash eventType,
     VariantMap& eventData
+  );
+
+  /// Send notification on changed
+  void notify_changed();
+
+  /// Convert local position to topology independent one
+  virtual Vector3 local_to_topology(
+    const Vector3& position,
+    const Vector3& normal
+  );
+
+  /// Convert position from topology independent to local
+  virtual Vector3 topology_to_local(
+    const Vector3& norm_position,
+    const Vector3& normal
   );
 
   // Existing overrides

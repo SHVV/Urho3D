@@ -25,6 +25,12 @@ public:
   /// Generate mesh geometry, basing on parameters
   virtual MeshGeometry* generate(const Parameters& parameters);
 
+  /// Update procedural unit guts
+  virtual void update_unit(
+    const Parameters& parameters, 
+    ProceduralUnit* unit
+  ) override;
+
   /// Cell size parameter ID
   static ParameterID s_cell_size;
 

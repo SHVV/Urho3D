@@ -7,6 +7,8 @@
 // Editor Includes
 #include "../Core/MeshGenerator.h"
 #include "../Core/Polyline2.h"
+#include "../Model/BaseAttachableSurface.h"
+#include "../Model/ProceduralUnit.h"
 
 /// Generator name
 String TestGenerator::s_name = "Test";
@@ -166,4 +168,16 @@ MeshGeometry* TestGenerator::generate(const Parameters& parameters)
     geometry->set_scale(i, scale);
   }
   return geometry;
+}
+
+/// Update procedural unit guts
+void TestGenerator::update_unit(
+  const Parameters& parameters,
+  ProceduralUnit* unit
+)
+{
+  // Call default implementation first
+  MeshGenerationFunction::update_unit(parameters, unit);
+  // Create default attachable surface
+  unit->get_component<BaseAttachableSurface>();
 }

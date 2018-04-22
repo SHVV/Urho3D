@@ -7,6 +7,8 @@
 // Editor Includes
 #include "../Core/MeshGenerator.h"
 #include "../Core/Polyline2.h"
+#include "../Model/Voxel1DAttachableSurface.h"
+#include "../Model/ProceduralUnit.h"
 
 /// Generator name
 String BaseTruss::s_name = "BaseTruss";
@@ -40,7 +42,7 @@ MeshGeometry* BaseTruss::generate(const Parameters& parameters)
 {
   // Parameters
   float cell_size = parameters[s_cell_size].GetFloat();
-  float cells = parameters[s_cells].GetFloat();
+  int cells = parameters[s_cells].GetUInt();
   int segments = parameters[s_segments].GetUInt();
   // TODO: add rest parameters
 
@@ -93,4 +95,20 @@ MeshGeometry* BaseTruss::generate(const Parameters& parameters)
     geometry->set_polygon_flags(i, mgfATTACHABLE);
   }
   return geometry;
+}
+
+/// Update procedural unit guts
+void BaseTruss::update_unit(
+  const Parameters& parameters,
+  ProceduralUnit* unit
+)
+{
+  float cell_size = parameters[s_cell_size].GetFloat();
+  int cells = parameters[s_cells].GetUInt();
+
+  // Call default implementation first
+  MeshGenerationFunction::update_unit(parameters, unit);
+  // Create voxel 1D attachable surface
+  auto* surface = unit->get_component<Voxel1DAttachableSurface>();
+  surface->initialize(cell_size, (cells & 1) ? (cell_size * 0.5) : 0);
 }
