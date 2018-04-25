@@ -61,6 +61,14 @@ SharedPtr<BaseTopologyAttachment> BaseAttachableSurface::local_to_topology(
     sub_index
   );
 
+  // TODO: if snap_optional, 
+  // - collect all potential attachments:
+  //   - closest surface feature attachment
+  //   - equator attachment (use closest feature to calculate longitude)
+  //   - pole attachment 
+  //   - think about more relaxed attachments
+  // - calculate best feature, based on distance and normal similarity (optional)
+
   // Second stage
   // convert position to "topology independent"
   Vector3 normalized_position = local_to_topology(position, normal);
@@ -275,6 +283,40 @@ Vector3 BaseAttachableSurface::topology_to_local(
   } else {
     return norm_position;
   }
+}
+
+/// Farthest point in direction
+float BaseAttachableSurface::farthest_vertex(
+  const Vector3& direction,
+  Vector3& position,
+  Vector3& normal
+)
+{
+  DynamicModel* model = dynamic_model();
+  if (!model) {
+    return 0;
+  }
+  const MeshGeometry* geometry = model->mesh_geometry();
+  if (!geometry) {
+    return 0;
+  }
+
+  return geometry->farthest_vertex(direction, position, normal);
+}
+
+/// Returns average length of attachable edge.
+float BaseAttachableSurface::average_attachable_edge()
+{
+  DynamicModel* model = dynamic_model();
+  if (!model) {
+    return 0;
+  }
+  const MeshGeometry* geometry = model->mesh_geometry();
+  if (!geometry) {
+    return 0;
+  }
+
+  return geometry->average_edge(mgfATTACHABLE);
 }
 
 /// Dynamic model component for attaching to.

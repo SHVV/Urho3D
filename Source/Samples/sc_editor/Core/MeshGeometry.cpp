@@ -500,6 +500,42 @@ int MeshGeometry::closest(
 
   return result;
 }
+
+/// Find farthest vertex on model in specified direction
+float MeshGeometry::farthest_vertex(
+  const Vector3& direction,
+  Vector3& position,
+  Vector3& normal
+) const
+{
+  float distance = 0;
+  // TODO: use search tree for faster ray cast
+  for (unsigned int i = 0; i < m_vertices.Size(); ++i) {
+    const Vertex& vertex = m_vertices[i];
+    float cur_dist = direction.DotProduct(vertex.position);
+    if (cur_dist > distance) {
+      distance = cur_dist;
+      position = vertex.position;
+      normal = vertex.normal;
+    }
+  }
+  return distance;
+}
+
+/// Returns average length of edge.
+float MeshGeometry::average_edge(unsigned int flags) const
+{
+  // TODO: use polygons too
+  auto& index_map = edges_by_flags(flags);
+  float result = 0;
+  int edges = index_map.Size();
+  for (unsigned int i = 0; i < index_map.Size(); ++i) {
+    const Edge& edge = m_edges[index_map[i]];
+    result += edge.length(*this);
+  }
+  return edges ? (result / edges) : 0;
+}
+
 ///// Find sub object, closest to the ray
 //int MeshGeometry::closest(
 //  const Ray& ray,

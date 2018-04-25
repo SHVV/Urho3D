@@ -94,6 +94,17 @@ public:
     Vector3& tangent
   );
 
+  // Different queries:
+  /// Farthest point in direction
+  virtual float farthest_vertex(
+    const Vector3& direction,
+    Vector3& position,
+    Vector3& normal
+  );
+
+  /// Returns average length of attachable edge.
+  virtual float average_attachable_edge();
+
   /// Dynamic model component for attaching to.
   DynamicModel* dynamic_model();
 

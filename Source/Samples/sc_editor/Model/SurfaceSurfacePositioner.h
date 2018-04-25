@@ -5,6 +5,7 @@
 #pragma once
 
 #include "BasePositioner.h"
+#include "BaseAttachableSurface.h"
 
 using namespace Urho3D;
 
@@ -35,6 +36,10 @@ public:
   /// Updates node position, based on reference and internal position.
   virtual void update_node_position() override;
 
+  /// Set position.
+  /// Returns true, if attachment was successfull, false - otherwise.
+  bool set_position(const Vector3& position, const Vector3& normal, const Quaternion& rotation);
+
   /// Get supported moves along local linear axis
   //virtual Axis linear_axis() override;
   /// Get supported rotations around local linear axis
@@ -50,10 +55,21 @@ public:
 protected:
   // Existing overrides
   /// Handle node being assigned.
-  //virtual void OnNodeSet(Node* node) override;
-  /// Handle node (not only our) transform being dirtied.
-  //virtual void OnMarkedDirty(Node* node) override;
+  virtual void OnNodeSet(Node* node) override;
+
+  /// Event handler on attachable surface change
+  void on_surface_changed(StringHash eventType, VariantMap& eventData);
+
+  /// Get our surface.
+  BaseAttachableSurface* get_our_surface();
+  /// Get surface, we attached to.
+  BaseAttachableSurface* get_attached_surface();
 
 private:
-
+  /// Topology attachment
+  SharedPtr<BaseTopologyAttachment> m_attachment;
+  /// Distance from reference attachment
+  float m_distance;
+  /// Euler angles
+  //Vector3 m_angles;
 };

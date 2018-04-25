@@ -84,6 +84,10 @@ public:
       return Min(mesh.m_vertices[vertexes[1]].radius,
                  mesh.m_vertices[vertexes[0]].radius) * 0.7;
     }
+    float length(const MeshGeometry& mesh) const {
+      return (mesh.m_vertices[vertexes[1]].position -
+              mesh.m_vertices[vertexes[0]].position).Length();
+    };
   };
 
   // Polygons
@@ -230,6 +234,14 @@ public:
     int types,
     unsigned int flags
   ) const;
+  /// Find farthest vertex on model in specified direction
+  float farthest_vertex(
+    const Vector3& direction,
+    Vector3& position,
+    Vector3& normal
+  ) const;
+  /// Returns average length of edge.
+  float average_edge(unsigned int flags) const;
 
   /// Find edges by vertex and flag
   PODVector<int> vertex_edges(int vertex, unsigned int flags) const;
