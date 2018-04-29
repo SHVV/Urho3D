@@ -31,14 +31,17 @@ public:
 
   // GetDependencyNodes?
 
+  /// Set position.
+  /// Returns true, if attachment was successfull, false - otherwise.
+  virtual bool set_position(
+    const Vector3& position, 
+    const Vector3& normal, 
+    const Quaternion& rotation
+  ) override;
   /// Updates internal position representation, based on current node position.
   virtual void update_internal_position() override;
   /// Updates node position, based on reference and internal position.
   virtual void update_node_position() override;
-
-  /// Set position.
-  /// Returns true, if attachment was successfull, false - otherwise.
-  bool set_position(const Vector3& position, const Vector3& normal, const Quaternion& rotation);
 
   /// Get supported moves along local linear axis
   //virtual Axis linear_axis() override;
@@ -65,9 +68,14 @@ protected:
   /// Get surface, we attached to.
   BaseAttachableSurface* get_attached_surface();
 
+  /// Calculate reference distance
+  float get_reference_distance(const Vector3& normal);
+
 private:
   /// Topology attachment
   SharedPtr<BaseTopologyAttachment> m_attachment;
+  ///// Topology attachment reference
+  //SharedPtr<BaseTopologyAttachment> m_attachment;
   /// Distance from reference attachment
   float m_distance;
   /// Euler angles

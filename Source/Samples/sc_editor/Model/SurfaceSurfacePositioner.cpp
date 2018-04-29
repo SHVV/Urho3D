@@ -3,6 +3,7 @@
 // Surface-Surface attachment. Used to adjust position relative to parent
 
 #include "SurfaceSurfacePositioner.h"
+#include "../Core/MathUtils.h"
 
 #include <Urho3D\Core\Context.h>
 #include <Urho3D\Scene\Node.h>
@@ -50,30 +51,86 @@ bool SurfaceSurfacePositioner::set_position(
       E_ATTACHABLE_SURFACE_CHANGED,
       URHO3D_HANDLER(SurfaceSurfacePositioner, on_surface_changed)
     );
+
+    Vector3 position_temp = position;
+    Vector3 normal_temp = normal;
+    Vector3 tangent = Vector3::RIGHT;
+    m_attachment = attached_surface->local_to_topology(
+      position_temp,
+      normal_temp,
+      tangent,
+      (int)SubObjectType::POLYGON | (int)SubObjectType::EDGE | (int)SubObjectType::VERTEX,
+      true
+    );
+
+    // Set orientation right here
+    if (m_attachment) {
+      tangent = MathUtils::ortogonal(normal_temp);
+      Vector3 binormal = normal_temp.CrossProduct(tangent);
+      Quaternion base_rotation(normal_temp, -binormal, tangent);
+      // Apply local rotation
+      Quaternion local_rotation = base_rotation * rotation;
+      node->SetRotation(local_rotation);
+      m_distance =
+        attached_surface->average_attachable_edge() +
+        our_surface->average_attachable_edge();
+      m_distance /= 2;
+
+      update_node_position();
+      return true;
+    }
   }
 
-  // TODO: 
-  // - set orientation right here
-  //
   // On update +
   // - calculate farthest point on our surface using normal as reference direction
   // - calculate distance between feature and attachment position
   // - quantize distance based on smallest surface feature
-  return true;
+  return false;
 }
 
 /// Updates internal position representation, based on current node position.
 void SurfaceSurfacePositioner::update_internal_position()
 {
-  // TODO:
+  Node* node = GetNode();
+  BaseAttachableSurface* our_surface = get_our_surface();
+  BaseAttachableSurface* attached_surface = get_attached_surface();
+  if (node && our_surface && attached_surface) {
+    auto position = node->GetPosition();
+    auto rotation = node->GetRotation();
+    auto normal = rotation * Vector3::FORWARD;
+    auto tangent = rotation * Vector3::RIGHT;
+
+    // Preserve original normal
+    if (m_attachment) {
+      normal = m_attachment->normal();
+    }
+
+    m_attachment = attached_surface->local_to_topology(
+      position,
+      normal,
+      tangent,
+      (int)SubObjectType::POLYGON | (int)SubObjectType::EDGE | (int)SubObjectType::VERTEX,
+      true
+    );
+    if (m_attachment) {
+      // TODO: deal with angles
+
+      // Update distance
+      float reference_distance = get_reference_distance(normal);
+      float full_distance = normal.DotProduct(node->GetPosition() - position);
+      m_distance = full_distance - reference_distance;
+      update_node_position();
+    }
+  }
 }
 
 /// Updates node position, based on reference and internal position.
 void SurfaceSurfacePositioner::update_node_position()
 {
   BaseAttachableSurface* attached_surface = get_attached_surface();
+  BaseAttachableSurface* our_surface = get_our_surface();
   Node* node = GetNode();
-  if (attached_surface && node && m_attachment) {
+  if (attached_surface && node && m_attachment && our_surface) {
     Vector3 position;
     Vector3 normal;
     Vector3 tangent;
@@ -86,20 +143,30 @@ void SurfaceSurfacePositioner::update_node_position()
     );
 
     if (valid) {
-      // TODO: think about angles, do we need them?
-      //Vector3 binormal = normal.CrossProduct(tangent);
-      //Quaternion base_rotation(tangent, binormal, normal);
-      //// Apply local angles
-      //Quaternion local_rotation = 
-      //  base_rotation * Quaternion(m_angles.x_, m_angles.y_, m_angles.z_);
-      //node->SetRotation(local_rotation);
-
+      float reference_distance = get_reference_distance(normal);
       // Apply distance
-      node->SetPosition(position + normal * m_distance);
+      node->SetPosition(position + normal * (m_distance + reference_distance));
     } else {
 
     }
   }
+}
+
+/// Calculate reference distance
+float SurfaceSurfacePositioner::get_reference_distance(const Vector3& normal)
+{
+  BaseAttachableSurface* our_surface = get_our_surface();
+  Node* node = GetNode();
+
+  Quaternion inverted_rotation = node->GetRotation().Inverse();
+  Vector3 local_attachment_direction = inverted_rotation * normal;
+  Vector3 reference_position;
+  Vector3 reference_normal;
+  return our_surface->farthest_vertex(
+    local_attachment_direction,
+    reference_position,
+    reference_normal
+  );
 }
 
 /// Handle node being assigned.

@@ -88,7 +88,7 @@ public:
   
   /// Convert topology position to local position
   virtual bool topology_to_local(
-    const BaseTopologyAttachment& topology_position,
+    BaseTopologyAttachment& topology_position,
     Vector3& position,
     Vector3& normal,
     Vector3& tangent

@@ -52,6 +52,13 @@ public:
 
   // GetDependencyNodes?
 
+  /// Set position.
+  /// Returns true, if attachment was successfull, false - otherwise.
+  virtual bool set_position(
+    const Vector3& position,
+    const Vector3& normal,
+    const Quaternion& rotation
+  );
   /// Updates internal position representation, based on current node position.
   virtual void update_internal_position();
   /// Updates node position, based on reference and internal position.

@@ -79,6 +79,12 @@ Scene* SceneModel::scene()
   return m_scene;
 }
 
+/// Returns actual scene root (spacecraft)
+Node* SceneModel::scene_root()
+{
+  return m_scene_root;
+}
+
 /// Returns material by name
 Material* SceneModel::get_vertex_material(StringHash key)
 {

@@ -85,4 +85,16 @@ Line3 clip(const Line3& line, const Plane& plane)
   }
 }
 
+/// Calculate ortoronal vector
+Vector3 ortogonal(const Vector3& original, const Vector3& reference)
+{
+  // TODO: fix this
+  Vector3 bitangent = reference.CrossProduct(original);
+  if (bitangent.LengthSquared() < M_LARGE_EPSILON) {
+    return Vector3::RIGHT;
+  } else {
+    return original.CrossProduct(bitangent).Normalized();
+  }
+}
+
 }

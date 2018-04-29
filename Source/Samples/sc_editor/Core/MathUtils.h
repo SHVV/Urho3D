@@ -22,4 +22,7 @@ namespace MathUtils {
 
   /// Clip line by plane
   Line3 clip(const Line3& line, const Plane& plane);
+
+  /// Calculate ortoronal vector
+  Vector3 ortogonal(const Vector3& original, const Vector3& reference = Vector3::FORWARD);
 };

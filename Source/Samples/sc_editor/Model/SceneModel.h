@@ -39,6 +39,8 @@ public:
 
   /// Returns pointer to the Urho scene behind
   Scene* scene();
+  /// Returns actual scene root (spacecraft)
+  Node* scene_root();
 
   /// Returns material by name
   Material* get_vertex_material(StringHash);

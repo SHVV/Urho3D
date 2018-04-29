@@ -5,6 +5,7 @@
 
 #include "BaseAttachableSurface.h"
 #include "../Model/DynamicModel.h"
+#include "../Core/MathUtils.h"
 #include <Urho3D\Core\Context.h>
 #include <Urho3D\Scene\Node.h>
 #include <Urho3D\Math\Ray.h>
@@ -93,7 +94,7 @@ SharedPtr<BaseTopologyAttachment> BaseAttachableSurface::local_to_topology(
 
 /// Convert topology position to local position
 bool BaseAttachableSurface::topology_to_local(
-  const BaseTopologyAttachment& topology_position,
+  BaseTopologyAttachment& topology_position,
   Vector3& position,
   Vector3& normal,
   Vector3& tangent
@@ -195,13 +196,7 @@ void BaseAttachableSurface::sub_object_to_local(
     }
   }
 
-  // TODO: fix this
-  Vector3 bitangent = Vector3::FORWARD.CrossProduct(normal);
-  if (bitangent.LengthSquared() < M_LARGE_EPSILON) {
-    tangent = Vector3::RIGHT;
-  } else {
-    tangent = normal.CrossProduct(bitangent);
-  }
+  tangent = MathUtils::ortogonal(normal);
 }
 
 bool BaseAttachableSurface::snap_to_primitive(
@@ -234,7 +229,7 @@ bool BaseAttachableSurface::snap_to_primitive(
       // Find just closest one
       primitive_index = geometry->closest(ray, snap_type, snap_to, mgfATTACHABLE);
       // Use real snapping in this case, only if it is not optional
-      result = !snap_optional;
+      //result = !snap_optional;
     //}
 
     // Calculate position, normal and tangent, based on component (and main axis)

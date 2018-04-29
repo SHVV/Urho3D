@@ -27,6 +27,17 @@ BasePositioner::BasePositioner(Context* context)
 {
 }
 
+/// Returns true, if attachment was successfull, false - otherwise.
+bool BasePositioner::set_position(
+  const Vector3& position,
+  const Vector3& normal,
+  const Quaternion& rotation
+)
+{
+  // Nothing to do in base positioner
+  return true;
+}
+
 /// Updates internal position representation, based on current node position.
 void BasePositioner::update_internal_position()
 {

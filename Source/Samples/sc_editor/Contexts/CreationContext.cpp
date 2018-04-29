@@ -92,6 +92,19 @@ void CreationContext::create_rollower()
   }
 }
 
+BasePositioner* get_or_create_positioner(Node* node, StringHash type)
+{
+  Component* result = node->GetComponent(type);
+  if (!result) {
+    // Remove old positioner, if it is not compatiable with requested.
+    auto old = node->GetDerivedComponent<BasePositioner>();
+    node->RemoveComponent(old);
+    // Create new one
+    result = node->CreateComponent(type);
+  }
+  return static_cast<BasePositioner*>(result);
+}
+
 template<class T>
 T* get_or_create_positioner(Node* node)
 {
@@ -122,8 +135,8 @@ void CreationContext::update_rollower_position()
 
     // TODO: use some more explicit way to detect possible attachments
     // If module has attable surface - use free positioner, or surface - surface
-    if (surface) {
-      if (!unit_under_mouse) {
+    if (!unit_under_mouse) {
+      if (surface) {
         // TODO: localisation
         // TODO: turn symmetry off for inserting to main axis
         String snap_text = "main axis";
@@ -171,6 +184,7 @@ void CreationContext::update_rollower_position()
         Vector3 z(0, 0, 1);
         for (int i = 0; i < m_rollowers.Size(); ++i) {
           Node* rollower_node = m_rollowers[i]->GetNode();
+          rollower_node->SetParent(model()->scene_root());
           // Insert positioner and update its internal position
           BasePositioner* positioner = 
             get_or_create_positioner<BasePositioner>(rollower_node);
@@ -191,66 +205,68 @@ void CreationContext::update_rollower_position()
           rollower_node->SetRotation(symmetry_rotation * m_orientation);
         }
       } else {
+        // Unitt without attachable surface cannot be placed in vaccum hide rollowers
+        for (int i = 0; i < m_rollowers.Size(); ++i) {
+          m_rollowers[i]->GetNode()->SetEnabledRecursive(false);
+        }
         hide_tooltip();
-        // TODO: attachment
-        // TODO: highlight attach point
       }
-    } else if (surface_mount) {
-      // Case for surface - node attachable units
-      if (unit_under_mouse) {
-        surface = unit_under_mouse->GetDerivedComponent<BaseAttachableSurface>();
-        if (surface) {
-          // Get symmetry nodes
-          auto attach_nodes = get_symmety_nodes(unit_under_mouse);
-          // If more than one unit
-          if (attach_nodes.Size() > 1) {
-            // Use underlaying nodes as a guide
-            for (int i = 0; i < m_rollowers.Size(); ++i) {
-              Node* rollower_node = m_rollowers[i]->GetNode();
-              if (i < attach_nodes.Size()) {
-                // Set new parent
-                rollower_node->SetParent(attach_nodes[i]);
-                // Get positioner
-                auto positioner =
-                  get_or_create_positioner<SurfaceNodePositioner>(rollower_node);
-                // and set position
-                rollower_node->SetEnabledRecursive(
-                  positioner->set_position(attach_position, attach_normal, m_orientation)
-                );
-              } else {
-                rollower_node->SetEnabledRecursive(false);
-              }
-            }
-          } else {
-            // for just one unit - use symmetry positions
-            auto positions = get_symmetry_positions(attach_position);
-            // and normals
-            auto normals = get_symmetry_positions(attach_normal);
-            for (int i = 0; i < m_rollowers.Size(); ++i) {
-              Node* rollower_node = m_rollowers[i]->GetNode();
+    } else {
+      // Attachment
+      StringHash positioner_type = "";
+      // Choose attachment type
+      if (surface) {
+        positioner_type = SurfaceSurfacePositioner::GetTypeStatic();
+      } else if (surface_mount) {
+        positioner_type = SurfaceNodePositioner::GetTypeStatic();
+      }
+      surface = unit_under_mouse->GetDerivedComponent<BaseAttachableSurface>();
+      if (surface) {
+        // Get symmetry nodes
+        auto attach_nodes = get_symmety_nodes(unit_under_mouse);
+        // If more than one unit
+        if (attach_nodes.Size() > 1) {
+          // Use underlaying nodes as a guide
+          for (int i = 0; i < m_rollowers.Size(); ++i) {
+            Node* rollower_node = m_rollowers[i]->GetNode();
+            if (i < attach_nodes.Size()) {
               // Set new parent
-              rollower_node->SetParent(unit_under_mouse);
+              rollower_node->SetParent(attach_nodes[i]);
               // Get positioner
               auto positioner =
-                get_or_create_positioner<SurfaceNodePositioner>(rollower_node);
+                get_or_create_positioner(rollower_node, positioner_type);
               // and set position
               rollower_node->SetEnabledRecursive(
-                positioner->set_position(positions[i], normals[i], m_orientation)
+                positioner->set_position(attach_position, attach_normal, m_orientation)
               );
+            } else {
+              rollower_node->SetEnabledRecursive(false);
             }
           }
-
-          if (m_rollowers[0]->GetNode()->IsEnabled()) {
-            set_tooltip("Attach to module");
+        } else {
+          // for just one unit - use symmetry positions
+          auto positions = get_symmetry_positions(attach_position);
+          // and normals
+          auto normals = get_symmetry_positions(attach_normal);
+          for (int i = 0; i < m_rollowers.Size(); ++i) {
+            Node* rollower_node = m_rollowers[i]->GetNode();
+            // Set new parent
+            rollower_node->SetParent(unit_under_mouse);
+            // Get positioner
+            auto positioner =
+              get_or_create_positioner(rollower_node, positioner_type);
+            // and set position
+            rollower_node->SetEnabledRecursive(
+              positioner->set_position(positions[i], normals[i], m_orientation)
+            );
           }
-          return;
         }
+
+        if (m_rollowers[0]->GetNode()->IsEnabled()) {
+          set_tooltip("Attach to module");
+        }
+        return;
       }
-      // If no unit under cursor with attachable surface - hide rollowers
-      for (int i = 0; i < m_rollowers.Size(); ++i) {
-        m_rollowers[i]->GetNode()->SetEnabledRecursive(false);
-      }
-      hide_tooltip();
     }
   }
 }
@@ -512,5 +528,5 @@ bool CreationContext::is_pickable(Node* node)
       return false;
     }
   }
-  return true;
+  return !!(node->GetDerivedComponent<BaseAttachableSurface>());
 }

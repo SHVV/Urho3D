@@ -33,6 +33,13 @@ public:
 
   // GetDependencyNodes?
 
+  /// Set position.
+  /// Returns true, if attachment was successfull, false - otherwise.
+  virtual bool set_position(
+    const Vector3& position,
+    const Vector3& normal,
+    const Quaternion& rotation
+  ) override;
   /// Updates internal position representation, based on current node position.
   virtual void update_internal_position() override;
   /// Updates node position, based on reference and internal position.
@@ -57,10 +64,6 @@ public:
   //bool update_position(Node* unit_under_mouse, const Ray& pointer_ray, rotation, symmetry_rotation);
   // TODO: attach and listen for attached events
   // TODO: Update on changes
-
-  /// Set position.
-  /// Returns true, if attachment was successfull, false - otherwise.
-  bool set_position(const Vector3& position, const Vector3& normal, const Quaternion& rotation);
 
 protected:
   // Existing overrides
