@@ -3,6 +3,7 @@
 // Surface-Surface attachment. Used to adjust position relative to parent
 
 #include "SurfaceSurfacePositioner.h"
+#include "SurfaceSurfaceAutoLinkUnit.h"
 #include "../Core/MathUtils.h"
 
 #include <Urho3D\Core\Context.h>
@@ -11,7 +12,8 @@
 using namespace Urho3D;
 
 extern const char* EDITOR_CATEGORY;
-
+static const char* AUTO_LINK_NAME = "AutoLink";
+static const StringHash AUTO_LINK_NAME_HASH = AUTO_LINK_NAME;
 
 /// Register object attributes.
 void SurfaceSurfacePositioner::RegisterObject(Context* context)
@@ -26,6 +28,14 @@ void SurfaceSurfacePositioner::RegisterObject(Context* context)
 SurfaceSurfacePositioner::SurfaceSurfacePositioner(Context* context)
   : BasePositioner(context)
 {
+}
+
+/// Destructor
+SurfaceSurfacePositioner::~SurfaceSurfacePositioner()
+{
+  if (!m_auto_link.Expired()) {
+    m_auto_link->GetNode()->Remove();
+  }
 }
 
 /// Set position externally.
@@ -76,11 +86,21 @@ bool SurfaceSurfacePositioner::set_position(
         our_surface->average_attachable_edge();
       m_distance /= 2;
 
+      SurfaceSurfaceAutoLinkUnit* auto_link_unit = get_auto_link(true);
+      if (auto_link_unit) {
+        auto_link_unit->set_nodes(node, node->GetParent());
+        auto_link_unit->GetNode()->SetEnabled(true);
+      }
+
       update_node_position();
       return true;
     }
   }
 
+  SurfaceSurfaceAutoLinkUnit* auto_link_unit = get_auto_link(false);
+  if (auto_link_unit) {
+    auto_link_unit->GetNode()->SetEnabled(false);
+  }
   // On update +
   // - calculate farthest point on our surface using normal as reference direction
   // - calculate distance between feature and attachment position
@@ -204,4 +224,27 @@ BaseAttachableSurface* SurfaceSurfacePositioner::get_attached_surface()
       return node->GetDerivedComponent<BaseAttachableSurface>();
     }
   }
+}
+
+/// Get or create mount adapter
+SurfaceSurfaceAutoLinkUnit* SurfaceSurfacePositioner::get_auto_link(bool create)
+{
+  if (m_auto_link.Expired()) {
+    Node* node = GetNode();
+    if (node) {
+      Node* parent_node = node->GetParent();
+      if (parent_node) {
+        Node* auto_link = node->GetChild(AUTO_LINK_NAME_HASH);
+        if (!auto_link) {
+          if (create) {
+            auto_link = node->CreateChild(AUTO_LINK_NAME);
+            m_auto_link = auto_link->CreateComponent<SurfaceSurfaceAutoLinkUnit>();
+          }
+        } else {
+          m_auto_link = auto_link->GetComponent<SurfaceSurfaceAutoLinkUnit>();
+        }
+      }
+    }
+  }
+  return m_auto_link.Get();
 }

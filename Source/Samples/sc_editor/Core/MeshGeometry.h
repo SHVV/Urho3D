@@ -71,7 +71,7 @@ public:
     bool secondary = false;
     Vector3 center(const MeshGeometry& mesh) const {
       return (mesh.m_vertices[vertexes[0]].position + 
-              mesh.m_vertices[vertexes[1]].position) * 0.5;
+              mesh.m_vertices[vertexes[1]].position) * 0.5f;
     };
     Vector3 normal(const MeshGeometry& mesh) const {
       return (mesh.m_vertices[vertexes[0]].normal +
@@ -83,7 +83,7 @@ public:
     };
     float radius(const MeshGeometry& mesh) const {
       return Min(mesh.m_vertices[vertexes[1]].radius,
-                 mesh.m_vertices[vertexes[0]].radius) * 0.7;
+                 mesh.m_vertices[vertexes[0]].radius) * 0.7f;
     }
     float length(const MeshGeometry& mesh) const {
       return (mesh.m_vertices[vertexes[1]].position -
@@ -114,7 +114,7 @@ public:
         result += mesh.m_vertices[vertexes[i]].position;
         ++i;
       }
-      return result / i;
+      return result / (float)i;
     };
     Vector3 normal(const MeshGeometry& mesh) const {
       int i = 0;
@@ -226,6 +226,14 @@ public:
     int types,
     unsigned int flags,
     float& t
+  ) const;
+
+  /// Test beam collision with polygons
+  int test_collision(
+    const Vector3& pos1,
+    const Vector3& pos2,
+    unsigned int flags = 0,
+    float shift = 0.01f
   ) const;
 
   /// Find sub object, closest to the ray

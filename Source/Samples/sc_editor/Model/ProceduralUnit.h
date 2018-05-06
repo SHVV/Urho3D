@@ -43,7 +43,7 @@ protected:
   /// Called on setting parameters
   //virtual void apply_parameters(int index = -1);
   /// Create or update all necessary components - override for derived classes
-  virtual void update_guts_int();
+  virtual void update_guts_int() override;
 
 private:
   StringHash m_function;

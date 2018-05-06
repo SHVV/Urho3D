@@ -6,6 +6,7 @@
 
 #include "BasePositioner.h"
 #include "BaseAttachableSurface.h"
+#include "SurfaceSurfaceAutoLinkUnit.h"
 
 using namespace Urho3D;
 
@@ -18,7 +19,7 @@ public:
   SurfaceSurfacePositioner(Context* context);
 
   /// Destructor
-  virtual ~SurfaceSurfacePositioner() override = default;
+  virtual ~SurfaceSurfacePositioner() override;
 
   /// Register object attributes.
   static void RegisterObject(Context* context);
@@ -68,6 +69,9 @@ protected:
   /// Get surface, we attached to.
   BaseAttachableSurface* get_attached_surface();
 
+  /// Get autolink unit
+  SurfaceSurfaceAutoLinkUnit* get_auto_link(bool create);
+
   /// Calculate reference distance
   float get_reference_distance(const Vector3& normal);
 
@@ -76,6 +80,9 @@ private:
   SharedPtr<BaseTopologyAttachment> m_attachment;
   ///// Topology attachment reference
   //SharedPtr<BaseTopologyAttachment> m_attachment;
+  /// Auto link pointer
+  WeakPtr<SurfaceSurfaceAutoLinkUnit> m_auto_link;
+
   /// Distance from reference attachment
   float m_distance;
   /// Euler angles

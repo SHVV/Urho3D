@@ -428,6 +428,28 @@ int MeshGeometry::raycast(
   return index;
 }
 
+/// Test beam collision with polygons
+int MeshGeometry::test_collision(
+  const Vector3& pos1,
+  const Vector3& pos2,
+  unsigned int flags,
+  float shift
+) const
+{
+  Vector3 direction = pos2 - pos1;
+  Ray ray(pos1 + direction * shift, direction);
+  SubObjectType res_type;
+  int result = -1;
+  float t = M_INFINITY;
+  if (ray_cast_polygons(ray, flags, t, result)) {
+    if (t < (direction.Length() * (1 - shift * 2))) {
+      return result;
+    }
+  }
+  return -1;
+}
+
+
 /// Distance from point P to edge p1-p2
 float point_edge_distance(const Vector3& p, const Vector3& p1, const Vector3& p2)
 {

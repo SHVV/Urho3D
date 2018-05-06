@@ -15,6 +15,7 @@
 #include "Model/BasePositioner.h"
 #include "Model/BaseAttachableSurface.h"
 #include "Model/SurfaceSurfacePositioner.h"
+#include "Model/SurfaceSurfaceAutoLinkUnit.h"
 #include "Model/SurfaceNodePositioner.h"
 #include "Model/SurfaceMount.h"
 #include "Model/Voxel1DAttachableSurface.h"
@@ -87,6 +88,7 @@ SCEditor::SCEditor(Context* context)
   BasePositioner::RegisterObject(context);
   BaseAttachableSurface::RegisterObject(context);
   SurfaceSurfacePositioner::RegisterObject(context);
+  SurfaceSurfaceAutoLinkUnit::RegisterObject(context);
   SurfaceNodePositioner::RegisterObject(context);
   SurfaceMount::RegisterObject(context);
   Voxel1DAttachableSurface::RegisterObject(context);
