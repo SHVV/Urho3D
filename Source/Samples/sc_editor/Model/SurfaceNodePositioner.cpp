@@ -72,8 +72,7 @@ bool SurfaceNodePositioner::set_position(
       position_temp,
       normal_temp,
       tangent,
-      (int)SubObjectType::POLYGON | (int)SubObjectType::EDGE,
-      false
+      (int)SubObjectType::POLYGON | (int)SubObjectType::EDGE
     );
 
     if (m_attachment) {
@@ -107,8 +106,7 @@ void SurfaceNodePositioner::update_internal_position()
       position,
       normal,
       tangent,
-      (int)SubObjectType::POLYGON | (int)SubObjectType::EDGE,
-      false
+      (int)SubObjectType::POLYGON | (int)SubObjectType::EDGE
     );
     if (m_attachment) {
       // Calculate angles between current position and snapped to ajust them

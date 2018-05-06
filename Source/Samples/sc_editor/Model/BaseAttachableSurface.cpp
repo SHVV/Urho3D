@@ -36,7 +36,7 @@ SharedPtr<BaseTopologyAttachment> BaseAttachableSurface::local_to_topology(
   Vector3& normal,
   Vector3& tangent,
   int snap_to,
-  bool snap_optional
+  int snap_flags
 )
 {
   DynamicModel* model = dynamic_model();
@@ -57,7 +57,7 @@ SharedPtr<BaseTopologyAttachment> BaseAttachableSurface::local_to_topology(
     normal,
     tangent,
     snap_to,
-    snap_optional,
+    snap_flags,
     sub_type,
     sub_index
   );
@@ -74,7 +74,7 @@ SharedPtr<BaseTopologyAttachment> BaseAttachableSurface::local_to_topology(
   // convert position to "topology independent"
   Vector3 normalized_position = local_to_topology(position, normal);
   
-  if (!snap_optional && sub_type == SubObjectType::NONE) {
+  if (sub_type == SubObjectType::NONE) {
     return nullptr;
   }
 
@@ -84,8 +84,9 @@ SharedPtr<BaseTopologyAttachment> BaseAttachableSurface::local_to_topology(
     normalized_position,
     normal,
     snap_type,
+    snap_flags,
     sub_index,
-    geometry->primitives_count_by_flags(snap_type, mgfATTACHABLE)
+    geometry->primitives_count_by_flags(snap_type, snap_flags)
   ));
 
 
@@ -112,10 +113,11 @@ bool BaseAttachableSurface::topology_to_local(
   // First - try to use topology dependent position, by checking number of primitives.
   SubObjectType snap_type = topology_position.snapped_to();
   int primitive_index = topology_position.primitive_index();
+  int snap_flags = topology_position.snap_flags();
   if (snap_type != SubObjectType::NONE &&
-      geometry->primitives_count_by_flags(snap_type, mgfATTACHABLE) 
+      geometry->primitives_count_by_flags(snap_type, snap_flags)
       == topology_position.primitives_count()) {
-    sub_object_to_local(snap_type, primitive_index, position, normal, tangent);
+    sub_object_to_local(snap_type, snap_flags, primitive_index, position, normal, tangent);
 
     return true;
   }
@@ -152,6 +154,7 @@ bool BaseAttachableSurface::topology_to_local(
 /// Convert sub-object into local position
 void BaseAttachableSurface::sub_object_to_local(
   SubObjectType sub_type,
+  int snap_flags,
   int sub_index,
   Vector3& position,
   Vector3& normal,
@@ -172,14 +175,14 @@ void BaseAttachableSurface::sub_object_to_local(
 
   switch (sub_type) {
     case SubObjectType::VERTEX: {
-      int real_index = geometry->vertices_by_flags(mgfATTACHABLE)[sub_index];
+      int real_index = geometry->vertices_by_flags(snap_flags)[sub_index];
       auto& vertex = geometry->vertices()[real_index];
       position = vertex.position;
       normal = vertex.normal;
       break;
     }
     case SubObjectType::EDGE: {
-      int real_index = geometry->edges_by_flags(mgfATTACHABLE)[sub_index];
+      int real_index = geometry->edges_by_flags(snap_flags)[sub_index];
       auto& edge = geometry->edges()[real_index];
       position = edge.center(*geometry);
       normal = edge.normal(*geometry);
@@ -189,7 +192,7 @@ void BaseAttachableSurface::sub_object_to_local(
       return;
     }
     case SubObjectType::POLYGON: {
-      int real_index = geometry->polygons_by_flags(mgfATTACHABLE)[sub_index];
+      int real_index = geometry->polygons_by_flags(snap_flags)[sub_index];
       auto& polygon = geometry->polygons()[real_index];
       position = polygon.center(*geometry);
       normal = polygon.normal(*geometry);
@@ -204,7 +207,7 @@ bool BaseAttachableSurface::snap_to_primitive(
   Vector3& normal,
   Vector3& tangent,
   int snap_to,
-  bool snap_optional,
+  int snap_flags,
   SubObjectType& snap_type,
   int& primitive_index
 )
@@ -227,7 +230,7 @@ bool BaseAttachableSurface::snap_to_primitive(
     // If no attachable sub object under position
     //if (primitive_index < 0) {
       // Find just closest one
-      primitive_index = geometry->closest(ray, snap_type, snap_to, mgfATTACHABLE);
+      primitive_index = geometry->closest(ray, snap_type, snap_to, snap_flags);
       // Use real snapping in this case, only if it is not optional
       //result = !snap_optional;
     //}
@@ -236,7 +239,7 @@ bool BaseAttachableSurface::snap_to_primitive(
     Vector3 new_position;
     Vector3 new_normal;
     Vector3 new_tangent;
-    sub_object_to_local(snap_type, primitive_index, new_position, new_normal, new_tangent);
+    sub_object_to_local(snap_type, snap_flags, primitive_index, new_position, new_normal, new_tangent);
 
     if (!result) {
       // TODO: Snap only Z axis angle

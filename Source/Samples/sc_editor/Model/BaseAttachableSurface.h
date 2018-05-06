@@ -30,17 +30,20 @@ public:
     const Vector3& position,
     const Vector3& normal,
     SubObjectType snaped_to,
+    int snap_flags,
     int primitive_index,
     int primitives_count
   ) 
     : m_position(position),
       m_normal(normal),
       m_snaped_to(snaped_to),
+      m_snap_flags(snap_flags),
       m_primitive_index(primitive_index),
       m_primitives_count(primitives_count) {};
   virtual ~BaseTopologyAttachment() = default;
 
   SubObjectType snapped_to() const { return m_snaped_to; };
+  int snap_flags() const { return m_snap_flags; };
   const Vector3& position() const { return m_position; };
   const Vector3& normal() const { return m_normal; };
   int primitive_index() const { return m_primitive_index; };
@@ -50,6 +53,7 @@ protected:
   Vector3 m_position;
   Vector3 m_normal;
   SubObjectType m_snaped_to;
+  int m_snap_flags;
   int m_primitive_index;
   int m_primitives_count;
 };
@@ -83,7 +87,7 @@ public:
     Vector3& normal,
     Vector3& tangent,
     int snap_to = (int)SubObjectType::NONE,
-    bool snap_optional = true
+    int snap_flags = mgfATTACHABLE
   );
   
   /// Convert topology position to local position
@@ -112,6 +116,7 @@ protected:
   /// Convert sub-object into local position
   void sub_object_to_local(
     SubObjectType sub_type,
+    int snap_flags,
     int sub_index,
     Vector3& position,
     Vector3& normal,
@@ -123,7 +128,7 @@ protected:
     Vector3& normal,
     Vector3& tangent,
     int snap_to,
-    bool snap_optional,
+    int snap_flags,
     SubObjectType& snap_type,
     int& primitive_index
   );

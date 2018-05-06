@@ -60,7 +60,7 @@ bool SurfaceSurfacePositioner::set_position(
       normal_temp,
       tangent,
       (int)SubObjectType::POLYGON | (int)SubObjectType::EDGE | (int)SubObjectType::VERTEX,
-      true
+      mgfATTACHABLE | mgfSNAPPABLE
     );
 
     // Set orientation right here
@@ -110,7 +110,7 @@ void SurfaceSurfacePositioner::update_internal_position()
       normal,
       tangent,
       (int)SubObjectType::POLYGON | (int)SubObjectType::EDGE | (int)SubObjectType::VERTEX,
-      true
+      mgfATTACHABLE | mgfSNAPPABLE
     );
     if (m_attachment) {
       // TODO: deal with angles

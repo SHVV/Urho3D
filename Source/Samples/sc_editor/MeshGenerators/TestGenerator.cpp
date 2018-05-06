@@ -135,7 +135,9 @@ MeshGeometry* TestGenerator::generate(const Parameters& parameters)
     profile, 
     parameters[s_segments].GetUInt(),
     //ttTRIANGLE
-    ttDIAMOND
+    ttDIAMOND,
+    M_PI / segments,
+    M_PI / segments
   );
 
   int start_vertex = geometry->vertices().Size();
@@ -161,6 +163,25 @@ MeshGeometry* TestGenerator::generate(const Parameters& parameters)
     if (geometry->polygons()[i].material == 1) {
       geometry->set_polygon_flags(i, mgfATTACHABLE | mgfVISIBLE);
     }
+  }
+
+  MeshGeometry::Vertex snap_point;
+  snap_point.material = -1;
+  snap_point.radius = seg.m_node_radius * 2;
+  snap_point.flags = mgfSNAPPABLE;
+
+  snap_point.position = Vector3(0, 0, -x1);
+  snap_point.normal = Vector3(0, 0, -1);
+  geometry->add(snap_point);
+  snap_point.position = Vector3(0, 0, x1);
+  snap_point.normal = Vector3(0, 0, 1);
+  geometry->add(snap_point);
+
+  for (int i = 0; i < segments; ++i) {
+    float a = 2 * M_PI / segments * i;
+    snap_point.position = Vector3(radius * cos(a), radius * sin(a), 0);
+    snap_point.normal = snap_point.position.Normalized();
+    geometry->add(snap_point);
   }
 
   float scale = Min(x1 * 2, radius * 2) * 1.3;

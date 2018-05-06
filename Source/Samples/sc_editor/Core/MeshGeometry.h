@@ -25,6 +25,7 @@ enum class SubObjectType {
 #define mgfVISIBLE  1
 #define mgfCOLLISION 2
 #define mgfATTACHABLE 4
+#define mgfSNAPPABLE 8
 
 // TODO: extract painting
 // TODO: LODs as flags
