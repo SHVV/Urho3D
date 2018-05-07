@@ -291,7 +291,7 @@ void NodesContext::on_mouse_up()
 /// Mouse button move handler
 void NodesContext::on_mouse_move(float x, float y)
 {
-  if (m_active_part) {
+  if (m_active_part && view()->selected().Size() > 0) {
     // TODO: Correct parentness support
     // TODO: Don't move non-movable nodes
     // TODO: Mirror symmetry support

@@ -12,7 +12,8 @@
 #include "DynamicModel.h"
 
 #include <Urho3D\Core\Context.h>
-#include "Urho3D\Core\CoreEvents.h"
+#include <Urho3D\Core\CoreEvents.h>
+#include <Urho3D\Container\Sort.h>
 
 using namespace Urho3D;
 
@@ -123,6 +124,155 @@ void SurfaceSurfaceAutoLinkUnit::update_guts_int()
   get_component<DynamicModel>();
 }
 
+/// Calculate usefullness of beam in direction
+float beam_usefullness(
+  const Vector3& pos1,
+  const Vector3& pos2,
+  const Vector3& center,
+  const Vector3& direction
+)
+{
+  // Calculate minimum distance in direction
+  float dist1 = direction.AbsDotProduct(pos1 - center);
+  float dist2 = direction.AbsDotProduct(pos2 - center);
+  float dist = Min(dist1, dist2);
+
+  // Calculate angle in direction
+  Vector3 beam = pos2 - pos1;
+  float angularity = 
+    1 - abs(acos(direction.AbsDotProduct(beam.Normalized())) - M_PI / 4);
+
+  return angularity * dist;
+}
+
+bool usefullness_compare(
+  const Pair<float, int>& first,
+  const Pair<float, int>& second
+)
+{
+  return first.first_ > second.first_;
+}
+
+/// Optimize truss by using several heuristics
+void optimize_truss(
+  const PODVector<Vector3>& positions1, // attached
+  const PODVector<Vector3>& positions2,
+  const Matrix3x4& trans1,
+  const Matrix3x4& trans2,
+  const PODVector<Pair<int, int>>& in_truss,
+  PODVector<Pair<int, int>>& out_truss
+  )
+{
+  // Calculate centre of ground structure
+  // TODO: ignore boundary effects.
+  Vector3 ground_structure_centre = Vector3::ZERO;
+  for (int i = 0; i < in_truss.Size(); ++i) {
+    ground_structure_centre += positions1[in_truss[i].first_];
+    ground_structure_centre += positions2[in_truss[i].second_];
+  }
+  ground_structure_centre /= in_truss.Size() * 2;
+
+  // Calculate primary directions
+  Vector3 normal = (trans1.Translation() - ground_structure_centre).Normalized();
+  Vector3 binormal = normal.CrossProduct(trans2 * Vector4(0, 0, 1, 0));
+  if (binormal.LengthSquared() < 0.01) {
+    binormal = trans2 * Vector4(0, 1, 0, 0);
+  }
+  binormal.Normalize();
+  Vector3 tangent = normal.CrossProduct(binormal).Normalized();
+  binormal = normal.CrossProduct(tangent);
+
+  // Calculate absolute usefullness of each beam in primary directions
+  PODVector<float> usefullness_tangent;
+  usefullness_tangent.Reserve(in_truss.Size());
+  PODVector<float> usefullness_binormal;
+  usefullness_binormal.Reserve(in_truss.Size());
+  float best_in_tangent = 0;
+  float best_in_binormal = 0;
+  for (int i = 0; i < in_truss.Size(); ++i) {
+    const Vector3& pos1 = positions1[in_truss[i].first_];
+    const Vector3& pos2 = positions2[in_truss[i].second_];
+
+    float in_tangent = beam_usefullness(pos1, pos2, ground_structure_centre, tangent);
+    float in_binormal = beam_usefullness(pos1, pos2, ground_structure_centre, binormal);
+
+    if (in_tangent > best_in_tangent) {
+      best_in_tangent = in_tangent;
+    }
+    if (in_binormal > best_in_binormal) {
+      best_in_binormal = in_binormal;
+    }
+
+    usefullness_tangent.Push(in_tangent);
+    usefullness_binormal.Push(in_binormal);
+  }
+
+  // Normalize usefullness
+  PODVector<Pair<float, int>> usefullness;
+  usefullness.Reserve(in_truss.Size());
+  for (int i = 0; i < in_truss.Size(); ++i) {
+    const Vector3& pos1 = positions1[in_truss[i].first_];
+    const Vector3& pos2 = positions2[in_truss[i].second_];
+
+    float beam_len = (pos1 - pos2).Length();
+    float current_usefullness =
+      beam_len > 0.01 ?
+      ((usefullness_binormal[i] / best_in_binormal +
+      usefullness_tangent[i] / best_in_tangent) /
+      beam_len) : 0;
+    usefullness.Push(Pair<float, int>(current_usefullness, i));
+  }
+
+  // Sort beams
+  Sort(begin(usefullness), end(usefullness), &usefullness_compare);
+
+  // Choose n best beams
+  // TODO: check rigidity and case, that new beams increase it
+  float last_usefullness = 0;
+  for (int i = 0; i < in_truss.Size(); ++i) {
+    if (i < 8 || (last_usefullness - usefullness[i].first_) < 0.001) {
+      // TODO: test collisions with existing beams
+      last_usefullness = usefullness[i].first_;
+      out_truss.Push(in_truss[usefullness[i].second_]);
+    }
+  }
+}
+
+void get_attachable_vertices(
+  BaseAttachableSurface* surface,
+  const Matrix3x4& cs,
+  PODVector<Vector3>& positions,
+  PODVector<Vector3>& normals
+)
+{
+  const MeshGeometry* geometry =
+    surface->dynamic_model()->mesh_geometry();
+
+  auto& vertex_indexes =
+    geometry->vertices_by_flags(mgfATTACHABLE);
+
+  positions.Reserve(vertex_indexes.Size());
+  normals.Reserve(vertex_indexes.Size());
+  for (int i = 0; i < vertex_indexes.Size(); ++i) {
+    const MeshGeometry::Vertex& vertex =
+      geometry->vertices()[vertex_indexes[i]];
+    Vector3 pos = cs * vertex.position;
+    Vector3 norm = cs * Vector4(vertex.normal, 0.0);
+    bool found = false;
+    for (int j = 0; j < positions.Size() && !found; ++j){
+      if (positions[j] == pos) {
+        found = true;
+        normals[j] += norm;
+        normals[j] /= 2;
+      }
+    }
+    if (!found) {
+      positions.Push(pos);
+      normals.Push(norm);
+    }
+  }
+}
+
 /// Prepare everything before rendering
 void SurfaceSurfaceAutoLinkUnit::on_update_views(
   StringHash eventType,
@@ -131,6 +281,7 @@ void SurfaceSurfaceAutoLinkUnit::on_update_views(
 {
   Node* node = GetNode();
   // If dirty - update
+  // TODO: filter update by checking changes in relative position between parent-child
   if (m_truss_dirty && node)  {
     BaseAttachableSurface* attached_surface = get_attached_surface();
     BaseAttachableSurface* parent_surface = get_parent_surface();
@@ -144,30 +295,17 @@ void SurfaceSurfaceAutoLinkUnit::on_update_views(
       Matrix3x4 to_parent_cs = parent_cs.Inverse();
 
       // List of vertex positions of each surface
-      const MeshGeometry* attached_geometry =
-        attached_surface->dynamic_model()->mesh_geometry();
-      const MeshGeometry* parent_geometry =
-        parent_surface->dynamic_model()->mesh_geometry();
-
-      auto& attached_vertex_indexes = 
-        attached_geometry->vertices_by_flags(mgfATTACHABLE);
-      auto& parent_vertex_indexes =
-        parent_geometry->vertices_by_flags(mgfATTACHABLE);
-      
       PODVector<Vector3> attached_positions;
-      attached_positions.Reserve(attached_vertex_indexes.Size());
-      for (int i = 0; i < attached_vertex_indexes.Size(); ++i) {
-        Vector3 position = 
-          attached_geometry->vertices()[attached_vertex_indexes[i]].position;
-        attached_positions.Push(attached_cs * position);
-      }
+      PODVector<Vector3> attached_normals;
+      get_attachable_vertices(
+        attached_surface, attached_cs, attached_positions, attached_normals
+      );
+
       PODVector<Vector3> parent_positions;
-      parent_positions.Reserve(parent_vertex_indexes.Size());
-      for (int i = 0; i < parent_vertex_indexes.Size(); ++i) {
-        Vector3 position =
-          parent_geometry->vertices()[parent_vertex_indexes[i]].position;
-        parent_positions.Push(parent_cs * position);
-      }
+      PODVector<Vector3> parent_normals;
+      get_attachable_vertices(
+        parent_surface, parent_cs, parent_positions, parent_normals
+      );
 
       // Find shortest beam
       float shortest_beam = M_INFINITY;
@@ -179,19 +317,36 @@ void SurfaceSurfaceAutoLinkUnit::on_update_views(
           }
         }
       }
+      float average_edge = 
+        attached_surface->average_attachable_edge() + 
+        parent_surface->average_attachable_edge();
+      average_edge /= 2;
+      if (shortest_beam < average_edge) {
+        shortest_beam = average_edge;
+      }
 
       // List of potential beams (pairs of vertex)
-      PODVector<Pair<int, int>> beams;
-      beams.Reserve(attached_positions.Size() * parent_positions.Size());
+      PODVector<Pair<int, int>> ground_beams;
+      ground_beams.Reserve(attached_positions.Size() * parent_positions.Size());
       for (int i = 0; i < attached_positions.Size(); ++i) {
         for (int j = 0; j < parent_positions.Size(); ++j) {
           Vector3& pos1 = attached_positions[i];
           Vector3& pos2 = parent_positions[j];
           // Filter by length
+          // TODO: increase length, until rigidity will start to preserve
           float distance = (pos1 - pos2).Length();
-          if (distance > shortest_beam * 2) {
+          if (distance > shortest_beam * 3) {
             continue;
           }
+          // Filter by normal
+          Vector3& norm1 = attached_normals[i];
+          Vector3& norm2 = parent_normals[j];
+          Vector3 dir = (pos2 - pos1).Normalized();
+          const float min_cos = 0.1f;
+          if (norm1.DotProduct(dir) < min_cos || (-norm2.DotProduct(dir)) < min_cos) {
+            continue;
+          }
+
           // Filter by collision (optimize collision detection)
           //if (attached_geometry->test_collision(to_attached_cs * pos1, to_attached_cs * pos2) >= 0){
           //  continue;
@@ -199,16 +354,24 @@ void SurfaceSurfaceAutoLinkUnit::on_update_views(
           //if (parent_geometry->test_collision(to_parent_cs * pos1, to_parent_cs * pos2) >= 0) {
           //  continue;
           //}
-          beams.Push(MakePair<int, int>(i, j));
+          ground_beams.Push(MakePair<int, int>(i, j));
         }
       }
+
+      // Euristics optimization
+      PODVector<Pair<int, int>> beams;
+      optimize_truss(
+        attached_positions, parent_positions, 
+        attached_cs,        parent_cs, 
+        ground_beams,       beams
+      );
 
       // TODO: 
       // - optimize by structure rigidity:
       //   - test response for different deformations
       //   - remove useless trusses until rigidity preserved
       //   - check beams self-intersection
-      // TODO: detect rings case
+      // TODO: detect rings case?
 
       // TODO: recalculate node radius
       float radius = shortest_beam / 25;
