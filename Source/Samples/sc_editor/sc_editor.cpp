@@ -9,6 +9,7 @@
 
 #include "Model/UnitModel.h"
 #include "Model/ProceduralUnit.h"
+#include "Model/MultiPointUnit.h"
 #include "Model/NodeModel.h"
 #include "Model/SceneModel.h"
 #include "Model/DynamicModel.h"
@@ -32,6 +33,7 @@
 #include "MeshGenerators/BaseTruss.h"
 #include "MeshGenerators/WingRadiator.h"
 #include "MeshGenerators/BeamAdapter.h"
+#include "MeshGenerators/ConnectionTruss.h"
 
 // Includes from Urho
 #include <Urho3D/Core/CoreEvents.h>
@@ -80,11 +82,13 @@ SCEditor::SCEditor(Context* context)
   generator->add_function(new BaseTruss());
   generator->add_function(new WingRadiator());
   generator->add_function(new BeamAdapter());
+  generator->add_function(new ConnectionTruss());
   // TODO:
 
   // Model
   UnitModel::RegisterObject(context);
   ProceduralUnit::RegisterObject(context);
+  MultiPointUnit::RegisterObject(context);
   BasePositioner::RegisterObject(context);
   BaseAttachableSurface::RegisterObject(context);
   SurfaceSurfacePositioner::RegisterObject(context);
@@ -192,6 +196,19 @@ void SCEditor::CreateScene()
   // Create default camera controller
   // TODO: probably we need to move this into view and allow to switch on demand
   m_camera_controller = new CameraController(context_, m_view);
+
+  Node* node1 = m_model->scene_root()->CreateChild();
+  node1->SetWorldPosition(Vector3(0, 0, 10));
+  Node* node2 = m_model->scene_root()->CreateChild();
+  node2->SetWorldPosition(Vector3(0, 100, 40));
+
+  MultiPointUnit* test_unit = static_cast<MultiPointUnit*>(m_model->create_unit(
+    MultiPointUnit::GetTypeStatic(),
+    Vector3(0, 0, 0)
+  ));
+  test_unit->set_function_name(ConnectionTruss::s_name);
+  test_unit->set_reference_node(0, node1);
+  test_unit->set_reference_node(1, node2);
 
   //ProceduralUnit* test_unit = static_cast<ProceduralUnit*>(m_model->create_unit(
   //  ProceduralUnit::GetTypeStatic(),

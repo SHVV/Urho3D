@@ -105,6 +105,8 @@ private:
   PODVector<Component*> m_tracked_components;
   /// Second list of components during update
   PODVector<Component*> m_update_components;
+  /// Reentrance guard for updating parameters
+  bool m_updating = false;
 
   /// Back pointer to scene
   //WeakPtr<SceneModel> m_scene;

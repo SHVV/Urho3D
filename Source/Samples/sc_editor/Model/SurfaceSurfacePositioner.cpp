@@ -81,11 +81,7 @@ bool SurfaceSurfacePositioner::set_position(
       // Apply local rotation
       Quaternion local_rotation = base_rotation * rotation;
       node->SetRotation(local_rotation);
-      m_distance =
-        attached_surface->average_attachable_edge() +
-        our_surface->average_attachable_edge();
-      m_distance /= 2;
-
+      m_distance = 1;
       SurfaceSurfaceAutoLinkUnit* auto_link_unit = get_auto_link(true);
       if (auto_link_unit) {
         auto_link_unit->set_nodes(node, node->GetParent());
@@ -138,7 +134,9 @@ void SurfaceSurfacePositioner::update_internal_position()
       // Update distance
       float reference_distance = get_reference_distance(normal);
       float full_distance = normal.DotProduct(node->GetPosition() - position);
-      m_distance = full_distance - reference_distance;
+      float base_dist = Min(attached_surface->average_attachable_edge(),
+        our_surface->average_attachable_edge());
+      m_distance = (full_distance - reference_distance) / base_dist;
       update_node_position();
     }
   }
@@ -162,10 +160,13 @@ void SurfaceSurfacePositioner::update_node_position()
       tangent
     );
 
+    float base_dist = Min(attached_surface->average_attachable_edge(),
+      our_surface->average_attachable_edge());
+
     if (valid) {
       float reference_distance = get_reference_distance(normal);
       // Apply distance
-      node->SetPosition(position + normal * (m_distance + reference_distance));
+      node->SetPosition(position + normal * (m_distance * base_dist + reference_distance));
     } else {
 
     }

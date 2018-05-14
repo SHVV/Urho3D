@@ -116,18 +116,24 @@ Component* UnitModel::get_component(StringHash type, CreateMode mode)
 /// Called on setting parameters
 void UnitModel::apply_parameters(int index)
 {
-  // By default update guts
-  update_guts();
-  // And notify, that attributes were changed
-  notify_attribute_changed();
+  // Reentrance guard
+  if (!m_updating) {
+    // By default update guts
+    update_guts();
+    // And notify, that attributes were changed
+    notify_attribute_changed();
+  }
 }
 
 /// Create or update all necessary components
 void UnitModel::update_guts()
 {
-  start_updating();
-  update_guts_int();
-  finish_updating();
+  // Reentrance guard
+  if (!m_updating) {
+    start_updating();
+    update_guts_int();
+    finish_updating();
+  }
 }
 
 /// Create or update all necessary components - override for derived classes
@@ -138,6 +144,7 @@ void UnitModel::update_guts_int()
 /// Starts updating all guts. Resets tracking
 void UnitModel::start_updating()
 {
+  m_updating = true;
   m_update_components.Clear();
 }
 
@@ -153,6 +160,7 @@ void UnitModel::finish_updating()
   }
   m_tracked_components = m_update_components;
   m_update_components.Clear();
+  m_updating = false;
 }
 
 /*/// Update all links due to movements

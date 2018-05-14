@@ -140,9 +140,9 @@ float beam_usefullness(
   // Calculate angle in direction
   Vector3 beam = pos2 - pos1;
   float angularity = 
-    1 - abs(acos(direction.AbsDotProduct(beam.Normalized())) - M_PI / 4);
+    M_PI / 4 - abs(acos(direction.AbsDotProduct(beam.Normalized())) - M_PI / 4);
 
-  return angularity * dist;
+  return angularity * dist * dist;
 }
 
 bool usefullness_compare(
@@ -219,7 +219,7 @@ void optimize_truss(
       beam_len > 0.01 ?
       ((usefullness_binormal[i] / best_in_binormal +
       usefullness_tangent[i] / best_in_tangent) /
-      beam_len) : 0;
+      (beam_len * beam_len * beam_len)) : 0;
     usefullness.Push(Pair<float, int>(current_usefullness, i));
   }
 
@@ -230,7 +230,7 @@ void optimize_truss(
   // TODO: check rigidity and case, that new beams increase it
   float last_usefullness = 0;
   for (int i = 0; i < in_truss.Size(); ++i) {
-    if (i < 8 || (last_usefullness - usefullness[i].first_) < 0.001) {
+    if (i < 12 || (last_usefullness - usefullness[i].first_) < 0.0000001) {
       // TODO: test collisions with existing beams
       last_usefullness = usefullness[i].first_;
       out_truss.Push(in_truss[usefullness[i].second_]);

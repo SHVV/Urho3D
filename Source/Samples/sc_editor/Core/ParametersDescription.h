@@ -16,11 +16,13 @@ typedef unsigned int ParameterID;
 enum ParameterFlag {
   pfNONE = 0,
   pfINVALID = 1,        // Invalid non-initialized parameter
-  pfINTERACTIVE = 2,    // Parameter, that can be entered interactively during creation process
-  pfLINEAR_VALUE = 4,   // Linear value in "m"
-  pfANGULAR_VALUE = 8,  // Angular value in degrees
-  pfCELL_SIZE = 16,     // Parameter determine cell size
-  pfCELLS = 32          // Parameter is a number of cells
+  pfTEMPORARY = 2,      // Temporary parameter, that should not be serialized
+  pfNOT_EDITABLE = 4,   // Parameter, that cannot be editied manually
+  pfINTERACTIVE = 8,    // Parameter, that can be entered interactively during creation process
+  pfLINEAR_VALUE = 16,  // Linear value in "m"
+  pfANGULAR_VALUE = 32, // Angular value in degrees
+  pfCELL_SIZE = 64,     // Parameter determine cell size
+  pfCELLS = 128         // Parameter is a number of cells
 };
 
 struct ParameterDescription
