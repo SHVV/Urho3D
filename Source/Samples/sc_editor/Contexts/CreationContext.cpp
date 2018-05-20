@@ -1,6 +1,6 @@
 // SHW Spacecraft editor
 //
-// Base abstract context class, knows about symmetry settings
+// Base context class for creating procedural units.
 
 #include "CreationContext.h"
 
@@ -92,7 +92,8 @@ void CreationContext::create_rollower()
   }
 }
 
-BasePositioner* get_or_create_positioner(Node* node, StringHash type)
+/// Gets or creates positioner for node with provided hash type
+BasePositioner* CreationContext::get_or_create_positioner(Node* node, StringHash type)
 {
   Component* result = node->GetComponent(type);
   if (!result) {
@@ -187,7 +188,7 @@ void CreationContext::update_rollower_position()
           rollower_node->SetParent(model()->scene_root());
           // Insert positioner and update its internal position
           BasePositioner* positioner = 
-            get_or_create_positioner<BasePositioner>(rollower_node);
+            ::get_or_create_positioner<BasePositioner>(rollower_node);
           positioner->update_internal_position();
 
           pos = positions[i];

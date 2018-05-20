@@ -193,6 +193,7 @@ Vector<Node*> BaseContext::get_symmety_nodes(Node* node)
   if (node) {
     UnitModel* unit = node->GetDerivedComponent<UnitModel>();
     if (unit) {
+      result.Push(node);
       auto original_pos = node->GetWorldPosition();
       auto drawable = node->GetDerivedComponent<Drawable>();
       if (drawable) {
@@ -225,7 +226,6 @@ Vector<Node*> BaseContext::get_symmety_nodes(Node* node)
           }
         }
       }
-      result.Push(node);
     }
   }
   return result;

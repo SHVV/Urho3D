@@ -1,6 +1,6 @@
 // SHW Spacecraft editor
 //
-// Base abstract context class, knows about symmetry settings
+// Base context class for creating procedural units.
 
 #pragma once
 
@@ -8,6 +8,7 @@
 
 // Editor classes predeclaration
 class UnitModel;
+class BasePositioner;
 
 using namespace Urho3D;
 
@@ -54,14 +55,17 @@ protected:
   virtual bool is_pickable(Node* node) override;
 
   /// Create rollower
-  void create_rollower();
+  virtual void create_rollower();
 
   /// Updates rollower position
-  void update_rollower_position();
+  virtual void update_rollower_position();
 
   /// Get i-th interactive parameter of current procedural object
   // i - 1 based index
   bool get_interactive_parameter(int i, ParameterID& id);
+
+  /// Gets or creates positioner for node with provided hash type
+  BasePositioner* get_or_create_positioner(Node* node, StringHash type);
 
   /// Gets unit class name
   StringHash unit_class() const;

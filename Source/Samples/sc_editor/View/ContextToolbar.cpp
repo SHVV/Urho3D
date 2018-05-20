@@ -10,13 +10,16 @@
 
 // Units and generators
 #include "../Model/ProceduralUnit.h"
+#include "../Model/MultiPointUnit.h"
 #include "../MeshGenerators/TestGenerator.h"
 #include "../MeshGenerators/BaseTruss.h"
 #include "../MeshGenerators/WingRadiator.h"
+#include "../MeshGenerators/ConnectionTruss.h"
 
 // Include all contexts for registering
 #include "../Contexts/NodesContext.h"
 #include "../Contexts/CreationContext.h"
+#include "../Contexts/MultiPointCreationContext.h"
 
 // Includes from Urho3D
 #include "Urho3D/Core/Context.h"
@@ -42,6 +45,7 @@ ContextToolbar::ContextToolbar(Context* context, EditorUI* editor)
   // TODO: move from here
   context->RegisterFactory<NodesContext>(EDITOR_CATEGORY);
   context->RegisterFactory<CreationContext>(EDITOR_CATEGORY);
+  context->RegisterFactory<MultiPointCreationContext>(EDITOR_CATEGORY);
 
   // Create all context buttons
   // TODO: move from here
@@ -66,9 +70,23 @@ ContextToolbar::ContextToolbar(Context* context, EditorUI* editor)
     CreationContext::GetTypeStatic(), // Context type name
     base_truss,                       // Context parameters, like model,..
     "Structure",                      // Category of context, determines tab
-    "Truss",                          // Toolbar icon // TODO: change icon
+    "Truss",                          // Toolbar icon
     "Base truss",                     // Button title
     "Create base truss"               // Button description for tooltip
+  );
+
+  // Connection truss context
+  Parameters connection_truss;
+  connection_truss[s_unit_class] = MultiPointUnit::GetTypeStatic();
+  connection_truss[s_function_name] = StringHash(ConnectionTruss::s_name);
+
+  add_context(
+    MultiPointCreationContext::GetTypeStatic(), // Context type name
+    connection_truss,                           // Context parameters, like model,..
+    "Structure",                                // Category of context, determines tab
+    "ConnectionTruss",                          // Toolbar icon
+    "Connection truss",                         // Button title
+    "Connect modules with truss"                // Button description for tooltip
   );
 
   // Spherical tank context

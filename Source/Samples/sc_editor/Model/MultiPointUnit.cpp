@@ -13,6 +13,8 @@
 #include "DynamicModel.h"
 
 #include <Urho3D\Core\Context.h>
+#include <Urho3D\Scene\Scene.h>
+#include <Urho3D\Scene\SceneEvents.h>
 
 using namespace Urho3D;
 
@@ -35,6 +37,13 @@ MultiPointUnit::MultiPointUnit(Context* context)
 /// Destructor
 MultiPointUnit::~MultiPointUnit()
 {
+  UnsubscribeFromAllEvents();
+  for (int i = 0; i < m_reference_nodes.Size(); ++i) {
+    if (!m_reference_nodes[i].Expired()) {
+      m_reference_nodes[i]->RemoveListener(this);
+      m_reference_nodes[i]->Remove();
+    }
+  }
 }
 
 /// Sets i'th reference node
@@ -56,11 +65,60 @@ bool MultiPointUnit::set_reference_node(int i, Node* node)
   return i < 1;
 }
 
+/// Gets i'th reference node, if it exists
+Node* MultiPointUnit::get_reference_node(int i)
+{
+  if (i >= 0 && i < m_reference_nodes.Size()) {
+    return m_reference_nodes[i];
+  } else {
+    return nullptr;
+  }
+}
+
+/// Handle node being assigned.
+void MultiPointUnit::OnNodeSet(Node* node)
+{
+  if (node) {
+    //SubscribeToEvent(
+    //  GetScene(),
+    //  E_NODEREMOVED,
+    //  URHO3D_HANDLER(MultiPointUnit, on_node_remove)
+    //);
+  }
+}
+
 /// Handle scene node transform dirtied.
 void MultiPointUnit::OnMarkedDirty(Node* node)
 {
   if (node != GetNode()) {
+    // Check nodes
+    for (int i = 0; i < m_reference_nodes.Size(); ++i) {
+      if (m_reference_nodes[i].Expired() || !m_reference_nodes[i]->GetParent()) {
+        SubscribeToEvent(
+          GetScene(),
+          E_SCENEPOSTUPDATE,
+          URHO3D_HANDLER(MultiPointUnit, on_node_remove)
+        );
+        //GetNode()->Remove();
+        return;
+      }
+    }
     update_guts();
+  }
+}
+
+/// On node remove event
+void MultiPointUnit::on_node_remove(StringHash eventType, VariantMap& eventData)
+{
+  GetNode()->Remove();
+  if (E_NODEREMOVED == eventType) {
+    using namespace NodeRemoved;
+    for (int i = 0; i < m_reference_nodes.Size(); ++i) {
+      if (eventData[P_NODE].GetPtr() == m_reference_nodes[i].Get()) {
+        GetNode()->Remove();
+        return;
+      }
+    }
   }
 }
 

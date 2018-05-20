@@ -261,14 +261,21 @@ void NodesContext::on_mouse_up()
     // Undo support
     commit_transaction();
   } else {
-    Node* node = get_unit_under_mouse();
+    Node* picked_node = get_unit_under_mouse();
+    Node* node = picked_node;
     // Go up by hierarhy until node with positioner will be found.
     BasePositioner* positioner;
     while (node && !(positioner = node->GetDerivedComponent<BasePositioner>())) {
       node = node->GetParent();
     }
+    if (!node) {
+      node = picked_node;
+    }
 
     Vector<Node*> symmetry_nodes = get_symmety_nodes(node);
+    // Make picked nodes last in the list
+    symmetry_nodes.Remove(picked_node);
+    symmetry_nodes.Push(picked_node);
     if (input->GetKeyDown(KEY_CTRL)) {
       if (node) {
         auto selected = view()->selected();
@@ -311,6 +318,9 @@ void NodesContext::on_mouse_move(float x, float y)
     float move_step = quantizing_step(min_size * 2);
     for (int i = 0; i < selected.Size(); ++i) {
       Node* node = selected[i];
+      if (!node->GetDerivedComponent<BasePositioner>()) {
+        continue;
+      }
       Vector3 node_pos;
       // Calculate orientation
       Vector3 parent_pos = node->GetParent()->GetWorldPosition();
@@ -392,20 +402,22 @@ void NodesContext::update(float dt)
     auto selected = view()->selected();
     if (selected.Size()) {
       Node* node = selected.Back();
-      Vector3 node_pos;
+      if (node->GetDerivedComponent<BasePositioner>()) {
+        Vector3 node_pos;
 
-      // Calculate orientation
-      Vector3 axis_x;
-      Vector3 axis_y;
-      Vector3 axis_z;
-      node->GetDerivedComponent<BasePositioner>()->axis(
-        node_pos, axis_x, axis_y, axis_z
-      );
+        // Calculate orientation
+        Vector3 axis_x;
+        Vector3 axis_y;
+        Vector3 axis_z;
+        node->GetDerivedComponent<BasePositioner>()->axis(
+          node_pos, axis_x, axis_y, axis_z
+        );
 
-      m_gizmo->SetPosition(node_pos);
-      m_gizmo->SetRotation(
-        Quaternion(axis_x, axis_y, axis_z)
-      );
+        m_gizmo->SetPosition(node_pos);
+        m_gizmo->SetRotation(
+          Quaternion(axis_x, axis_y, axis_z)
+        );
+      }
     }
 
     // Update gizmo scale

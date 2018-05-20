@@ -10,6 +10,7 @@
 #include "../Model/DynamicModel.h"
 #include "../Model/Voxel1DAttachableSurface.h"
 #include "../Model/ProceduralUnit.h"
+#include "../Model/SurfaceNodePositioner.h"
 
 #include <Urho3D\Scene\Scene.h>
 
@@ -38,7 +39,7 @@ ConnectionTruss::ConnectionTruss()
   // Set parameters
   add_parameter(s_node_ids, VariantVector(), pfTEMPORARY | pfNOT_EDITABLE, "Node IDs", "List of reference node IDs");
   add_parameter(s_segments, 4, pfINTERACTIVE, "Sides", "Number of truss sides", 3, 12);
-  add_parameter(s_curvature, 0.0, pfNONE, "Curvature", "Truss curvature", 0.0, 1.0);
+  add_parameter(s_curvature, 0.3, pfNONE, "Curvature", "Truss curvature", 0.001, 1.0);
 }
 
 /// Destructor
@@ -58,7 +59,11 @@ MeshGeometry* ConnectionTruss::generate(const Parameters& parameters)
 
   // Recalculate cell size based on cells count
   int cells = Ceil(length / cell_size);
-  cell_size = length / cells;
+  if (0.0 == length) {
+    cells = 1;
+  } else {
+    cell_size = length / cells;
+  }
 
   float radius = cell_size / sin(M_PI / segments) / 2;
   
@@ -74,21 +79,33 @@ MeshGeometry* ConnectionTruss::generate(const Parameters& parameters)
   seg.m_smooth_vertex = false;
   seg.m_smooth_segment = false;
 
-  seg.m_pos = Vector2(-cell_size * cells * 0.5, 0);
+  if (0.0 == length) {
+    seg.m_pos = Vector2(0, 0);
+  } else {
+    seg.m_pos = Vector2(-cell_size * cells * 0.5, 0);
+  }
   profile.segments().Push(seg);
 
   for (int i = 1; i < cells; ++i) {
-    seg.m_pos = Vector2((-cells * 0.5 + i) * cell_size, radius);
+    float x_norm = (-cells * 0.5 + i) / cells * 2;
+    float y = 1 - pow(abs(x_norm), 1.0 / curvature);
+    //float y = 1 - Cos(x_norm * 90);
+    //y = 1 - y * y;
+    seg.m_pos = Vector2((-cells * 0.5 + i) * cell_size, radius * y);
     profile.segments().Push(seg);
   }
 
-  seg.m_pos = Vector2(cell_size * cells * 0.5, 0);
+  if (0.0 == length) {
+    seg.m_pos = Vector2(cell_size * cells, 0);
+  } else {
+    seg.m_pos = Vector2(cell_size * cells * 0.5, 0);
+  }
   profile.segments().Push(seg);
 
   MeshGeometry* geometry = generator()->lathe(
     profile, 
     segments,
-    //ttTRIANGLE
+    //ttTRIANGLE,
     ttDIAMOND,
     M_PI / segments,
     M_PI / segments
@@ -133,14 +150,34 @@ void ConnectionTruss::update_unit(
     if (!node1 || !node2) {
       return;
     }
+
     // Caclulate and fill parameters for mesh function
     Parameters mesh_parameters;
     // Calculate length
     float length = (node1->GetWorldPosition() - node2->GetWorldPosition()).Length();
 
-    // TODO: get cell size from connections
+    // Get cell size from connections
+    auto positioner1 = node1->GetDerivedComponent<SurfaceNodePositioner>();
+    auto positioner2 = node2->GetDerivedComponent<SurfaceNodePositioner>();
+    float edge_length = FLT_MAX;
+    if (positioner1) {
+      float edge_length1 = positioner1->average_attachable_edge();
+      if (edge_length1 > 0 && edge_length > edge_length1) {
+        edge_length = edge_length1;
+      }
+    }
+    if (positioner2) {
+      float edge_length2 = positioner2->average_attachable_edge();
+      if (edge_length2 > 0 && edge_length > edge_length2) {
+        edge_length = edge_length2;
+      }
+    }
     int cells = 15;
     float cell_size = length / cells;
+    if (edge_length != FLT_MAX) {
+      cell_size = edge_length;
+      cells = ceil(length / cell_size);
+    }
     // Quantize length to reduce rounding errors
     float step = cell_size / 100;
     int step_log = floor(log2(step));
@@ -162,6 +199,33 @@ void ConnectionTruss::update_unit(
     // Create voxel 1D attachable surface
     auto* surface = unit->get_component<Voxel1DAttachableSurface>();
     surface->initialize(cell_size, (cells & 1) ? (cell_size * 0.5) : 0);
+  } else if (node_ids.Size() == 1) {
+    Scene* scene = unit->GetScene();
+    Node* node1 = scene->GetNode(node_ids[0].GetUInt());
+    if (!node1) {
+      return;
+    }
+    auto positioner1 = node1->GetDerivedComponent<SurfaceNodePositioner>();
+    float edge_length = 10;
+    if (positioner1) {
+      float edge_length1 = positioner1->average_attachable_edge();
+      if (edge_length1 > 0 && edge_length > edge_length1) {
+        edge_length = edge_length1;
+      }
+    }
+
+    // TODO: add some marker for one node mode
+    Parameters mesh_parameters;
+    // Fill parameters
+    mesh_parameters[s_length] = 0;
+    mesh_parameters[s_cell_size] = edge_length;
+    mesh_parameters[s_segments] = parameters[s_segments];
+    mesh_parameters[s_curvature] = parameters[s_curvature];
+
+    MeshBuffer* mesh_buffer = generator()->generate_buffer(name(), mesh_parameters);
+    if (mesh_buffer) {
+      DynamicModel* dynamic_model = unit->get_component<DynamicModel>();
+      dynamic_model->mesh_buffer(mesh_buffer);
+    }
   }
-  // TODO: add some marker for one node mode
 }

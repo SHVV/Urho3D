@@ -59,7 +59,11 @@ public:
     Vector3& axis_z
   );
 
-
+  /// Set allowed sub-objects
+  void set_sub_objects(int value);
+  /// Get average edge size
+  float average_attachable_edge();
+  
   // TODO: Create in proper position, potentially can have several positions for two points units
   //bool update_position(Node* unit_under_mouse, const Ray& pointer_ray, rotation, symmetry_rotation);
   // TODO: attach and listen for attached events
@@ -106,4 +110,6 @@ private:
   Vector3 m_angles;
   /// Surface, we attached to
   WeakPtr<BaseAttachableSurface> m_surface;
+  /// Allowed sub objects
+  int m_sub_objects = (int)SubObjectType::POLYGON | (int)SubObjectType::EDGE;
 };

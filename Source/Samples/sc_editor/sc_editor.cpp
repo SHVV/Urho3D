@@ -197,18 +197,18 @@ void SCEditor::CreateScene()
   // TODO: probably we need to move this into view and allow to switch on demand
   m_camera_controller = new CameraController(context_, m_view);
 
-  Node* node1 = m_model->scene_root()->CreateChild();
-  node1->SetWorldPosition(Vector3(0, 0, 10));
-  Node* node2 = m_model->scene_root()->CreateChild();
-  node2->SetWorldPosition(Vector3(0, 100, 40));
+  //Node* node1 = m_model->scene_root()->CreateChild();
+  //node1->SetWorldPosition(Vector3(0, 0, 10));
+  //Node* node2 = m_model->scene_root()->CreateChild();
+  //node2->SetWorldPosition(Vector3(0, 100, 40));
 
-  MultiPointUnit* test_unit = static_cast<MultiPointUnit*>(m_model->create_unit(
-    MultiPointUnit::GetTypeStatic(),
-    Vector3(0, 0, 0)
-  ));
-  test_unit->set_function_name(ConnectionTruss::s_name);
-  test_unit->set_reference_node(0, node1);
-  test_unit->set_reference_node(1, node2);
+  //MultiPointUnit* test_unit = static_cast<MultiPointUnit*>(m_model->create_unit(
+  //  MultiPointUnit::GetTypeStatic(),
+  //  Vector3(0, 0, 0)
+  //));
+  //test_unit->set_function_name(ConnectionTruss::s_name);
+  //test_unit->set_reference_node(0, node1);
+  //test_unit->set_reference_node(1, node2);
 
   //ProceduralUnit* test_unit = static_cast<ProceduralUnit*>(m_model->create_unit(
   //  ProceduralUnit::GetTypeStatic(),

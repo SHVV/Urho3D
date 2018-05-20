@@ -72,7 +72,7 @@ bool SurfaceNodePositioner::set_position(
       position_temp,
       normal_temp,
       tangent,
-      (int)SubObjectType::POLYGON | (int)SubObjectType::EDGE
+      m_sub_objects
     );
 
     if (m_attachment) {
@@ -106,7 +106,7 @@ void SurfaceNodePositioner::update_internal_position()
       position,
       normal,
       tangent,
-      (int)SubObjectType::POLYGON | (int)SubObjectType::EDGE
+      m_sub_objects
     );
     if (m_attachment) {
       // Calculate angles between current position and snapped to ajust them
@@ -289,6 +289,22 @@ void SurfaceNodePositioner::axis(
     axis_y = Vector3(0, 1, 0);
     axis_z = Vector3(0, 0, 1);
   }
+}
+
+/// Set allowed sub-objects
+void SurfaceNodePositioner::set_sub_objects(int value)
+{
+  m_sub_objects = value;
+}
+
+/// Get average edge size
+float SurfaceNodePositioner::average_attachable_edge()
+{
+  BaseAttachableSurface* surface = get_surface();
+  if (surface) {
+    return surface->average_attachable_edge();
+  }
+  return 0;
 }
 
 /// Handle node being assigned.
