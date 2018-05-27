@@ -89,10 +89,10 @@ SCEditor::SCEditor(Context* context)
   UnitModel::RegisterObject(context);
   ProceduralUnit::RegisterObject(context);
   MultiPointUnit::RegisterObject(context);
+  SurfaceSurfaceAutoLinkUnit::RegisterObject(context);
   BasePositioner::RegisterObject(context);
   BaseAttachableSurface::RegisterObject(context);
   SurfaceSurfacePositioner::RegisterObject(context);
-  SurfaceSurfaceAutoLinkUnit::RegisterObject(context);
   SurfaceNodePositioner::RegisterObject(context);
   SurfaceMount::RegisterObject(context);
   Voxel1DAttachableSurface::RegisterObject(context);

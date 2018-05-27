@@ -87,7 +87,9 @@ void MultiPointCreationContext::update_rollower_position()
                   get_or_create_positioner(reference_node, positioner_type);
                 auto spec_positioner = dynamic_cast<SurfaceNodePositioner*>(positioner);
                 if (spec_positioner) {
-                  spec_positioner->set_sub_objects((int)SubObjectType::VERTEX);
+                  spec_positioner->set_sub_objects(
+                    (int)SubObjectType::VERTEX | (int)SubObjectType::POLYGON
+                  );
                 }
                 // and set position
                 rollower_node->SetEnabledRecursive(
@@ -116,7 +118,9 @@ void MultiPointCreationContext::update_rollower_position()
                   get_or_create_positioner(reference_node, positioner_type);
                 auto spec_positioner = dynamic_cast<SurfaceNodePositioner*>(positioner);
                 if (spec_positioner) {
-                  spec_positioner->set_sub_objects((int)SubObjectType::VERTEX);
+                  spec_positioner->set_sub_objects(
+                    (int)SubObjectType::VERTEX | (int)SubObjectType::POLYGON
+                  );
                 }
                 // and set position
                 rollower_node->SetEnabledRecursive(

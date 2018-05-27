@@ -141,8 +141,12 @@ float beam_usefullness(
   Vector3 beam = pos2 - pos1;
   float angularity = 
     M_PI / 4 - abs(acos(direction.AbsDotProduct(beam.Normalized())) - M_PI / 4);
+  float usefullness = angularity * dist * dist;
+  if (isnan(usefullness)) {
+    usefullness = 0;
+  }
 
-  return angularity * dist * dist;
+  return usefullness;
 }
 
 bool usefullness_compare(
@@ -220,6 +224,9 @@ void optimize_truss(
       ((usefullness_binormal[i] / best_in_binormal +
       usefullness_tangent[i] / best_in_tangent) /
       (beam_len * beam_len * beam_len)) : 0;
+    if (isnan(current_usefullness)) {
+      current_usefullness = 0;
+    }
     usefullness.Push(Pair<float, int>(current_usefullness, i));
   }
 
