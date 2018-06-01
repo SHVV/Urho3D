@@ -19,6 +19,20 @@
     <attribute name="Texture" value="Texture2D;Textures/UI/SCEditorIcons.png" />
     <attribute name="Image Rect" value="128 0 158 30" />
   </element>
+
+  <element type="FileNew">
+    <attribute name="Texture" value="Texture2D;Textures/UI/SCEditorIcons.png" />
+    <attribute name="Image Rect" value="160 0 190 30" />
+  </element>
+  <element type="FileOpen">
+    <attribute name="Texture" value="Texture2D;Textures/UI/SCEditorIcons.png" />
+    <attribute name="Image Rect" value="192 0 222 30" />
+  </element>
+  <element type="FileSave">
+    <attribute name="Texture" value="Texture2D;Textures/UI/SCEditorIcons.png" />
+    <attribute name="Image Rect" value="224 0 254 30" />
+  </element>
+
   <element type="Symmetry2">
     <attribute name="Texture" value="Texture2D;Textures/UI/SCEditorIcons.png" />
     <attribute name="Image Rect" value="0 32 30 62" />

@@ -12,6 +12,7 @@
 // Includes from Urho3D
 #include "Urho3D/Core/Context.h"
 #include "Urho3D/UI/BorderImage.h"
+#include "Urho3D/UI/Button.h"
 #include "Urho3D/UI/CheckBox.h"
 #include <Urho3D/UI/UIEvents.h>
 #include "Urho3D/UI/UI.h"
@@ -47,6 +48,19 @@ MainToolbar::MainToolbar(Context* context, EditorUI* editor)
   m_symmetry_switch->add_switch("Symmetry8", "Symmetry 8", 8);
   SubscribeToEvent(m_symmetry_switch, E_RADIO_GROUP_SWITCHED, URHO3D_HANDLER(MainToolbar, on_symmetry_switched));
   //CheckBox* button = m_editor_ui->create_toolbar_checkbox("Manipulate", "AAA");
+
+  m_file_toolbar = new UIElement(context_);
+  m_file_toolbar->SetName("FileToolbar");
+  ui->GetRoot()->AddChild(m_file_toolbar);
+  m_file_toolbar->SetAlignment(HA_LEFT, VA_TOP);
+  m_file_toolbar->SetLayout(LM_HORIZONTAL);
+  m_file_toolbar->SetLayoutSpacing(4);
+  m_file_toolbar->SetLayoutBorder(IntRect(4, 4, 4, 4));
+  m_file_toolbar->SetOpacity(0.7);
+  m_file_toolbar->AddChild(m_editor_ui->create_toolbar_button("FileNew", "Create new spacecraft"));
+  m_file_toolbar->AddChild(m_editor_ui->create_toolbar_button("FileOpen", "Open spacecraft from file"));
+  m_file_toolbar->AddChild(m_editor_ui->create_toolbar_button("FileSave", "Save spacecraft to file"));
+
 
   //SubscribeToEvent(button, E_TOGGLED, URHO3D_HANDLER(MainToolbar, on_button));
 

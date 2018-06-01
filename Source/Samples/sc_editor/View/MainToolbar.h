@@ -53,6 +53,7 @@ private:
 
   /// UI toolbar element
   UIElement* m_symmetry_toolbar;
+  UIElement* m_file_toolbar;
 
   /// Symmetry switch group
   SharedPtr<RadioGroup> m_symmetry_switch;

@@ -200,9 +200,9 @@ void ContextToolbar::update(float dt)
 void ContextToolbar::resize(int w, int h)
 {
   if (m_toolbar) {
-    m_toolbar->SetFixedSize(44, h - 40);
-    m_toolbar->SetPosition(0, 40);
-    m_toolbar->SetFixedHeight(h - 40);
+    //m_toolbar->SetFixedSize(44, h - 60);
+    m_toolbar->SetPosition(0, 60);
+    //m_toolbar->SetFixedHeight(h - 60);
   }
 }
 

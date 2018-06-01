@@ -351,6 +351,7 @@
     <element type="ToolBarButton" style="Button">
         <attribute name="Min Size" value="34 34" />
         <attribute name="Max Size" value="34 34" />
+        <attribute name="Image Rect" value="208 0 224 16" />
         <attribute name="Layout Mode" value="Horizontal" />
         <attribute name="Layout Border" value="2 2 2 2" />
         <attribute name="Focus Mode" value="NotFocusable" />
